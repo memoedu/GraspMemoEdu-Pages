@@ -1,4 +1,4 @@
-@import url('./vendor/book-font/font.css?v=36c7e727c5dae4ec');
+@import url('./vendor/book-font/font.css?v=f742d59dbc8f0b23');
 /* Hallmark · component: answers · existing book typography and semantic colours
  * pre-emit critique: P4 H5 E4 S5 R5 V4 */
 :root {
@@ -44,6 +44,19 @@
 .multiStepAnswer, .multiStepCurrent > .selfAssessment { margin-top: 1rem; min-width: 0; }
 .multiStepAnswer .answerContent, .multiStepCurrent > .selfAssessment .answerContent { margin-inline: 0; }
 .multiStepAnswer .exampleExplanationHeader, .multiStepCurrent > .selfAssessment .exampleExplanationHeader { margin-block: 1rem .5rem; }
+/* Hallmark · component: question parts · existing typography and spacing
+ * pre-emit critique: P4 H5 E4 S5 R5 V4 */
+.courseContent p.bookSubquestion {
+  margin-block: 1em; padding-inline-start: 2.25em; text-indent: -2.25em;
+  line-height: 1.85; min-width: 0; overflow-wrap: anywhere;
+}
+.courseContent p.bookSubquestionNested { margin-inline-start: 1em; }
+.courseContent p.bookSubquestion :is(.mathDisplay, mjx-container[display="true"]) { text-indent: 0; }
+.courseContent .bookFigures { clear: both; margin-block: 1.25rem; min-width: 0; }
+.courseContent .bookFigure { max-width: 100%; margin-inline: 0; }
+.courseContent .bookFigure img { display: block; max-width: 100%; height: auto; margin-block: .5rem; }
+.courseContent .bookFigure figcaption { color: var(--muted); font-size: .85em; line-height: 1.6; }
+.courseContent .sourceAnswerNote { margin-block: 1rem; padding-inline-start: 1rem; border-inline-start: 2px solid var(--ma-border); }
 .courseContent.reading-outline { --article-font-size: 18px; --article-line-height: 1.75; }
 .courseContent [id^="node-"] { scroll-margin-block: 6rem; }
 .courseContent [id^="node-"]:focus { outline: 2px solid var(--accent, #806449); outline-offset: 4px; }

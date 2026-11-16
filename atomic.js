@@ -1,14 +1,14 @@
-import {t, translateMessage} from './i18n.js?v=36c7e727c5dae4ec';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=36c7e727c5dae4ec';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=36c7e727c5dae4ec';
-import {reportableContent} from './content-report.js?v=36c7e727c5dae4ec';
-import {createLearningCache} from './learning-cache.js?v=36c7e727c5dae4ec';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=36c7e727c5dae4ec';
-import {enhanceSourceContent} from './topic-content.js?v=36c7e727c5dae4ec';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=36c7e727c5dae4ec';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=36c7e727c5dae4ec';
-import {pointAssessment} from './point-assessment.js?v=36c7e727c5dae4ec';
-import {trainingAudio} from './training-audio.js?v=36c7e727c5dae4ec';
+import {t, translateMessage} from './i18n.js?v=f742d59dbc8f0b23';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=f742d59dbc8f0b23';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=f742d59dbc8f0b23';
+import {reportableContent} from './content-report.js?v=f742d59dbc8f0b23';
+import {createLearningCache} from './learning-cache.js?v=f742d59dbc8f0b23';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=f742d59dbc8f0b23';
+import {enhanceSourceContent} from './topic-content.js?v=f742d59dbc8f0b23';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=f742d59dbc8f0b23';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=f742d59dbc8f0b23';
+import {pointAssessment} from './point-assessment.js?v=f742d59dbc8f0b23';
+import {trainingAudio} from './training-audio.js?v=f742d59dbc8f0b23';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -271,7 +271,7 @@ export function createAtomicView(bridge) {
       box.append(feedback);
       if (!history && !state.pause) box.append(button(t('atomic.continue'), () => mutate('continue'), 'primaryButton'));
     }
-    if (!history) {
+    if (!history && (question.phase === 'feedback' || question.revealed)) {
       const peek = chunkPeek(question.memory_chunks, {topicId: topic, version: state.course_version});
       if (peek) box.append(peek);
     }
