@@ -23,6 +23,9 @@ const numberLabel = value => {
 const taskParagraph = text => /^(?:(?:read|choose|select|fill|complete|match|answer|write|use|put|for\s+(?:each|the|gaps?|blanks?|questions?))\b|(?:为|請|请|阅读|根據|根据|选择|選擇|选出|填写|填入|完成|将|將|在第|对第))/i.test(text.trim())
   && /\b(?:gap|blank|option|sentence|question|answer|passage|paragraph)\b|空|缺口|选|選|题|題|填/i.test(text);
 const ignoredPassageText = element => element?.closest?.('code,pre,kbd,samp,script,style,textarea,input,select,button,label,legend,svg,math,mjx-container,.MathJax,.passageBlank');
+// Explicit declared markers are answer controls even in code. Prose-based gap
+// inference still excludes code/pre so ordinary source examples remain literal.
+const ignoredExplicitBlank = element => element?.closest?.('kbd,samp,script,style,textarea,input,select,button,label,legend,svg,math,mjx-container,.MathJax,.passageBlank');
 
 // This is a presentation policy only: answer IDs, grading and scheduling stay shared.
 export function passagePresentation(spec) {
@@ -161,15 +164,16 @@ export function mountPassageBlanks(container, controls, createField, {numbered =
     }
     wrapper.append(field); mounted.push({id: control.id, wrapper, field, number}); return wrapper;
   };
-  const elementTargets = [...container.querySelectorAll('[data-control]')].filter(marker => byId.has(marker.dataset.control) && !ignoredPassageText(marker));
+  const elementTargets = [...container.querySelectorAll('[data-control]')].filter(marker => byId.has(marker.dataset.control) && !ignoredExplicitBlank(marker));
   for (const marker of elementTargets) explicit.add(marker.dataset.control);
-  const texts = [];
+  const explicitTexts = [];
   if (document.createTreeWalker) {
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) if (!ignoredPassageText(walker.currentNode.parentElement)
-      && !walker.currentNode.parentElement.closest?.('[data-control]')) texts.push(walker.currentNode);
+    while (walker.nextNode()) if (!ignoredExplicitBlank(walker.currentNode.parentElement)
+      && !walker.currentNode.parentElement.closest?.('[data-control]')) explicitTexts.push(walker.currentNode);
   }
-  for (const text of texts) for (const match of text.textContent.matchAll(/\{\{(?:blank|control):([A-Za-z][A-Za-z0-9_-]*)\}\}/g)) {
+  const texts = explicitTexts.filter(text => !ignoredPassageText(text.parentElement));
+  for (const text of explicitTexts) for (const match of text.textContent.matchAll(/\{\{(?:blank|control):([A-Za-z][A-Za-z0-9_-]*)\}\}/g)) {
     if (!byId.has(match[1])) continue;
     explicit.add(match[1]); targets.push({text, start: match.index, end: match.index + match[0].length, control: byId.get(match[1])});
   }
@@ -214,7 +218,7 @@ export function mountPassageBlanks(container, controls, createField, {numbered =
   }
   for (const matches of candidates.values()) if (matches.length === 1) targets.push(matches[0]);
   for (const marker of elementTargets) if (inside(marker)) marker.replaceWith(make(byId.get(marker.dataset.control)));
-  for (const text of texts) {
+  for (const text of explicitTexts) {
     if (!inside(text)) continue;
     const matches = targets.filter(target => target.text === text).sort((a, b) => a.start - b.start);
     if (!matches.length) continue;
