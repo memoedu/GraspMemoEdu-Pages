@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=e817f2f79f759c3d";
-import {answerReady} from './question-input.js?v=e817f2f79f759c3d';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=e817f2f79f759c3d';
-import {startPresence} from './presence.js?v=e817f2f79f759c3d';
-import {createLearningCache} from './learning-cache.js?v=e817f2f79f759c3d';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=e817f2f79f759c3d';
+import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=b458bab2ee12bcea";
+import {answerReady} from './question-input.js?v=b458bab2ee12bcea';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=b458bab2ee12bcea';
+import {startPresence} from './presence.js?v=b458bab2ee12bcea';
+import {createLearningCache} from './learning-cache.js?v=b458bab2ee12bcea';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=b458bab2ee12bcea';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=e817f2f79f759c3d';
-import {selfAssessment} from './self-assessment.js?v=e817f2f79f759c3d';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=e817f2f79f759c3d';
-import {renderSourceReader} from './learning-ui.js?v=e817f2f79f759c3d';
-import {readingSectionHeading} from './learning-ui.js?v=e817f2f79f759c3d';
-import {createTrainingView} from './training.js?v=e817f2f79f759c3d';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=b458bab2ee12bcea';
+import {selfAssessment} from './self-assessment.js?v=b458bab2ee12bcea';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=b458bab2ee12bcea';
+import {renderSourceReader} from './learning-ui.js?v=b458bab2ee12bcea';
+import {readingSectionHeading} from './learning-ui.js?v=b458bab2ee12bcea';
+import {createTrainingView} from './training.js?v=b458bab2ee12bcea';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1081,9 +1081,9 @@ function renderProgress() {
   if (state.read_only) { readerProgress(refs, {label: '可阅读', status: '暂不可训练', percent: 0, hidden: true}); return; }
   if (state.topic_kind === 'introduction') {
     const progress = Math.round(state.reading_progress || 0), status = readingStatus();
-    const label = t('reader.readingProgress', {progress});
+    const label = t(state.has_practice ? 'reader.readingPracticeProgress' : 'reader.readingProgress', {progress});
     readerProgress(refs, {label, percent: progress, reading: true,
-      status: status === 'paused' ? t('已暂停') : status === 'completed' ? t('学习完成') : t('阅读中')});
+      status: status === 'paused' ? t('已暂停') : status === 'completed' ? t('学习完成') : t(state.has_practice ? '学习中' : '阅读中')});
     return;
   }
   const completed = state.modules.filter((module) => module.status === "completed").length;
@@ -1161,6 +1161,7 @@ function renderHistory() {
     for (const step of visited) {
       if (step.kind === 'introduction') nodes.push(historyGroup(readerStepTitle(step), step.phase === 'completed' ? t('已读') : t('阅读中'), [step]));
       else if (step.kind === 'bank_question') nodes.push(historyGroup(readerStepTitle(step), step.bank_completed ? t('已完成') : t('学习中'), [step]));
+      else if (step.kind === 'bank_practice') nodes.push(historyGroup(readerStepTitle(step), step.phase === 'completed' ? t('已完成') : t('学习中'), [step]));
       else if (step.kind === 'atomic_card') nodes.push(historyGroup(t('atomic.title'), t('atomic.mastered'), [step]));
       else if (step.kind === 'completion') nodes.push(historyGroup(t('Topic 完成'), t('已完成'), [step], 'completed'));
       else if (!visited.slice(0, visited.indexOf(step)).some(item => item.module_id === step.module_id && item.kind !== 'introduction')) {
@@ -1232,12 +1233,14 @@ function renderStep(step) {
     show(Number(storageRead(sessionStorage, key, '0')) || 0);
     return;
   }
-  const key = JSON.stringify([state.course_version, state.revision, state.current_step_id, state.pending_submission_id, state.dependency_ready, state.content_references, step?.bank_completed, submissionError?.request_id, submissionError?.reason, access?.features]);
+  const key = JSON.stringify([state.course_version, state.revision, state.current_step_id, state.pending_submission_id, state.dependency_ready, state.content_references, step?.bank_completed, step?.practice, submissionError?.request_id, submissionError?.reason, access?.features]);
   if (key === renderedKey) return;
   renderedKey = key;
   const target = $("stepCard");
-  if (step?.kind === 'bank_question') {
-    const bankKey = JSON.stringify([state.course_version, step.id, access?.learner_id, access?.features]);
+  if (step?.kind === 'bank_question' || step?.kind === 'bank_practice') {
+    const practice = step.practice;
+    const reference = practice || step.bank_reference;
+    const bankKey = JSON.stringify([state.course_version, reference.version, step.id, access?.learner_id, access?.features]);
     if (topicTrainingKey !== bankKey) {
       stopTopicTraining(); target.replaceChildren(); target.dataset.stepId = step.id;
       const heading = readingSectionHeading(step.section); if (heading) target.append(heading);
@@ -1247,11 +1250,17 @@ function renderStep(step) {
         (path.includes('?') ? '&' : '?') + new URLSearchParams({subject_id: topicSubjectId}), options),
         getAccess: () => access, href: path => '#/subjects/' + topicSubjectId + path,
         formatDate: value => new Date(value).toLocaleString(), progressChanged: () => portal?.progressChanged()});
-      void topicTraining.mount(step.bank_reference, host, () => refreshState({force: true}));
+      void topicTraining.mount(reference, host, () => refreshState({force: true}));
     }
     for (const nav of [...target.children].filter(n => n.classList.contains('stepNavigation'))) nav.remove();
     target.querySelector(':scope > .bankRequiredNotice')?.remove();
-    if (!step.bank_completed) target.append(el('p', 'inputHint bankRequiredNotice', '完成这道例题后可继续学习。'));
+    if (practice) {
+      topicTraining.updatePractice(practice);
+      if (practice.required_ids.length) {
+        target.append(el('p', 'inputHint bankRequiredNotice',
+          t('training.practiceProgress', {done: practice.completed_ids.length, total: practice.required_ids.length})));
+      }
+    } else if (!step.bank_completed) target.append(el('p', 'inputHint bankRequiredNotice', '完成这道例题后可继续学习。'));
     renderStepNavigation(target, step, step.actions || []);
     return;
   }
@@ -1327,14 +1336,15 @@ function renderStepNavigation(target, step, actions) {
   const pages = readingSteps(), index = pages.findIndex(item => item.id === step.id);
   let primary;
   if (actions.includes('continue')) {
-    primary = button(t('下一页'), 'primaryButton', () => mutate('continue', mutationPayload()));
-    primary.setAttribute('aria-label', t('Continue，继续学习'));
+    primary = button(t(step.kind === 'bank_practice' ? 'reader.completeTask' : '下一页'), 'primaryButton', () => mutate('continue', mutationPayload()));
+    if (step.kind !== 'bank_practice') primary.setAttribute('aria-label', t('Continue，继续学习'));
   } else if (actions.includes('submit')) primary = target.querySelector('#submitButton');
   else if (step.kind === 'completion') primary = button(t(state.skipped_modules?.length ? 'nav.backHome' : 'reader.finishLearning'), 'primaryButton', () => {
     portal?.progressChanged(); location.hash = $("topicHomeLink").hash || `/subjects/${topicSubjectId || 'math'}/courses`;
   });
   readerNavigation(target, {previous: index > 0 ? pages[index - 1] : null, next: index >= 0 ? pages[index + 1] : null,
-    onSelect: page => selectStep(page.id), canNavigate: can('review_history'), titleOf: readerStepTitle, primary});
+    onSelect: page => selectStep(page.id), canNavigate: can('review_history'), titleOf: readerStepTitle, primary,
+    ...(step.kind === 'bank_practice' ? {previousLabel: 'reader.backToIntroduction'} : {})});
 }
 
 function answerForm(step, stem) {
@@ -1400,7 +1410,7 @@ function renderCompletion(target) {
   const heading = el("h2", "completionHeading", incomplete ? t('reader.roundEnded') : t("本 Topic 已完成"));
   heading.id = "stepTitle";
   heading.tabIndex = -1;
-  target.append(heading, el("p", "completionIntro", incomplete ? t('reader.catchUpPending') : state.topic_kind === 'introduction' ? t('reader.readingComplete') : t("各模块的学习结果已保存。你可以通过学习记录回看题目与讲解。")));
+  target.append(heading, el("p", "completionIntro", incomplete ? t('reader.catchUpPending') : state.topic_kind === 'introduction' ? t(state.has_practice ? 'reader.readingPracticeComplete' : 'reader.readingComplete') : t("各模块的学习结果已保存。你可以通过学习记录回看题目与讲解。")));
   const list = el("div", "completionList");
   for (const module of state.modules) {
     const row = el("div", "completionRow");
@@ -1610,7 +1620,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=e817f2f79f759c3d");
+const { initPortal } = await import("./portal.js?v=b458bab2ee12bcea");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

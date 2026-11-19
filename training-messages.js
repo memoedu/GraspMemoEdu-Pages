@@ -1,4 +1,10 @@
 export const trainingMessages = {
+  'training.selectPractice': ['选择练习', 'Choose an exercise'],
+  'training.requiredPractice': ['必做', 'Required'],
+  'training.optionalPractice': ['选做', 'Optional'],
+  'training.practiceProgress': ['必做练习 {done} / {total}', 'Required exercises {done} / {total}'],
+  'training.previousPractice': ['上一题', 'Previous exercise'],
+  'training.nextPractice': ['下一题', 'Next exercise'],
   'training.ojAccepted': ['OJ 已 AC', 'Accepted on OJ'],
   'training.ojSubmitted': ['OJ 已提交，尚未 AC', 'Submitted on OJ, not yet accepted'],
   'training.finishLearning': ['完成学习', 'Finish learning'],

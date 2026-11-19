@@ -1,5 +1,10 @@
 // Explicit reader UI catalog. Course text, question titles, answers, and judge feedback are excluded.
 export const readerMessages = {
+  'reader.completeTask': ['完成学习任务', 'Complete learning task'],
+  'reader.backToIntroduction': ['返回引论', 'Back to introduction'],
+  'reader.readingPracticeTask': ['引论与练习', 'Reading and practice'],
+  'reader.readingPracticeProgress': ['学习进度 {progress}%', 'Learning progress {progress}%'],
+  'reader.readingPracticeComplete': ['阅读和练习记录已保存，可通过学习记录回看。', 'Your reading and practice are saved. You can revisit them in your learning history.'],
   'reader.sources': ['来源', 'Sources'],
   'reader.viewSource': ['查看来源', 'View source'],
   'reader.sourceLicense': ['许可', 'License'],

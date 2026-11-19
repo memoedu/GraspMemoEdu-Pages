@@ -1,4 +1,4 @@
-@import url('./vendor/book-font/font.css?v=e817f2f79f759c3d');
+@import url('./vendor/book-font/font.css?v=b458bab2ee12bcea');
 /* Hallmark · component: answers · existing book typography and semantic colours
  * pre-emit critique: P4 H5 E4 S5 R5 V4 */
 :root {
@@ -186,6 +186,8 @@
 .readingFootnotes .courseContent [data-source-role="footnote"] { font-size: inherit; line-height: inherit; }
 .readingExample { margin-block: 1.2em; }
 .topicBankQuestion, .embeddedBankQuestion { width: 100%; min-width: 0; }
+.embeddedPracticeSelector { display: block; }
+.embeddedPracticeSelector .inlineBlank { display: block; width: 100%; margin-inline: 0; }
 .courseContent.sourceBook .sourceFigure { margin-block: 1.6em; }
 .courseContent.sourceBook .sourceFigure :is(p,figcaption) { text-align: center; text-align-last: center; text-indent: 0; }
 .courseContent.sourceBook .sourceFigure img { max-height: 70vh; width: auto; object-fit: contain; }

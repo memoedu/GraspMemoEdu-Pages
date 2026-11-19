@@ -1,18 +1,18 @@
-import {t, translateMessage} from './i18n.js?v=e817f2f79f759c3d';
-import {answerReady, answerEmpty} from './question-input.js?v=e817f2f79f759c3d';
-import {createLearningCache} from './learning-cache.js?v=e817f2f79f759c3d';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=e817f2f79f759c3d';
-import {helpableContent} from './content-report.js?v=e817f2f79f759c3d';
-import {ratingChoices} from './self-assessment.js?v=e817f2f79f759c3d';
-import {pointAssessment} from './point-assessment.js?v=e817f2f79f759c3d';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=e817f2f79f759c3d';
+import {t, translateMessage} from './i18n.js?v=b458bab2ee12bcea';
+import {answerReady, answerEmpty} from './question-input.js?v=b458bab2ee12bcea';
+import {createLearningCache} from './learning-cache.js?v=b458bab2ee12bcea';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=b458bab2ee12bcea';
+import {helpableContent} from './content-report.js?v=b458bab2ee12bcea';
+import {ratingChoices} from './self-assessment.js?v=b458bab2ee12bcea';
+import {pointAssessment} from './point-assessment.js?v=b458bab2ee12bcea';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=b458bab2ee12bcea';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=e817f2f79f759c3d';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=b458bab2ee12bcea';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -245,7 +245,23 @@ export function createTrainingView(bridge) {
       content_order: [{type: 'question', id: selected.id}]};
   }
   function renderSidebar() {
-    if (embedded) return;
+    if (embedded) {
+      if (!embedded.selector) return;
+      const required = new Set(embedded.reference.required_ids);
+      const completed = new Set(embedded.reference.completed_ids);
+      const order = group.content_order || group.questions.map(q => ({type: 'question', id: q.id}));
+      embedded.selector.replaceChildren(...order.map(item => {
+        const rows = item.type === 'question' ? group.questions : group.introductions;
+        const title = rows.find(row => row.id === item.id).title;
+        const status = required.has(item.id) ? completed.has(item.id) ? t('已完成') : t('training.requiredPractice') : t('training.optionalPractice');
+        const option = node('option', '', title + ' · ' + status);
+        option.value = item.type + ':' + item.id;
+        return option;
+      }));
+      const selected = selectedIntroduction ? 'introduction:' + selectedIntroduction : current ? 'question:' + current.question_id : null;
+      if (selected) embedded.selector.value = selected;
+      return;
+    }
     if (reviewCard) {
       const question = group.questions[0];
       renderReviewReader(reader.refs, {items: [{...question, completed: current?.phase === 'done',
@@ -283,7 +299,7 @@ export function createTrainingView(bridge) {
       segments: group.questions.map(q => ({title: q.title, status: q.completed ? 'completed' : q.latest_attempt_id ? 'in_progress' : 'not_started'}))});
   }
   function navigationFor(id, primary, extra = []) {
-    if (embedded) {
+    if (embedded && reviewCard) {
       readerNavigation(main, {primary, extra, idPrefix: 'training'});
       return;
     }
@@ -293,7 +309,7 @@ export function createTrainingView(bridge) {
       return {...value, kind: item.type};
     });
     const index = pages.findIndex(item => item.id === id);
-    if (!reviewCard && !primary && group.questions.length && group.questions.every(q => q.completed)
+    if (!reviewCard && !embedded && !primary && group.questions.length && group.questions.every(q => q.completed)
         && (!current || current.phase === 'done')) {
       primary = button(t('training.finishLearning'), 'primaryButton trainingFinish', () => {
         bridge.progressChanged();
@@ -302,6 +318,7 @@ export function createTrainingView(bridge) {
     }
     readerNavigation(main, {previous: index > 0 ? pages[index - 1] : null, next: index >= 0 ? pages[index + 1] : null,
       idPrefix: 'training', primary, nextAsPrimary: pages[index]?.kind === 'introduction', extra,
+      ...(embedded ? {previousLabel: 'training.previousPractice', nextLabel: 'training.nextPractice'} : {}),
       onSelect: page => page.kind === 'introduction' ? selectIntroduction(page.id) : select(page.id)});
   }
   function selectIntroduction(id) {
@@ -311,7 +328,7 @@ export function createTrainingView(bridge) {
     const step = {...intro, kind: 'introduction'};
     renderReaderStep(main, step, {titleId: 'trainingStepTitle', counter: t('阅读')});
     reader.refs.footerPosition.textContent = readerStepTitle(step); reader.refs.saveStatus.textContent = '';
-    history.replaceState(null, '', href(groupPath(group.bank_id, group.id) + (selectedRoot ? '&' : '?') + 'introduction=' + encode(id)));
+    if (!embedded) history.replaceState(null, '', href(groupPath(group.bank_id, group.id) + (selectedRoot ? '&' : '?') + 'introduction=' + encode(id)));
     navigationFor(id);
   }
   async function select(questionId, fresh = false, attemptId = null) {
@@ -338,7 +355,7 @@ export function createTrainingView(bridge) {
       if (!embedded) history.replaceState(null, '', href(groupPath(group.bank_id, group.id, questionId)
         + (reviewCard ? '&card=1&attempt=' + encode(state.attempt_id) : '')));
       current = remember(state); startClock(state); renderSidebar(); renderQuestion();
-      if(state.hyperskill && !state.hyperskill.local_ide && !state.preview && state.phase==='answer' && state.can_submit) void warmHyperskill(state,e);
+      if(state.hyperskill && !state.hyperskill.local_only && !state.hyperskill.local_ide && !state.preview && state.phase==='answer' && state.can_submit) void warmHyperskill(state,e);
     } catch (failure) { if (alive(e, s)) error(main, failure, () => select(questionId, fresh, attemptId)); }
   }
   function renderQuestion() {
@@ -505,7 +522,7 @@ export function createTrainingView(bridge) {
   }
   function scheduleHyperskillRecovery(e) {
     if(e!==epoch||hyperskillAvailability!==false||document.hidden||hyperskillBusy||
-        hyperskillRecovery||hyperskillTimer!==null)return;
+        hyperskillRecovery||hyperskillTimer!==null||!current?.hyperskill||current.hyperskill.local_only)return;
     const delay=Math.min(30000,2000*2**Math.min(hyperskillRetry++,4));
     hyperskillTimer=setTimeout(()=>{
       hyperskillTimer=null;return refreshHyperskill(e);
@@ -531,7 +548,7 @@ export function createTrainingView(bridge) {
     if(e===epoch&&!document.hidden&&hyperskillAvailability!==true)void refreshHyperskill(e);
   }
   function refreshHyperskill(e) {
-    if(e!==epoch||document.hidden||hyperskillBusy||current?.hyperskill?.local_ide)return Promise.resolve();
+    if(e!==epoch||document.hidden||hyperskillBusy||!current?.hyperskill||current.hyperskill.local_only||current.hyperskill.local_ide)return Promise.resolve();
     if(hyperskillRecovery)return hyperskillRecovery;
     clearTimeout(hyperskillTimer);hyperskillTimer=null;
     const recovery=(async()=>{
@@ -554,7 +571,7 @@ export function createTrainingView(bridge) {
       '本机 Hyperskill 服务未连接，正在自动重试。';
   }
   function paintHyperskillConnection() {
-    if(!current?.hyperskill||!main)return;
+    if(!current?.hyperskill||current.hyperskill.local_only||!main)return;
     const status=main.querySelector('.hyperskillConnection');
     if(status)status.textContent=connectionText(current);
     const send=main.querySelector('[data-hyperskill-submit]');
@@ -564,7 +581,7 @@ export function createTrainingView(bridge) {
     if(hyperskillAvailability)main.querySelector('.trainingError[data-hyperskill-connection]')?.remove();
   }
   async function warmHyperskill(state,e,force=false) {
-    if(state.hyperskill?.local_ide)return null;
+    if(state.hyperskill?.local_only||state.hyperskill?.local_ide)return null;
     if(!force && !await probeHyperskill(e))return null;
     if(e!==epoch)return null;
     let entry=hyperskillWarm.get(state.attempt_id);
@@ -596,11 +613,13 @@ export function createTrainingView(bridge) {
     return entry.promise;
   }
   function hyperskillAnswer(state, e, s) {
+    const localOnly = state.hyperskill.local_only;
     let data;
     try { data = JSON.parse(read('hyperskill', state.attempt_id)); } catch {}
     if(!data && state.hyperskill.prepared)data={interaction:state.hyperskill.interaction,
-      local:!hyperskillAvailability,last:state.hyperskill.local_last};
-    if(data)data={...data,connection:connectionText(state),
+      local:localOnly || !hyperskillAvailability,last:state.hyperskill.local_last};
+    if(localOnly) data={...data,local:true};
+    else if(data)data={...data,connection:connectionText(state),
       disconnected:hyperskillAvailability===false||!!hyperskillWarm.get(state.attempt_id)?.error};
     const action = async (name, answer) => {
       if (hyperskillBusy || !state.can_submit) return;
@@ -616,7 +635,7 @@ export function createTrainingView(bridge) {
         } else if (name === 'finish') {
           await request('academy/training/finish', {method:'POST',body:{attempt_id:state.attempt_id}});
         } else {
-          const ready=await probeHyperskill(e,['submit','ide'].includes(name));
+          const ready=!localOnly && await probeHyperskill(e,['submit','ide'].includes(name));
           if(!alive(e,s))return;
           if(name==='status'&&!ready&&!data?.local_pending)return;
           if((name==='status'||name==='submit')&&data?.local_pending) {
@@ -825,7 +844,7 @@ export function createTrainingView(bridge) {
   }
   async function mount(reference, host, onChange = () => {}) {
     stop(); cacheAccess = getAccess();
-    embedded = {reference, onChange}; reviewCard = true; reviewQuestion = reference.question_id;
+    embedded = {reference, onChange}; reviewCard = Boolean(reference.question_id); reviewQuestion = reference.question_id;
     const e = epoch;
     host.replaceChildren(node('p', '', t('training.loading')));
     try {
@@ -836,6 +855,17 @@ export function createTrainingView(bridge) {
       main = node('section', 'embeddedBankQuestion');
       const saveStatus = node('p', 'inputHint');
       host.replaceChildren(main, saveStatus);
+      if (!reviewCard) {
+        const label = node('label', 'inputHint embeddedPracticeSelector', t('training.selectPractice'));
+        const selector = node('select', 'inlineBlank');
+        embedded.selector = selector;
+        label.append(selector); host.prepend(label);
+        selector.addEventListener('change', () => {
+          const [type, id] = selector.value.split(':');
+          if (type === 'introduction') selectIntroduction(id);
+          else void select(id);
+        });
+      }
       reader = {refs: {footerPosition: node('span'), saveStatus}, closeOnMobile() {}, destroy() {host.replaceChildren();}};
       mathStyle = node('style'); mathStyle.textContent = group.math_css; document.head.append(mathStyle);
       visibilityHandler = () => {
@@ -847,9 +877,23 @@ export function createTrainingView(bridge) {
       if (group.external_providers?.includes('hyperskill')) {
         onlineHandler = () => resumeHyperskill(e); window.addEventListener('online', onlineHandler);
       }
-      await select(reference.question_id);
+      if (reviewCard) await select(reference.question_id);
+      else {
+        const completed = new Set(reference.completed_ids);
+        const pending = reference.required_ids.find(id => !completed.has(id));
+        const first = group.content_order?.[0];
+        if (pending) await select(pending);
+        else if (first?.type === 'introduction') selectIntroduction(first.id);
+        else if (group.questions.length) await select(group.questions[0].id);
+        else if (group.introductions?.length) selectIntroduction(group.introductions[0].id);
+      }
       if (e === epoch) scheduleValidation();
     } catch (failure) { if (e === epoch) error(host, failure, () => mount(reference, host, onChange)); }
   }
-  return {open, mount, stop, renderReviews};
+  function updatePractice(reference) {
+    if (!embedded?.selector || JSON.stringify(embedded.reference) === JSON.stringify(reference)) return;
+    embedded.reference = reference;
+    renderSidebar();
+  }
+  return {open, mount, stop, renderReviews, updatePractice};
 }

@@ -1,11 +1,11 @@
-import {t, learningTitle} from './i18n.js?v=e817f2f79f759c3d';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=e817f2f79f759c3d';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=e817f2f79f759c3d';
-import {enhanceTopicContent} from './topic-content.js?v=e817f2f79f759c3d';
-import {sourceAttributions} from './memory-chunk.js?v=e817f2f79f759c3d';
-import {mountPassageBlanks} from './composite-input.js?v=e817f2f79f759c3d';
-import {placeContentActions} from './content-report.js?v=e817f2f79f759c3d';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=e817f2f79f759c3d';
+import {t, learningTitle} from './i18n.js?v=b458bab2ee12bcea';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b458bab2ee12bcea';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b458bab2ee12bcea';
+import {enhanceTopicContent} from './topic-content.js?v=b458bab2ee12bcea';
+import {sourceAttributions} from './memory-chunk.js?v=b458bab2ee12bcea';
+import {mountPassageBlanks} from './composite-input.js?v=b458bab2ee12bcea';
+import {placeContentActions} from './content-report.js?v=b458bab2ee12bcea';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=b458bab2ee12bcea';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -34,7 +34,7 @@ export function readerHistorySteps(state) {
     const position = step => step.kind === 'completion' ? state.content_order.length + 1
       : step.kind === 'atomic_card' ? (positions.get(`introduction:${step.introduction_id}`) ?? 0) + .5
       : positions.get(step.kind === 'introduction' ? `introduction:${step.introduction_id || step.module_id}`
-        : step.kind === 'bank_question' ? `bank_question:${step.module_id}`
+        : ['bank_question', 'bank_practice'].includes(step.kind) ? `${step.kind}:${step.module_id}`
         : `example:${step.module_id}`) ?? state.content_order.length;
     return visited.slice().sort((a, b) => position(a) - position(b));
   }
@@ -268,10 +268,11 @@ export function topicHistory(sections, {records = [], currentIntroduction, curre
 }
 
 export function readerNavigation(target, {previous, next, onSelect, canNavigate = true,
-  titleOf = readerStepTitle, idPrefix = '', primary, nextAsPrimary = false, extra = [], disabled = false} = {}) {
+  titleOf = readerStepTitle, idPrefix = '', primary, nextAsPrimary = false, extra = [], disabled = false,
+  previousLabel = '上一页', nextLabel = '下一页'} = {}) {
   const footer = node('div', 'stepNavigation'), area = node('div', 'continueRow');
   const pageControl = (page, forward) => {
-    const label = t(forward ? '下一页' : '上一页');
+    const label = t(forward ? nextLabel : previousLabel);
     const control = action(label, forward && nextAsPrimary ? 'primaryButton' : 'secondaryButton pageButton', () => onSelect(page), disabled);
     control.id = idPrefix + (forward ? 'nextPageButton' : 'previousPageButton'); control.dataset.navAvailable = 'true';
     control.title = t('reader.pageControlTitle', {label, title: titleOf(page)}); return control;

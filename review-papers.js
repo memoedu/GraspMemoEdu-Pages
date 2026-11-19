@@ -1,18 +1,18 @@
-import {t, translateMessage} from './i18n.js?v=e817f2f79f759c3d';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=e817f2f79f759c3d';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=e817f2f79f759c3d';
-import {createLearningCache} from './learning-cache.js?v=e817f2f79f759c3d';
-import {helpableContent, reportableContent} from './content-report.js?v=e817f2f79f759c3d';
+import {t, translateMessage} from './i18n.js?v=b458bab2ee12bcea';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=b458bab2ee12bcea';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=b458bab2ee12bcea';
+import {createLearningCache} from './learning-cache.js?v=b458bab2ee12bcea';
+import {helpableContent, reportableContent} from './content-report.js?v=b458bab2ee12bcea';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return x; };
-import {createContentTimer} from './content-timer.js?v=e817f2f79f759c3d';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=e817f2f79f759c3d';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=e817f2f79f759c3d';
-import {chunkPeek} from './memory-chunk.js?v=e817f2f79f759c3d';
-import {pointAssessment} from './point-assessment.js?v=e817f2f79f759c3d';
-import {trainingAudio} from './training-audio.js?v=e817f2f79f759c3d';
+import {createContentTimer} from './content-timer.js?v=b458bab2ee12bcea';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=b458bab2ee12bcea';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=b458bab2ee12bcea';
+import {chunkPeek} from './memory-chunk.js?v=b458bab2ee12bcea';
+import {pointAssessment} from './point-assessment.js?v=b458bab2ee12bcea';
+import {trainingAudio} from './training-audio.js?v=b458bab2ee12bcea';
 
 export function createPaperView({root, request, href, getAccess, formatDate, progressChanged, courseSidebar, taskTree}) {
   const template = document.getElementById('appLayout').cloneNode(true);
