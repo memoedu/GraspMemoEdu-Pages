@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=b65dd7a39f431d51";
-import {answerReady} from './question-input.js?v=b65dd7a39f431d51';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=b65dd7a39f431d51';
-import {startPresence} from './presence.js?v=b65dd7a39f431d51';
-import {createLearningCache} from './learning-cache.js?v=b65dd7a39f431d51';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=b65dd7a39f431d51';
+import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=a942017127d40beb";
+import {answerReady} from './question-input.js?v=a942017127d40beb';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=a942017127d40beb';
+import {startPresence} from './presence.js?v=a942017127d40beb';
+import {createLearningCache} from './learning-cache.js?v=a942017127d40beb';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=a942017127d40beb';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=b65dd7a39f431d51';
-import {selfAssessment} from './self-assessment.js?v=b65dd7a39f431d51';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=b65dd7a39f431d51';
-import {renderSourceReader} from './learning-ui.js?v=b65dd7a39f431d51';
-import {readingSectionHeading} from './learning-ui.js?v=b65dd7a39f431d51';
-import {createTrainingView} from './training.js?v=b65dd7a39f431d51';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=a942017127d40beb';
+import {selfAssessment} from './self-assessment.js?v=a942017127d40beb';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=a942017127d40beb';
+import {renderSourceReader} from './learning-ui.js?v=a942017127d40beb';
+import {readingSectionHeading} from './learning-ui.js?v=a942017127d40beb';
+import {createTrainingView} from './training.js?v=a942017127d40beb';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -123,7 +123,9 @@ const draftKey = (step) => `draft:${scope()}:${learnerScope()}:${topicId}:${stat
 const can = (feature) => Boolean(access?.features?.includes(feature));
 const identityFailure = (error) => error.status === 401 && ["identity_required", "invalid_identity", "identity_expired"].includes(error.code);
 const permissionFailure = (error) => error.status === 403 && ["feature_forbidden", "topic_forbidden", "course_forbidden"].includes(error.code);
-const selectedStep = () => state?.steps?.find((step) => step.id === state.current_step_id)
+const stepById = (snapshot, id) => snapshot?.steps?.find(step => step.id === id)
+  || snapshot?.guidance_history?.find(step => step.id === id);
+const selectedStep = () => stepById(state, state?.current_step_id)
   || state?.steps?.find((step) => step.current)
   || state?.steps?.find((step) => step.id === state.active_step_id);
 const activeStep = () => state?.steps?.find((step) => step.id === state.active_step_id);
@@ -771,9 +773,9 @@ function applyState(next, { force = false, announceChange = false } = {}) {
   const accessChanged = next.access && JSON.stringify(next.access) !== JSON.stringify(access);
   if (next.access) access = next.access;
   if (force || next.course_version !== state?.course_version || !can('review_history')
-      || !next.steps.some(step => step.id === localStep)) localStep = null;
+      || !stepById(next, localStep)) localStep = null;
   if (localStep) next = {...next, current_step_id: localStep};
-  const changed = accessChanged || !state || next.course_version !== state.course_version || next.revision !== state.revision || next.current_step_id !== state.current_step_id || next.dependency_ready !== state.dependency_ready || JSON.stringify(next.content_references) !== JSON.stringify(state.content_references) || JSON.stringify(next.steps.map(s => s.bank_completed)) !== JSON.stringify(state.steps.map(s => s.bank_completed));
+  const changed = accessChanged || !state || next.course_version !== state.course_version || next.revision !== state.revision || next.current_step_id !== state.current_step_id || next.dependency_ready !== state.dependency_ready || next.guidance_history?.length !== state.guidance_history?.length || JSON.stringify(next.content_references) !== JSON.stringify(state.content_references) || JSON.stringify(next.steps.map(s => s.bank_completed)) !== JSON.stringify(state.steps.map(s => s.bank_completed));
   const previousStep = state?.current_step_id;
   state = next;
   connectionIssue = null;
@@ -1622,7 +1624,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=b65dd7a39f431d51");
+const { initPortal } = await import("./portal.js?v=a942017127d40beb");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

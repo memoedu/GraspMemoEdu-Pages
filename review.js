@@ -1,9 +1,9 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=b65dd7a39f431d51';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b65dd7a39f431d51';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b65dd7a39f431d51';
-import {reportableContent} from './content-report.js?v=b65dd7a39f431d51';
-import {createLearningCache} from './learning-cache.js?v=b65dd7a39f431d51';
-import {enhanceTopicContent} from './topic-content.js?v=b65dd7a39f431d51';
+import { t, translateMessage, learningTitle } from './i18n.js?v=a942017127d40beb';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a942017127d40beb';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a942017127d40beb';
+import {reportableContent} from './content-report.js?v=a942017127d40beb';
+import {createLearningCache} from './learning-cache.js?v=a942017127d40beb';
+import {enhanceTopicContent} from './topic-content.js?v=a942017127d40beb';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;

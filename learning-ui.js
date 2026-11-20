@@ -1,11 +1,11 @@
-import {t, learningTitle} from './i18n.js?v=b65dd7a39f431d51';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b65dd7a39f431d51';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b65dd7a39f431d51';
-import {enhanceTopicContent} from './topic-content.js?v=b65dd7a39f431d51';
-import {sourceAttributions} from './memory-chunk.js?v=b65dd7a39f431d51';
-import {mountPassageBlanks} from './composite-input.js?v=b65dd7a39f431d51';
-import {placeContentActions} from './content-report.js?v=b65dd7a39f431d51';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=b65dd7a39f431d51';
+import {t, learningTitle} from './i18n.js?v=a942017127d40beb';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a942017127d40beb';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a942017127d40beb';
+import {enhanceTopicContent} from './topic-content.js?v=a942017127d40beb';
+import {sourceAttributions} from './memory-chunk.js?v=a942017127d40beb';
+import {mountPassageBlanks} from './composite-input.js?v=a942017127d40beb';
+import {placeContentActions} from './content-report.js?v=a942017127d40beb';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=a942017127d40beb';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -27,7 +27,8 @@ export function readerStepTitle(step, {formatVersion = 2} = {}) {
 
 // Recall follows authored sections; saved steps still record actual learning order.
 export function readerHistorySteps(state) {
-  const visited = (state?.steps || []).filter(step => step.visited && step.unlocked);
+  const visited = [...(state?.steps || []), ...(state?.guidance_history || [])]
+    .filter(step => step.visited && step.unlocked);
   if (state?.topic_format_version === 2) {
     if (!state.content_order?.length) return visited;
     const positions = new Map(state.content_order.map((section, index) => [`${section.kind}:${section.id}`, index]));
