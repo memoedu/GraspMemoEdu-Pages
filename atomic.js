@@ -1,14 +1,15 @@
-import {t, translateMessage} from './i18n.js?v=e9e7f450329e5efa';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=e9e7f450329e5efa';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=e9e7f450329e5efa';
-import {reportableContent} from './content-report.js?v=e9e7f450329e5efa';
-import {createLearningCache} from './learning-cache.js?v=e9e7f450329e5efa';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=e9e7f450329e5efa';
-import {enhanceSourceContent} from './topic-content.js?v=e9e7f450329e5efa';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=e9e7f450329e5efa';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=e9e7f450329e5efa';
-import {pointAssessment} from './point-assessment.js?v=e9e7f450329e5efa';
-import {trainingAudio} from './training-audio.js?v=e9e7f450329e5efa';
+import {t, translateMessage} from './i18n.js?v=02d2c1bdd280d1e5';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=02d2c1bdd280d1e5';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=02d2c1bdd280d1e5';
+import {reportableContent} from './content-report.js?v=02d2c1bdd280d1e5';
+import {createLearningCache} from './learning-cache.js?v=02d2c1bdd280d1e5';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=02d2c1bdd280d1e5';
+import {enhanceSourceContent} from './topic-content.js?v=02d2c1bdd280d1e5';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=02d2c1bdd280d1e5';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=02d2c1bdd280d1e5';
+import {pointAssessment} from './point-assessment.js?v=02d2c1bdd280d1e5';
+import {trainingAudio} from './training-audio.js?v=02d2c1bdd280d1e5';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=02d2c1bdd280d1e5';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -38,7 +39,7 @@ export function createAtomicView(bridge) {
   const savedSubmission = () => { try { return JSON.parse(read(submissionKey())); } catch { return null; } };
   const hyperskillKey = () => `${prefix()}:hyperskill:${state.active_step_id}`;
   const hyperskillData = () => { try { return JSON.parse(read(hyperskillKey())); } catch { return null; } };
-  const call = (path, options) => bridge.request(`${path}?topic_id=${encodeURIComponent(topic)}`, options);
+  const call = (path, options) => bridge.request(`${path}${path.includes('?') ? '&' : '?'}topic_id=${encodeURIComponent(topic)}`, options);
   const payload = () => ({request_id: crypto.randomUUID(), expected_revision: state.revision,
     attempt_id: state.attempt_id, step_id: state.active_step_id});
   const can = feature => (state?.access || bridge.getAccess())?.features?.includes(feature);
@@ -135,8 +136,9 @@ export function createAtomicView(bridge) {
     if (busy) return;
     const ticket = epoch; busy = true; failure = null; render();
     try {
-      const result = await call('academy/launch', {method: 'POST', body: payload()});
+      const result = await call('academy/launch?guide=1', {method: 'POST', body: payload()});
       if (!active(ticket)) return;
+      if (result.setup_required) { location.hash = ideaSetupHash; return; }
       if (!/^(?:graspmemoedu:\/\/academy|jetbrains:\/\/idea\/graspmemoedu)\/open\?ticket=[A-Za-z0-9_-]{40,100}$/.test(result.url)) throw new Error(t('review.invalidState'));
       academyLink = result.url; busy = false; accept(result.state, true);
       const link = root.querySelector('[data-academy-link]');
@@ -188,13 +190,14 @@ export function createAtomicView(bridge) {
       return box;
     }
     const open = button(t(busy ? 'academy.launching' : question.academy.round_id ? 'academy.resume' : 'academy.open'), launchAcademy, 'primaryButton');
-    open.disabled = disabled; box.append(open, node('p', 'inputHint', t('academy.reset')));
+    open.disabled = disabled; box.append(open, ideaSetupLink(), node('p', 'inputHint', t('academy.reset')));
     if (academyLink && !history) {
       const link = node('a', 'secondaryButton', t('academy.retry'));
       link.href = academyLink; link.dataset.academyLink = ''; link.rel = 'noreferrer';
       box.append(node('p', 'inputHint', t('academy.connection')), link);
     }
-    const status = node('p', 'inputHint', t(question.academy.checks ? 'academy.checks' : 'academy.waiting', {count: question.academy.checks}));
+    const status = node('p', 'inputHint', t(question.academy.checks ? 'academy.checks'
+      : question.academy.opened ? 'academy.connected' : 'academy.waiting', {count: question.academy.checks}));
     status.setAttribute('role', 'status');
     if (question.academy.round_id) box.append(status);
     if (question.academy.kind === 'manual') {
