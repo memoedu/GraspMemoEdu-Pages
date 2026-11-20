@@ -1,11 +1,11 @@
-import {t, learningTitle} from './i18n.js?v=a942017127d40beb';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a942017127d40beb';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a942017127d40beb';
-import {enhanceTopicContent} from './topic-content.js?v=a942017127d40beb';
-import {sourceAttributions} from './memory-chunk.js?v=a942017127d40beb';
-import {mountPassageBlanks} from './composite-input.js?v=a942017127d40beb';
-import {placeContentActions} from './content-report.js?v=a942017127d40beb';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=a942017127d40beb';
+import {t, learningTitle} from './i18n.js?v=e9e7f450329e5efa';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=e9e7f450329e5efa';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=e9e7f450329e5efa';
+import {enhanceTopicContent} from './topic-content.js?v=e9e7f450329e5efa';
+import {sourceAttributions} from './memory-chunk.js?v=e9e7f450329e5efa';
+import {mountPassageBlanks} from './composite-input.js?v=e9e7f450329e5efa';
+import {placeContentActions} from './content-report.js?v=e9e7f450329e5efa';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=e9e7f450329e5efa';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -17,6 +17,13 @@ const action = (label, cls, onClick, disabled = false) => {
   const item = node('button', cls, label); item.type = 'button'; item.disabled = disabled;
   item.addEventListener('click', onClick); return item;
 };
+
+export function lessonTaskLabel(task, fallback) {
+  if (task.topic_kind === 'introduction' && !task.has_practice) {
+    return t(task.content_update ? 'reader.introductionUpdate' : 'reader.introductionTask');
+  }
+  return fallback || t('portal.lesson') + (task.retake ? t('portal.retake') : '');
+}
 
 export function readerStepTitle(step, {formatVersion = 2} = {}) {
   if (step?.kind === 'introduction') return formatVersion === 2

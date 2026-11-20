@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=a942017127d40beb";
-import {answerReady} from './question-input.js?v=a942017127d40beb';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=a942017127d40beb';
-import {startPresence} from './presence.js?v=a942017127d40beb';
-import {createLearningCache} from './learning-cache.js?v=a942017127d40beb';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=a942017127d40beb';
+import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=e9e7f450329e5efa";
+import {answerReady} from './question-input.js?v=e9e7f450329e5efa';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=e9e7f450329e5efa';
+import {startPresence} from './presence.js?v=e9e7f450329e5efa';
+import {createLearningCache} from './learning-cache.js?v=e9e7f450329e5efa';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=e9e7f450329e5efa';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=a942017127d40beb';
-import {selfAssessment} from './self-assessment.js?v=a942017127d40beb';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=a942017127d40beb';
-import {renderSourceReader} from './learning-ui.js?v=a942017127d40beb';
-import {readingSectionHeading} from './learning-ui.js?v=a942017127d40beb';
-import {createTrainingView} from './training.js?v=a942017127d40beb';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=e9e7f450329e5efa';
+import {selfAssessment} from './self-assessment.js?v=e9e7f450329e5efa';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=e9e7f450329e5efa';
+import {renderSourceReader} from './learning-ui.js?v=e9e7f450329e5efa';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=e9e7f450329e5efa';
+import {createTrainingView} from './training.js?v=e9e7f450329e5efa';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1041,6 +1041,8 @@ function render() {
   }
   $("loadingState").hidden = true;
   $("courseShell").hidden = false;
+  $("topicTaskLabel").textContent = state.read_only ? t('lesson.topic')
+    : lessonTaskLabel({...state, content_update: state.reread_pending});
   $("lessonTitle").textContent = state.title;
   document.title = t("reader.pageTitle", { title: state.title });
   renderProgress();
@@ -1348,7 +1350,7 @@ function renderStepNavigation(target, step, actions) {
   });
   readerNavigation(target, {previous: index > 0 ? pages[index - 1] : null, next: index >= 0 ? pages[index + 1] : null,
     onSelect: page => selectStep(page.id), canNavigate: can('review_history'), titleOf: readerStepTitle, primary,
-    ...(step.kind === 'bank_practice' ? {previousLabel: 'reader.backToIntroduction'} : {})});
+    ...(step.kind === 'bank_practice' ? {previousLabel: 'reader.backToReading'} : {})});
 }
 
 function answerForm(step, stem) {
@@ -1624,7 +1626,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=a942017127d40beb");
+const { initPortal } = await import("./portal.js?v=e9e7f450329e5efa");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

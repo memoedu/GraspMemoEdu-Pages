@@ -1,8 +1,7 @@
 // Explicit reader UI catalog. Course text, question titles, answers, and judge feedback are excluded.
 export const readerMessages = {
   'reader.completeTask': ['完成学习任务', 'Complete learning task'],
-  'reader.backToIntroduction': ['返回引论', 'Back to introduction'],
-  'reader.readingPracticeTask': ['引论与练习', 'Reading and practice'],
+  'reader.backToReading': ['返回阅读', 'Back to reading'],
   'reader.readingPracticeProgress': ['学习进度 {progress}%', 'Learning progress {progress}%'],
   'reader.readingPracticeComplete': ['阅读和练习记录已保存，可通过学习记录回看。', 'Your reading and practice are saved. You can revisit them in your learning history.'],
   'reader.sources': ['来源', 'Sources'],
@@ -17,7 +16,7 @@ export const readerMessages = {
   'reader.cooldown': ['6 小时后可再次学习 · {time}', 'You can study again after 6 hours · {time}'],
   'reader.introductionTask': ['引论', 'Introduction'],
   'reader.introductionUpdate': ['引论更新', 'Updated introduction'],
-  'reader.updatedNotice': ['引论内容已更新，请阅读本次内容。原完成记录和课程进度已保留。', 'This introduction has changed. Read the updated content; your original completion and course progress are preserved.'],
+  'reader.updatedNotice': ['阅读内容已更新，请阅读本次内容。原完成记录和课程进度已保留。', 'The reading content has changed. Read the updated content; your original completion and course progress are preserved.'],
   'reader.readingProgress': ['已阅读 {progress}%', '{progress}% read'],
   'reader.readingComplete': ['阅读记录已保存，可通过学习记录回看引论。', 'Your reading is saved. Use the learning history to revisit this introduction.'],
   'reader.referenceUnavailable': ['目标尚未导入或当前不可访问', 'The target is not yet imported or is currently unavailable'],
