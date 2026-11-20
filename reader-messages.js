@@ -1,5 +1,6 @@
 // Explicit reader UI catalog. Course text, question titles, answers, and judge feedback are excluded.
 export const readerMessages = {
+  'source.practiceDraft': ['可在此试答。本次作答保存在当前标签页，供自己核对。', 'Try the question here. Your draft stays in this tab for self-checking.'],
   'reader.completeTask': ['完成学习任务', 'Complete learning task'],
   'reader.backToReading': ['返回阅读', 'Back to reading'],
   'reader.readingPracticeProgress': ['学习进度 {progress}%', 'Learning progress {progress}%'],

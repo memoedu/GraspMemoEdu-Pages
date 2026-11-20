@@ -1,18 +1,19 @@
-import {t, translateMessage} from './i18n.js?v=e9e7f450329e5efa';
-import {answerReady, answerEmpty} from './question-input.js?v=e9e7f450329e5efa';
-import {createLearningCache} from './learning-cache.js?v=e9e7f450329e5efa';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=e9e7f450329e5efa';
-import {helpableContent} from './content-report.js?v=e9e7f450329e5efa';
-import {ratingChoices} from './self-assessment.js?v=e9e7f450329e5efa';
-import {pointAssessment} from './point-assessment.js?v=e9e7f450329e5efa';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=e9e7f450329e5efa';
+import {t, translateMessage} from './i18n.js?v=09ba913f08227f06';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=09ba913f08227f06';
+import {answerReady, answerEmpty} from './question-input.js?v=09ba913f08227f06';
+import {createLearningCache} from './learning-cache.js?v=09ba913f08227f06';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=09ba913f08227f06';
+import {helpableContent} from './content-report.js?v=09ba913f08227f06';
+import {ratingChoices} from './self-assessment.js?v=09ba913f08227f06';
+import {pointAssessment} from './point-assessment.js?v=09ba913f08227f06';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=09ba913f08227f06';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=e9e7f450329e5efa';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=09ba913f08227f06';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -710,17 +711,18 @@ export function createTrainingView(bridge) {
     const open = button(t(state.academy.opened ? 'academy.resume' : 'academy.open'), 'primaryButton academyTrainingOpen', async () => {
       open.disabled = true;
       try {
-        const result = await adapter('launch', {attempt_id: state.attempt_id});
+        const result = await adapter('launch?guide=1', {attempt_id: state.attempt_id});
         if (!alive(e, s)) return;
+        if (result.setup_required) { location.hash = ideaSetupHash; return; }
         current = result.state; renderQuestion();
         // Only a deliberate click opens the native app; polling never launches it.
         location.href = result.url;
       } catch (failure) { if (alive(e, s)) { error(main, failure); open.disabled = !state.can_submit; } }
     });
     open.disabled = !state.can_submit;
-    main.append(node('p', 'inputHint', t('academy.reset')));
-    const status = node('p', 'inputHint academyTrainingStatus', state.academy.opened
-      ? t('academy.checks', {count: state.academy.checks}) : t('academy.waiting'));
+    main.append(ideaSetupLink(), node('p', 'inputHint', t('academy.reset')));
+    const status = node('p', 'inputHint academyTrainingStatus', t(state.academy.checks ? 'academy.checks'
+      : state.academy.opened ? 'academy.connected' : 'academy.waiting', {count: state.academy.checks}));
     status.setAttribute('role', 'status'); main.append(status);
     const finish = async rating => {
       try {

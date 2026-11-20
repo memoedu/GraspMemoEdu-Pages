@@ -1,11 +1,11 @@
-import {t, learningTitle} from './i18n.js?v=e9e7f450329e5efa';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=e9e7f450329e5efa';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=e9e7f450329e5efa';
-import {enhanceTopicContent} from './topic-content.js?v=e9e7f450329e5efa';
-import {sourceAttributions} from './memory-chunk.js?v=e9e7f450329e5efa';
-import {mountPassageBlanks} from './composite-input.js?v=e9e7f450329e5efa';
-import {placeContentActions} from './content-report.js?v=e9e7f450329e5efa';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=e9e7f450329e5efa';
+import {t, learningTitle} from './i18n.js?v=09ba913f08227f06';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=09ba913f08227f06';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=09ba913f08227f06';
+import {enhanceTopicContent} from './topic-content.js?v=09ba913f08227f06';
+import {sourceAttributions} from './memory-chunk.js?v=09ba913f08227f06';
+import {mountPassageBlanks} from './composite-input.js?v=09ba913f08227f06';
+import {placeContentActions} from './content-report.js?v=09ba913f08227f06';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=09ba913f08227f06';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -122,7 +122,7 @@ export function readingSectionHeading(section) {
   return heading;
 }
 
-export function renderSourceReader(target, state, index = 0, onNavigate = () => {}) {
+export function renderSourceReader(target, state, index = 0, onNavigate = () => {}, draft = {}) {
   const blocks = state.blocks || [], block = blocks[index];
   target.replaceChildren();
   const notice = node('aside', 'featureNotice');
@@ -132,7 +132,8 @@ export function renderSourceReader(target, state, index = 0, onNavigate = () => 
   notice.append(reasons); target.append(notice);
   if (block) {
     const article = node('section', 'sourceReadingBlock');
-    renderReaderStep(article, block, {titleId: 'sourceReadingTitle', submittedId: 'sourceInput', showAnswer: false});
+    renderReaderStep(article, block, {titleId: 'sourceReadingTitle', submittedId: 'sourceInput', showAnswer: false,
+      editInteraction: block.preview_answer ? draft : null});
     target.append(article);
     const nav = node('nav', 'stepNavigation'); nav.setAttribute('aria-label', '阅读内容');
     nav.append(action('上一页', 'secondaryButton', () => onNavigate(index - 1), index === 0),
@@ -157,7 +158,7 @@ export function renderReaderStep(target, step, {titleId = 'stepTitle', title = r
   showSubmittedInteraction = !step.actions?.includes('submit'), submittedValue = step.answer || '',
   showAnswer = step.answer !== null && step.answer !== undefined && step.answer !== '',
   feedback = step.feedback, feedbackClass = '', referenceSource = step,
-  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice} = {}) {
+  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice, editInteraction = null} = {}) {
   const heading = node('div', 'stepHeader'), titleNode = node('h2', 'stepTitle', title);
   titleNode.id = titleId; titleNode.tabIndex = -1; heading.append(titleNode);
   if (counter) heading.append(node('span', 'stepCounter', counter));
@@ -174,10 +175,17 @@ export function renderReaderStep(target, step, {titleId = 'stepTitle', title = r
   const showingStepAnswer = step.multi_step && !step.multi_step.finished && showExplanation && step.explanation_html;
   const assessment = answerAssessment(referenceSource);
   if (showingStepAnswer) staticStepBlanks(stem, step.interaction);
-  else if (showSubmittedInteraction && step.interaction && step.interaction.type !== 'text')
-    target.append(questionInput(step.interaction, {id: submittedId, stem, value: submittedValue, disabled: true,
-      feedback: showExplanation ? referenceSource.choice_feedback : null,
-      assessment}).element);
+  else if (showSubmittedInteraction && step.interaction && step.interaction.type !== 'text') {
+    const editable = Boolean(editInteraction);
+    const {element, input} = questionInput(step.interaction, {id: submittedId, stem,
+      value: editable ? editInteraction.value : submittedValue, disabled: !editable,
+      feedback: showExplanation ? referenceSource.choice_feedback : null, assessment});
+    if (editable) {
+      target.append(node('p', 'inputHint', t('source.practiceDraft')));
+      if (editInteraction.save) input.addEventListener('input', () => editInteraction.save(input.value));
+    }
+    target.append(element);
+  }
   if (showAnswer && !step.multi_step) {
     const answer = node('details', 'submittedAnswer');
     answer.append(node('summary', '', t('查看已提交答案')), submittedAnswer(step, step.answer, step.answer_display ?? step.answer)); target.append(answer);
