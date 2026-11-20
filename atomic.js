@@ -1,14 +1,14 @@
-import {t, translateMessage} from './i18n.js?v=b458bab2ee12bcea';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b458bab2ee12bcea';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=b458bab2ee12bcea';
-import {reportableContent} from './content-report.js?v=b458bab2ee12bcea';
-import {createLearningCache} from './learning-cache.js?v=b458bab2ee12bcea';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=b458bab2ee12bcea';
-import {enhanceSourceContent} from './topic-content.js?v=b458bab2ee12bcea';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=b458bab2ee12bcea';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=b458bab2ee12bcea';
-import {pointAssessment} from './point-assessment.js?v=b458bab2ee12bcea';
-import {trainingAudio} from './training-audio.js?v=b458bab2ee12bcea';
+import {t, translateMessage} from './i18n.js?v=a942017127d40beb';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a942017127d40beb';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=a942017127d40beb';
+import {reportableContent} from './content-report.js?v=a942017127d40beb';
+import {createLearningCache} from './learning-cache.js?v=a942017127d40beb';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=a942017127d40beb';
+import {enhanceSourceContent} from './topic-content.js?v=a942017127d40beb';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=a942017127d40beb';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=a942017127d40beb';
+import {pointAssessment} from './point-assessment.js?v=a942017127d40beb';
+import {trainingAudio} from './training-audio.js?v=a942017127d40beb';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
