@@ -1,9 +1,4 @@
 export const academyMessages = {
-  'academy.setupTitle': ['IntelliJ IDEA 安装指南', 'IntelliJ IDEA setup guide'],
-  'academy.copyPrompt': ['复制提示词', 'Copy prompt'],
-  'academy.promptCopied': ['已复制', 'Copied'],
-  'academy.promptCopyFailed': ['无法访问剪贴板，已选中提示词。请用复制快捷键。', 'Clipboard unavailable. The prompt is selected. Use your copy shortcut.'],
-  'academy.connected': ['IDEA 已连接，等待检查结果。', 'IDEA is connected. Waiting for check results.'],
   'academy.open': ['在 IDEA 中打开', 'Open in IDEA'],
   'academy.resume': ['继续在 IDEA 中作答', 'Continue in IDEA'],
   'academy.launching': ['正在连接 IDEA…', 'Connecting to IDEA…'],
