@@ -1,18 +1,18 @@
-import {t, translateMessage} from './i18n.js?v=e9e7f450329e5efa';
-import {answerReady, answerEmpty} from './question-input.js?v=e9e7f450329e5efa';
-import {createLearningCache} from './learning-cache.js?v=e9e7f450329e5efa';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=e9e7f450329e5efa';
-import {helpableContent} from './content-report.js?v=e9e7f450329e5efa';
-import {ratingChoices} from './self-assessment.js?v=e9e7f450329e5efa';
-import {pointAssessment} from './point-assessment.js?v=e9e7f450329e5efa';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=e9e7f450329e5efa';
+import {t, translateMessage} from './i18n.js?v=c8530ae3192b5f5a';
+import {answerReady, answerEmpty} from './question-input.js?v=c8530ae3192b5f5a';
+import {createLearningCache} from './learning-cache.js?v=c8530ae3192b5f5a';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=c8530ae3192b5f5a';
+import {helpableContent} from './content-report.js?v=c8530ae3192b5f5a';
+import {ratingChoices} from './self-assessment.js?v=c8530ae3192b5f5a';
+import {pointAssessment} from './point-assessment.js?v=c8530ae3192b5f5a';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=c8530ae3192b5f5a';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=e9e7f450329e5efa';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=c8530ae3192b5f5a';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
