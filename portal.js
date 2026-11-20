@@ -1,24 +1,24 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=a942017127d40beb";
-import { createReviewView } from "./review.js?v=a942017127d40beb";
-import { renderCourseGraph } from "./course-graph.js?v=a942017127d40beb";
-import {questionInput, choiceTypeField} from './question-input.js?v=a942017127d40beb';
-import {readingFields, readingSectionHeading} from './learning-ui.js?v=a942017127d40beb';
-import {enhanceTopicContent} from './topic-content.js?v=a942017127d40beb';
-import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=a942017127d40beb';
-import {createCatalogPicker} from './catalog-picker.js?v=a942017127d40beb';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=a942017127d40beb';
-import {createAtomicView} from './atomic.js?v=a942017127d40beb';
-import {sourceAttributions} from './memory-chunk.js?v=a942017127d40beb';
-import {createTrainingView} from './training.js?v=a942017127d40beb';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=a942017127d40beb";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=e9e7f450329e5efa";
+import { createReviewView } from "./review.js?v=e9e7f450329e5efa";
+import { renderCourseGraph } from "./course-graph.js?v=e9e7f450329e5efa";
+import {questionInput, choiceTypeField} from './question-input.js?v=e9e7f450329e5efa';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=e9e7f450329e5efa';
+import {enhanceTopicContent} from './topic-content.js?v=e9e7f450329e5efa';
+import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=e9e7f450329e5efa';
+import {createCatalogPicker} from './catalog-picker.js?v=e9e7f450329e5efa';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=e9e7f450329e5efa';
+import {createAtomicView} from './atomic.js?v=e9e7f450329e5efa';
+import {sourceAttributions} from './memory-chunk.js?v=e9e7f450329e5efa';
+import {createTrainingView} from './training.js?v=e9e7f450329e5efa';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=e9e7f450329e5efa";
 
-import {createPaperView} from './review-papers.js?v=a942017127d40beb';
-import {createContextLibraryView} from './context-library.js?v=a942017127d40beb';
+import {createPaperView} from './review-papers.js?v=e9e7f450329e5efa';
+import {createContextLibraryView} from './context-library.js?v=e9e7f450329e5efa';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=a942017127d40beb';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a942017127d40beb';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=a942017127d40beb';
-import {createStudentDashboard} from './student-dashboard.js?v=a942017127d40beb';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=e9e7f450329e5efa';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=e9e7f450329e5efa';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=e9e7f450329e5efa';
+import {createStudentDashboard} from './student-dashboard.js?v=e9e7f450329e5efa';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -31,14 +31,14 @@ const control = (text, className, action) => { const item = node("button", class
 const percent = (value) => Number.isFinite(Number(value)) && value !== null ? Math.max(0, Math.min(100, Number(value))) : null;
 const percentLabel = (value) => percent(value) === null ? "—" : `${Math.round(percent(value)).toLocaleString(locale())}%`;
 const encode = encodeURIComponent;
-const typeNames = { Lesson: t("portal.lesson"), Review: t("portal.review"), Placement: t("portal.diagnostic.0"), Supplemental: t("portal.supplemental.diagnostic.1"), Quiz: t("portal.assessment.2"), Exam: t("portal.assessment.2") };
+const taskLabelKeys = {Review: 'portal.reviewTask', Placement: 'portal.diagnostic.0', Supplemental: 'portal.supplemental.diagnostic.1', Quiz: 'portal.assessment.2', Exam: 'portal.assessment.2'};
 const statusNames = { not_started: t("portal.not.started.3"), in_progress: t("portal.in.progress.4"), paused: t("portal.paused.5"), completed: t("portal.completed.6") };
 const roundButton = (text, action) => control(text, "portalStart", action);
 
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=a942017127d40beb').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=e9e7f450329e5efa').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -652,9 +652,9 @@ export function initPortal(bridge) {
   }
   function taskSummary(task, history = false, view = {}) {
     const wrap = node("div", "taskSummaryContent"), heading = node("div", "taskHeading");
-    heading.append(taskIcon(task, history), node("strong", "", task.has_practice ? t('reader.readingPracticeTask')
-      : task.topic_kind === 'introduction' ? t(task.content_update ? 'reader.introductionUpdate' : 'reader.introductionTask')
-      : view.label || `${task.type === 'Review' ? t('portal.reviewTask') : typeNames[task.type] || t("portal.lesson")}${task.retake ? t("portal.retake") : ""}`));
+    const typeLabel = taskLabelKeys[task.type];
+    const label = typeLabel ? view.label || t(typeLabel) : lessonTaskLabel(task, view.label);
+    heading.append(taskIcon(task, history), node("strong", "", label));
     if (task.reason === "gravity") {
       const reason = node("span", "taskReason", "●"); reason.title = task.reason_message ? translateMessage(task.reason_message) : t("portal.this.task.was.selected.by.the.course.schedule.45"); reason.setAttribute("aria-label", reason.title); heading.append(reason);
     }
