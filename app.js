@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=b458bab2ee12bcea";
-import {answerReady} from './question-input.js?v=b458bab2ee12bcea';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=b458bab2ee12bcea';
-import {startPresence} from './presence.js?v=b458bab2ee12bcea';
-import {createLearningCache} from './learning-cache.js?v=b458bab2ee12bcea';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=b458bab2ee12bcea';
+import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=b65dd7a39f431d51";
+import {answerReady} from './question-input.js?v=b65dd7a39f431d51';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=b65dd7a39f431d51';
+import {startPresence} from './presence.js?v=b65dd7a39f431d51';
+import {createLearningCache} from './learning-cache.js?v=b65dd7a39f431d51';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=b65dd7a39f431d51';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=b458bab2ee12bcea';
-import {selfAssessment} from './self-assessment.js?v=b458bab2ee12bcea';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=b458bab2ee12bcea';
-import {renderSourceReader} from './learning-ui.js?v=b458bab2ee12bcea';
-import {readingSectionHeading} from './learning-ui.js?v=b458bab2ee12bcea';
-import {createTrainingView} from './training.js?v=b458bab2ee12bcea';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=b65dd7a39f431d51';
+import {selfAssessment} from './self-assessment.js?v=b65dd7a39f431d51';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=b65dd7a39f431d51';
+import {renderSourceReader} from './learning-ui.js?v=b65dd7a39f431d51';
+import {readingSectionHeading} from './learning-ui.js?v=b65dd7a39f431d51';
+import {createTrainingView} from './training.js?v=b65dd7a39f431d51';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1159,7 +1159,8 @@ function renderHistory() {
   }
   if (state.topic_format_version === 2) {
     for (const step of visited) {
-      if (step.kind === 'introduction') nodes.push(historyGroup(readerStepTitle(step), step.phase === 'completed' ? t('已读') : t('阅读中'), [step]));
+      if (step.kind === 'introduction') nodes.push(historyGroup(readerStepTitle(step),
+        step.phase === 'completed' ? t('已读') : step.phase === 'available' ? '' : t('阅读中'), [step]));
       else if (step.kind === 'bank_question') nodes.push(historyGroup(readerStepTitle(step), step.bank_completed ? t('已完成') : t('学习中'), [step]));
       else if (step.kind === 'bank_practice') nodes.push(historyGroup(readerStepTitle(step), step.phase === 'completed' ? t('已完成') : t('学习中'), [step]));
       else if (step.kind === 'atomic_card') nodes.push(historyGroup(t('atomic.title'), t('atomic.mastered'), [step]));
@@ -1174,7 +1175,8 @@ function renderHistory() {
     return;
   }
   const introductions = visited.filter((step) => step.kind === "introduction");
-  if (introductions.length) nodes.push(historyGroup(t("Introduction"), state.introduction_read ? t("已读") : t("阅读中"), introductions));
+  if (introductions.length) nodes.push(historyGroup(t("Introduction"),
+    state.introduction_read ? t("已读") : introductions.some(step => step.phase !== 'available') ? t("阅读中") : '', introductions));
   for (const module of state.modules) {
     const steps = visited.filter((step) => step.module_id === module.id && !["introduction", "completion"].includes(step.kind));
     const status = module.status === "completed" ? t("reader.completedMastery", { score: module.mastery })
@@ -1287,7 +1289,7 @@ function renderStep(step) {
   const reportContext = {topic_id: state.topic_id, ...(step.question_id ? {question_id: step.question_id} : {})};
   const counter = step.kind === 'practice' && module
     ? module.attempt_id && module.attempt_id !== step.attempt_id ? t('历史作答') : t('reader.practiceCompleted', {completed: module.practice_answered_count, total: module.practice_target_count})
-    : step.kind === 'introduction' ? t(state.introduction_read ? '已读' : '阅读') : null;
+    : step.kind === 'introduction' && step.phase !== 'available' ? t(state.introduction_read ? '已读' : '阅读') : null;
   const {stem} = renderReaderStep(target, step, {title: readerStepTitle(step), counter, references: state.content_references,
     showSubmittedInteraction: !actions.includes('submit'),
     submittedValue: step.answer || (step.id === state.active_step_id ? draftValue(step) : ''),
@@ -1620,7 +1622,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=b458bab2ee12bcea");
+const { initPortal } = await import("./portal.js?v=b65dd7a39f431d51");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
