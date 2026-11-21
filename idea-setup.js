@@ -1,4 +1,4 @@
-import {t, getLanguage} from './i18n.js?v=02d2c1bdd280d1e5';
+import {t, getLanguage} from './i18n.js?v=09ba913f08227f06';
 
 export const ideaSetupHash = '#/idea-setup';
 const repository = 'https://github.com/memoedu/GraspMemoEdu-IDEA';
