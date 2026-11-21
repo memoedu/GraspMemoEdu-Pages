@@ -1,6 +1,7 @@
-import {t, getLanguage} from './i18n.js?v=09ba913f08227f06';
+import {t, getLanguage} from './i18n.js?v=41e2e104ccc6eaf2';
 
-export const ideaSetupHash = '#/idea-setup';
+export const ideaSetupSection = 'idea-setup';
+export const ideaSetupHash = `#/subjects/cs/guide?section=${ideaSetupSection}`;
 const repository = 'https://github.com/memoedu/GraspMemoEdu-IDEA';
 
 const prompt = {
@@ -26,11 +27,13 @@ export function ideaSetupLink() {
   return link;
 }
 
-export function renderIdeaSetup() {
-  const page = document.createElement('article');
-  page.className = 'guidePage';
-  const title = document.createElement('h1');
-  title.className = 'portalPageTitle';
+export function renderIdeaSetupSection() {
+  const section = document.createElement('section');
+  section.className = 'guideBody courseContent';
+  section.setAttribute('aria-labelledby', ideaSetupSection);
+  const title = document.createElement('h2');
+  title.id = ideaSetupSection;
+  title.tabIndex = -1;
   title.textContent = t('academy.setupTitle');
   const copy = document.createElement('button');
   copy.type = 'button';
@@ -39,7 +42,6 @@ export function renderIdeaSetup() {
   const status = document.createElement('p');
   status.setAttribute('role', 'status');
   const body = document.createElement('div');
-  body.className = 'guideBody courseContent';
   const paragraphs = prompt[getLanguage()] || prompt['zh-CN'];
   body.append(...paragraphs.map(text => {
     const paragraph = document.createElement('p');
@@ -60,6 +62,6 @@ export function renderIdeaSetup() {
       status.textContent = t('academy.promptCopyFailed');
     }
   });
-  page.append(title, copy, status, body);
-  return page;
+  section.append(title, copy, status, body);
+  return section;
 }

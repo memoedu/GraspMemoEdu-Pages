@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=09ba913f08227f06";
-import { createReviewView } from "./review.js?v=09ba913f08227f06";
-import { renderCourseGraph } from "./course-graph.js?v=09ba913f08227f06";
-import {questionInput, choiceTypeField} from './question-input.js?v=09ba913f08227f06';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=09ba913f08227f06';
-import {enhanceTopicContent} from './topic-content.js?v=09ba913f08227f06';
-import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=09ba913f08227f06';
-import {createCatalogPicker} from './catalog-picker.js?v=09ba913f08227f06';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=09ba913f08227f06';
-import {createAtomicView} from './atomic.js?v=09ba913f08227f06';
-import {renderIdeaSetup} from './idea-setup.js?v=09ba913f08227f06';
-import {sourceAttributions} from './memory-chunk.js?v=09ba913f08227f06';
-import {createTrainingView} from './training.js?v=09ba913f08227f06';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=09ba913f08227f06";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=41e2e104ccc6eaf2";
+import { createReviewView } from "./review.js?v=41e2e104ccc6eaf2";
+import { renderCourseGraph } from "./course-graph.js?v=41e2e104ccc6eaf2";
+import {questionInput, choiceTypeField} from './question-input.js?v=41e2e104ccc6eaf2';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=41e2e104ccc6eaf2';
+import {enhanceTopicContent} from './topic-content.js?v=41e2e104ccc6eaf2';
+import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=41e2e104ccc6eaf2';
+import {createCatalogPicker} from './catalog-picker.js?v=41e2e104ccc6eaf2';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=41e2e104ccc6eaf2';
+import {createAtomicView} from './atomic.js?v=41e2e104ccc6eaf2';
+import {ideaSetupHash, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=41e2e104ccc6eaf2';
+import {sourceAttributions} from './memory-chunk.js?v=41e2e104ccc6eaf2';
+import {createTrainingView} from './training.js?v=41e2e104ccc6eaf2';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=41e2e104ccc6eaf2";
 
-import {createPaperView} from './review-papers.js?v=09ba913f08227f06';
-import {createContextLibraryView} from './context-library.js?v=09ba913f08227f06';
+import {createPaperView} from './review-papers.js?v=41e2e104ccc6eaf2';
+import {createContextLibraryView} from './context-library.js?v=41e2e104ccc6eaf2';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=09ba913f08227f06';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=09ba913f08227f06';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=09ba913f08227f06';
-import {createStudentDashboard} from './student-dashboard.js?v=09ba913f08227f06';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=41e2e104ccc6eaf2';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=41e2e104ccc6eaf2';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=41e2e104ccc6eaf2';
+import {createStudentDashboard} from './student-dashboard.js?v=41e2e104ccc6eaf2';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=09ba913f08227f06').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=41e2e104ccc6eaf2').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -351,6 +351,9 @@ export function initPortal(bridge) {
       rememberWorkspaceLocation(previousHash, true);
     }
     currentRoute = parseRoute();
+    if (currentRoute.path === '/idea-setup') {
+      currentRoute = {...parsePlatformRoute(ideaSetupHash), canonicalHash: ideaSetupHash};
+    }
     if (/^\/help-requests(?:\/|$)/.test(currentRoute.path)) {
       currentRoute.path = currentRoute.path.replace('/help-requests', '/qa');
       currentRoute.subjectId = null;
@@ -371,12 +374,6 @@ export function initPortal(bridge) {
     root.inert = true; root.setAttribute('aria-busy', 'true');
     if (!root.childElementCount) root.replaceChildren(loading());
     try {
-      if (currentRoute.path === '/idea-setup') {
-        document.title = pageTitle(t('academy.setupTitle'));
-        root.replaceChildren(renderIdeaSetup());
-        window.scrollTo(0, 0);
-        return;
-      }
       if (profile) await bridge.refreshAccess();
       if (ticket !== sequence) return;
       await basics(ticket, currentRoute.subjectId);
@@ -466,8 +463,11 @@ export function initPortal(bridge) {
       const target = params.get("unitId") || params.get("topicId");
       requestAnimationFrame(() => {
         if (ticket !== sequence) return;
+        const guideSection = path === '/guide' && subjectId === 'cs'
+          && params.get('section') === ideaSetupSection && $(ideaSetupSection);
         const reportBlock = root.querySelector('.materialBlock.targetBlock') || root.querySelector('.helpContentBlock');
-        if (reportBlock) { reportBlock.focus({preventScroll: true}); reportBlock.scrollIntoView({block: 'start'}); }
+        if (guideSection) { guideSection.focus({preventScroll: true}); guideSection.scrollIntoView({block: 'center'}); }
+        else if (reportBlock) { reportBlock.focus({preventScroll: true}); reportBlock.scrollIntoView({block: 'start'}); }
         else if (params.has('groupId') && !scrolls.has(currentHash)) {
           const card = root.querySelector(`[data-task-id="${CSS.escape(params.get('groupId'))}"]`);
           for (let parent = card?.parentElement; parent && parent !== root; parent = parent.parentElement) {
@@ -1065,7 +1065,10 @@ export function initPortal(bridge) {
     guideLoaded = false; guideVersion = null;
     const article = node("article", "guidePage"), heading = node("h1", "portalPageTitle", t("portal.guide.109")), notice = node("div", "guideNotice"), body = node("div", "guideBody courseContent"), updated = node("p", "guideUpdated");
     notice.id = "guideNotice"; body.id = "guideBody"; updated.id = "guideUpdated";
-    body.append(loading(t("portal.loading.guide.110"))); article.append(heading, notice, body, updated); root.replaceChildren(article);
+    body.append(loading(t("portal.loading.guide.110")));
+    article.append(heading, notice, body, updated);
+    if (currentRoute.subjectId === 'cs') article.append(renderIdeaSetupSection());
+    root.replaceChildren(article);
     await updateGuide(ticket);
   }
   async function guideContent(html, ticket, subjectId) {
@@ -1107,7 +1110,11 @@ export function initPortal(bridge) {
       notice.replaceChildren();
       if (!guideLoaded || guideVersion !== result.version) {
         const y = window.scrollY;
-        if (result.status === "empty") { releaseGuideAssets(); body.replaceChildren(emptyBox(t("portal.the.guide.has.not.been.written.yet.112"))); }
+        if (result.status === "empty") {
+          releaseGuideAssets();
+          body.replaceChildren();
+          if (currentRoute.subjectId !== 'cs') body.append(emptyBox(t("portal.the.guide.has.not.been.written.yet.112")));
+        }
         else if (result.status === "ready") {
           const fragment = await guideContent(result.html, ticket, currentRoute.subjectId);
           if (ticket !== sequence) return;
