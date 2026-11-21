@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=63427ccb01242a92";
-import { createReviewView } from "./review.js?v=63427ccb01242a92";
-import { renderCourseGraph } from "./course-graph.js?v=63427ccb01242a92";
-import {questionInput, choiceTypeField} from './question-input.js?v=63427ccb01242a92';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=63427ccb01242a92';
-import {enhanceTopicContent} from './topic-content.js?v=63427ccb01242a92';
-import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=63427ccb01242a92';
-import {createCatalogPicker} from './catalog-picker.js?v=63427ccb01242a92';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=63427ccb01242a92';
-import {createAtomicView} from './atomic.js?v=63427ccb01242a92';
-import {ideaFeedback, ideaSetupHash, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=63427ccb01242a92';
-import {sourceAttributions} from './memory-chunk.js?v=63427ccb01242a92';
-import {createTrainingView} from './training.js?v=63427ccb01242a92';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=63427ccb01242a92";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=8249a057afad057f";
+import { createReviewView } from "./review.js?v=8249a057afad057f";
+import { renderCourseGraph } from "./course-graph.js?v=8249a057afad057f";
+import {questionInput, choiceTypeField} from './question-input.js?v=8249a057afad057f';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=8249a057afad057f';
+import {enhanceTopicContent} from './topic-content.js?v=8249a057afad057f';
+import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=8249a057afad057f';
+import {createCatalogPicker} from './catalog-picker.js?v=8249a057afad057f';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=8249a057afad057f';
+import {createAtomicView} from './atomic.js?v=8249a057afad057f';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=8249a057afad057f';
+import {sourceAttributions} from './memory-chunk.js?v=8249a057afad057f';
+import {createTrainingView} from './training.js?v=8249a057afad057f';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=8249a057afad057f";
 
-import {createPaperView} from './review-papers.js?v=63427ccb01242a92';
-import {createContextLibraryView} from './context-library.js?v=63427ccb01242a92';
+import {createPaperView} from './review-papers.js?v=8249a057afad057f';
+import {createContextLibraryView} from './context-library.js?v=8249a057afad057f';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=63427ccb01242a92';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=63427ccb01242a92';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=63427ccb01242a92';
-import {createStudentDashboard} from './student-dashboard.js?v=63427ccb01242a92';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=8249a057afad057f';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=8249a057afad057f';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=8249a057afad057f';
+import {createStudentDashboard} from './student-dashboard.js?v=8249a057afad057f';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=63427ccb01242a92').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=8249a057afad057f').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -81,9 +81,9 @@ export function initPortal(bridge) {
   const canUseHelp = () => Boolean(!bridge.getIdentityProblem() && (bridge.getAccess()?.is_admin ||
     (bridge.getAccess()?.is_student && allowed('request_help'))));
   const canSendIdeaFeedback = () => canUseHelp() && !bridge.getAccess()?.is_admin;
-  const ideaFeedbackMode = params => {
+  const ideaFeedbackKind = params => {
     const kind = params.get('idea-feedback');
-    return Object.hasOwn(ideaFeedback, kind) ? ideaFeedback[kind] : null;
+    return Object.hasOwn(ideaFeedback, kind) ? kind : null;
   };
   const rootKey = (courseId, subjectId) => `graspmemoedu:catalog-root:${bridge.getAccess()?.learner_id}:${subjectId}:${courseId}`;
   function savedCourseRoot(courseId, subjectId) {
@@ -422,6 +422,8 @@ export function initPortal(bridge) {
       } else if (path === "/help") {
         document.title = pageTitle(t("nav.help")); renderHelp();
       } else if (path === '/qa') {
+        const feedbackKind = ideaFeedbackKind(params);
+        if (feedbackKind) return navigate(ideaFeedbackHash(feedbackKind), true);
         document.title = pageTitle(t('help.pageTitle'));
         await renderHelpInbox(ticket);
       } else if (/^\/qa\/[^/]+$/.test(path)) {
@@ -468,13 +470,11 @@ export function initPortal(bridge) {
       const target = params.get("unitId") || params.get("topicId");
       requestAnimationFrame(() => {
         if (ticket !== sequence) return;
-        const guideSection = path === '/guide' && subjectId === 'cs'
-          && params.get('section') === ideaSetupSection && $(ideaSetupSection);
-        const feedbackEditor = path === '/qa' && ideaFeedbackMode(params)
-          && root.querySelector('.helpMainConversation .helpReplyForm [contenteditable="true"]');
+        const feedbackKind = ideaFeedbackKind(params);
+        const guideSection = path === '/guide' && subjectId === 'cs' && params.get('section') === ideaSetupSection
+          && $(feedbackKind ? ideaFeedbackId(feedbackKind) : ideaSetupSection);
         const reportBlock = root.querySelector('.materialBlock.targetBlock') || root.querySelector('.helpContentBlock');
         if (guideSection) { guideSection.focus({preventScroll: true}); guideSection.scrollIntoView({block: 'center'}); }
-        else if (feedbackEditor) { feedbackEditor.focus({preventScroll: true}); feedbackEditor.scrollIntoView({block: 'center'}); }
         else if (reportBlock) { reportBlock.focus({preventScroll: true}); reportBlock.scrollIntoView({block: 'start'}); }
         else if (params.has('groupId') && !scrolls.has(currentHash)) {
           const card = root.querySelector(`[data-task-id="${CSS.escape(params.get('groupId'))}"]`);
@@ -1075,9 +1075,27 @@ export function initPortal(bridge) {
     notice.id = "guideNotice"; body.id = "guideBody"; updated.id = "guideUpdated";
     body.append(loading(t("portal.loading.guide.110")));
     article.append(heading, notice, body, updated);
-    if (currentRoute.subjectId === 'cs') article.append(renderIdeaSetupSection(canSendIdeaFeedback()));
+    const csGuide = currentRoute.subjectId === 'cs';
+    const canSendFeedback = csGuide && canSendIdeaFeedback();
+    if (csGuide) article.append(renderIdeaSetupSection(canSendFeedback));
     root.replaceChildren(article);
-    await updateGuide(ticket);
+    await Promise.all([updateGuide(ticket), canSendFeedback && installGuideFeedback(ticket)]);
+  }
+  async function installGuideFeedback(ticket) {
+    const owner = bridge.getAccess()?.learner_id;
+    const hosts = Object.entries(ideaFeedback).map(([kind, mode]) => [$(ideaFeedbackId(kind) + '-composer'), mode]);
+    try {
+      await loadChat();
+    } catch (error) {
+      if (ticket === sequence) hosts[0][0].replaceChildren(errorBox(error.message, () => installGuideFeedback(ticket)));
+      return;
+    }
+    if (ticket !== sequence || owner !== bridge.getAccess()?.learner_id) return;
+    const thread = {id: 'main:' + owner, learner_id: owner, is_main: true};
+    for (const [host, mode] of hosts) {
+      host.replaceChildren();
+      installHelpComposer(host, thread, ticket, () => { void refreshHelpSummary(true); }, mode);
+    }
   }
   async function guideContent(html, ticket, subjectId) {
     const template = document.createElement('template'); template.innerHTML = html || '';
@@ -1219,13 +1237,9 @@ export function initPortal(bridge) {
   }
 
   async function renderHelpInbox(ticket) {
-    const ideaMode = ideaFeedbackMode(currentRoute.params);
-    if (ideaMode && !canSendIdeaFeedback()) return navigate(ideaSetupHash, true);
     await loadChat();
     if (ticket !== sequence) return;
-    const title = t(ideaMode?.title || 'help.pageTitle');
-    if (ideaMode) document.title = pageTitle(title);
-    const page = node('section', 'helpInbox'); page.append(node('h1', 'portalPageTitle', title));
+    const page = node('section', 'helpInbox'); page.append(node('h1', 'portalPageTitle', t('help.pageTitle')));
     const toolbar = node('div', 'helpToolbar');
     const refresh = control(t('help.refresh'), 'textButton', () => load(true)); toolbar.append(refresh); page.append(toolbar);
     const selectorLabel = node('label', 'helpStudentSelector', t('help.chooseStudent'));
@@ -1264,9 +1278,9 @@ export function initPortal(bridge) {
         void refreshHelpSummary(true);
         if (reset) { list.replaceChildren(); offset = 0; styles = new Set(); ids = new Set(); helpReadObserver?.disconnect(); helpReadObserver = null; }
         if (reset || !main.children.length) {
-          main.replaceChildren(...(result.main_thread ? [mainConversation(result.main_thread, result.viewer, ticket, ideaMode)] : []));
+          main.replaceChildren(...(result.main_thread ? [mainConversation(result.main_thread, ticket)] : []));
         }
-        hint.textContent = t(ideaMode?.description || (result.viewer === 'admin' ? 'help.adminHint' : 'help.studentHint'));
+        hint.textContent = t(result.viewer === 'admin' ? 'help.adminHint' : 'help.studentHint');
         if (!result.items.length && !offset) list.append(emptyBox(t('help.empty')));
         for (const item of result.items) {
           if (ids.has(item.id)) continue;
@@ -1281,19 +1295,19 @@ export function initPortal(bridge) {
     }
     await load();
   }
-  function mainConversation(item, viewer, ticket, ideaMode) {
+  function mainConversation(item, ticket) {
     item = {...item, id: 'main:' + item.learner_id};
     const card = node('article', 'courseChoice helpRequest helpConversation helpMainConversation');
     card.dataset.learnerId = item.learner_id;
     const panel = node('div', 'helpReplyPanel');
     card.append(node('h2', '', t('help.mainConversation')), panel);
-    installHelpThread(panel, item, viewer, ticket, null, async () => {
+    installHelpThread(panel, item, ticket, null, async () => {
       const data = await bridge.request('help-center?learner_id=' + encode(item.learner_id));
       if (ticket !== sequence || !card.isConnected) return;
-      card.replaceWith(mainConversation(data.main_thread, data.viewer, ticket, ideaMode));
+      card.replaceWith(mainConversation(data.main_thread, ticket));
       pruneChatEditors();
       void refreshHelpSummary(true);
-    }, ideaMode);
+    });
     return card;
   }
   function helpConversation(item, viewer, ticket, detail = false) {
@@ -1335,7 +1349,7 @@ export function initPortal(bridge) {
       });
       update.append(open, current); context.append(update);
     }
-    installHelpThread(answer, item, viewer, ticket, context.querySelector('.helpUpdateBadge'), async () => {
+    installHelpThread(answer, item, ticket, context.querySelector('.helpUpdateBadge'), async () => {
       const data = await call('help-center?report_id=' + encode(item.id));
       if (ticket !== sequence || !card.isConnected) return;
       card.replaceWith(helpConversation(data.items[0], data.viewer, ticket, detail));
@@ -1345,22 +1359,19 @@ export function initPortal(bridge) {
     card.append(context, answer);
     return card;
   }
-  function installHelpThread(panel, item, viewer, ticket, updateBadge, refresh, ideaMode) {
+  function installHelpComposer(panel, item, ticket, refresh, ideaMode) {
     const messages = item.messages || [], owner = bridge.getAccess()?.learner_id;
-    panel.append(node('h3', '', t('help.conversation')));
-    const status = node('p', 'helpReplyStatus', t(item.unread ? 'help.newActivity' : messages.length ? 'help.replyReceived' : 'help.replyPending'));
-    const list = node('div', 'helpMessageList'); panel.append(status, list);
     const inputLabel = t(ideaMode?.title || 'help.replyInput');
     const form = node('form', 'helpReplyForm'), label = node('label', '', inputLabel);
-    const input = node('textarea'); input.id = 'help-reply-' + item.id; label.htmlFor = input.id;
+    const draftKey = ideaMode ? item.id + ':' + ideaMode.title : item.id;
+    const input = node('textarea'); input.id = 'help-reply-' + draftKey; label.htmlFor = input.id;
     label.id = input.id + '-label'; let editor;
+    if (ideaMode) { label.hidden = true; form.setAttribute('aria-label', inputLabel); }
     input.required = true; input.maxLength = 4000; input.rows = 5;
     const target = node('p', 'helpComposerTarget'); target.setAttribute('aria-live', 'polite');
     const feedback = node('p', 'feedbackStatus'); feedback.setAttribute('role', 'status');
     const submit = node('button', 'primaryButton', t('help.sendReply')); submit.type = 'submit';
-    const draftKey = ideaMode ? item.id + ':' + ideaMode.title : item.id;
     let draft = replyDrafts.get(draftKey) || {message: '', message_id: null, reply_to: null, revision: 0, pending: null}, busy = false;
-    const isNewFeedback = () => ideaMode && !draft.message_id && !draft.reply_to;
     const cancel = control(t('help.cancelEdit'), 'textButton', () => {
       draft = {message: '', message_id: null, reply_to: null, revision: 0, pending: null};
       replyDrafts.delete(draftKey); syncComposer();
@@ -1368,8 +1379,8 @@ export function initPortal(bridge) {
     function syncComposer() {
       input.value = draft.message;
       editor?.setValue(draft.message);
-      submit.textContent = t(draft.message_id ? 'help.updateReply' : isNewFeedback() ? 'academy.feedbackSend' : 'help.sendReply');
-      target.textContent = draft.message_id ? t('help.editingReply') : draft.reply_to ? t('help.replyingTo') : t('help.continueReply');
+      submit.textContent = t(draft.message_id ? 'help.updateReply' : ideaMode ? 'academy.feedbackSend' : 'help.sendReply');
+      target.textContent = ideaMode ? '' : draft.message_id ? t('help.editingReply') : draft.reply_to ? t('help.replyingTo') : t('help.continueReply');
       cancel.hidden = !draft.message_id && !draft.reply_to;
       const original = messages.find(message => message.id === draft.message_id);
       feedback.textContent = original && original.revision !== draft.revision ? t('help.replyChanged') : '';
@@ -1380,21 +1391,10 @@ export function initPortal(bridge) {
         reply_to: edit ? null : message.id, revision: edit ? message.revision : 0, pending: null};
       replyDrafts.set(draftKey, draft); syncComposer(); editor.focus();
     }
-    for (const message of messages) {
-      const block = node('article', 'helpMessage ' + (message.author_role === 'admin' ? 'helpAdminMessage' : 'helpStudentMessage'));
-      block.dataset.messageId = message.id;
-      block.append(node('strong', '', t(message.author_role === 'admin' ? 'help.adminAuthor' : 'help.studentAuthor')),
-        node('p', 'inputHint', apiDate(message.created_at, true) + (message.revision > 1 ? ' · ' + t('help.edited') : '')));
-      const parent = messages.find(m => m.id === message.reply_to);
-      if (parent) block.append(renderChatMarkdown(node('blockquote', 'helpReplyQuote helpReplyText'), parent.message));
-      block.append(renderChatMarkdown(node('div', 'helpReplyText'), message.message));
-      const actions = node('div', 'helpMessageActions');
-      actions.append(control(t('help.replyToMessage'), 'textButton', () => choose(message, false)));
-      if (message.editable) actions.append(control(t('help.editMessage'), 'textButton', () => choose(message, true)));
-      block.append(actions); list.append(block);
-    }
     input.addEventListener('input', () => { draft = {...draft, message: input.value, pending: null}; replyDrafts.set(draftKey, draft); });
-    form.append(label, target, input, submit, cancel, feedback); syncComposer(); panel.append(form);
+    form.append(label);
+    if (!ideaMode) form.append(target);
+    form.append(input, submit, cancel, feedback); syncComposer(); panel.append(form);
     editor = attachChatEditor(input, {editor: inputLabel, hint: t('help.editorHint'),
       bold: t('help.editorBold'), italic: t('help.editorItalic'), list: t('help.editorList'),
       math: t('help.editorMath'), preview: t('help.editorPreview'), uploading: t('help.imageUploading'),
@@ -1407,7 +1407,7 @@ export function initPortal(bridge) {
     }); chatEditors.add(editor);
     form.addEventListener('submit', async event => {
       event.preventDefault(); if (busy || editor.isUploading() || !input.value.trim() || owner !== bridge.getAccess()?.learner_id) return;
-      const message = isNewFeedback() ? ideaMode.prefix + input.value.trim() : input.value;
+      const message = ideaMode ? ideaMode.prefix + input.value.trim() : input.value;
       if (ideaMode && [...message].length > 4000) { feedback.textContent = t('academy.feedbackTooLong'); return; }
       busy = true; submit.disabled = input.disabled = cancel.disabled = true; feedback.textContent = t('help.sendingReply');
       editor.setDisabled(true);
@@ -1421,10 +1421,31 @@ export function initPortal(bridge) {
         if (result.status !== 'saved') throw new Error(t('portal.feedback.was.not.confirmed.as.saved.please.try.again.129'));
         saved = true; replyDrafts.delete(draftKey);
         draft = {message: '', message_id: null, reply_to: null, revision: 0, pending: null};
-        syncComposer(); feedback.textContent = t('help.replySent'); await refresh();
+        syncComposer(); feedback.textContent = t(ideaMode ? 'academy.feedbackSent' : 'help.replySent'); await refresh();
       } catch (error) { if (ticket === sequence) feedback.textContent = saved ? t('help.savedRefresh') : translateMessage(error.message); }
       finally { busy = false; submit.disabled = input.disabled = cancel.disabled = false; if (editor.host.isConnected) editor.setDisabled(false); }
     });
+    return choose;
+  }
+  function installHelpThread(panel, item, ticket, updateBadge, refresh) {
+    const messages = item.messages || [], owner = bridge.getAccess()?.learner_id;
+    panel.append(node('h3', '', t('help.conversation')));
+    const status = node('p', 'helpReplyStatus', t(item.unread ? 'help.newActivity' : messages.length ? 'help.replyReceived' : 'help.replyPending'));
+    const list = node('div', 'helpMessageList'); panel.append(status, list);
+    const choose = installHelpComposer(panel, item, ticket, refresh);
+    for (const message of messages) {
+      const block = node('article', 'helpMessage ' + (message.author_role === 'admin' ? 'helpAdminMessage' : 'helpStudentMessage'));
+      block.dataset.messageId = message.id;
+      block.append(node('strong', '', t(message.author_role === 'admin' ? 'help.adminAuthor' : 'help.studentAuthor')),
+        node('p', 'inputHint', apiDate(message.created_at, true) + (message.revision > 1 ? ' · ' + t('help.edited') : '')));
+      const parent = messages.find(m => m.id === message.reply_to);
+      if (parent) block.append(renderChatMarkdown(node('blockquote', 'helpReplyQuote helpReplyText'), parent.message));
+      block.append(renderChatMarkdown(node('div', 'helpReplyText'), message.message));
+      const actions = node('div', 'helpMessageActions');
+      actions.append(control(t('help.replyToMessage'), 'textButton', () => choose(message, false)));
+      if (message.editable) actions.append(control(t('help.editMessage'), 'textButton', () => choose(message, true)));
+      block.append(actions); list.append(block);
+    }
     if (item.unread) {
       const reading = new Set();
       let unreadMessages = item.message_unread, unreadContent = item.content_update_unread;

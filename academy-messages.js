@@ -8,6 +8,7 @@ export const academyMessages = {
   'academy.feedbackProblemHint': ['排查后仍无法继续。请说明卡住的步骤、实际现象和已经试过的办法。', 'Still blocked after troubleshooting? Include the step, what happened and what you tried.'],
   'academy.feedbackAccess': ['站内反馈使用学员的答疑权限。', 'On-site feedback requires learner access to the Help Center.'],
   'academy.feedbackSend': ['发送反馈', 'Send feedback'],
+  'academy.feedbackSent': ['反馈已发送。', 'Feedback sent.'],
   'academy.feedbackTooLong': ['反馈正文加上分类最多 4000 字。', 'Feedback including its category must be 4,000 characters or fewer.'],
   'academy.copyPrompt': ['复制提示词', 'Copy prompt'],
   'academy.promptCopied': ['已复制', 'Copied'],
