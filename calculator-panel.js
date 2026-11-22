@@ -1,5 +1,5 @@
-import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3a6f3c011309215f';
-import {toolInputs} from './calculator-inputs.js?v=3a6f3c011309215f';
+import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=769a0cb3f2f6366b';
+import {toolInputs} from './calculator-inputs.js?v=769a0cb3f2f6366b';
 
 let active = null;
 let preferredLayout = 'side';
@@ -87,6 +87,7 @@ const resultLabels = {
 };
 const errors = {
   restricted: ['当前题目未开放此运算。', 'This operation is unavailable for this question.'],
+  unassigned: ['请点击「赋值」，并填写原式中每个变量的值。', 'Select Assign and enter a value for each variable.'],
   invalid: ['请检查输入格式及参数。', 'Check the input format and parameters.'],
   domain: ['输入超出定义域，或结果无有限数值。', 'Outside the domain or no finite result.'],
   limit: ['输入或计算规模超出范围。', 'The input or calculation is too large.'],
@@ -176,20 +177,21 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       output.replaceChildren(data);
     } else output.textContent = result.text;
   }
-  function run(module, operation, input, control) {
+  function run(module, operation, input, control, receive) {
     if (working || control.disabled) return;
     working = true; control.disabled = true;
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=3a6f3c011309215f', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=769a0cb3f2f6366b', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
         if (data.error) { showError(data.error); return; }
+        if (receive) { receive(data.result); return; }
         if (module === 'expression') {
           session.previousAnswer = data.result.numeric;
-          history.push({expression: input.expression, result: data.result.text});
+          history.push({expression: input.expression, assignments: input.assignments, result: data.result.text});
           if (history.length > 12) history.shift();
           renderHistory();
         }
@@ -208,16 +210,41 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
-      input.addEventListener('input', () => saved.set(module, input.value));
+      let focused = input, assign;
       const display = create('div', 'calculatorDisplay');
       label(display, local('表达式', 'Expression'), input);
+      const variableFields = create('div', 'calculatorAssignments');
+      variableFields.id = 'calculatorAssignments';
       output.textContent = history.at(-1)?.result || '0';
-      display.append(output); form.append(display);
+      display.append(variableFields, output); form.append(display);
+      const currentAssignments = () => session.assignmentDraft?.expression === input.value
+        ? session.assignmentDraft.values : null;
+      function renderAssignments() {
+        const values = currentAssignments();
+        variableFields.replaceChildren();
+        variableFields.hidden = !values?.size;
+        assign?.setAttribute('aria-expanded', String(!variableFields.hidden));
+        if (!values) return;
+        for (const [name, value] of values) {
+          const field = create('input', 'calculatorAssignmentValue');
+          field.type = 'text'; field.maxLength = 1024; field.spellcheck = false; field.autocomplete = 'off';
+          field.value = value;
+          field.setAttribute('aria-label', local('变量 ', 'Variable ') + name);
+          field.addEventListener('focus', () => { focused = field; });
+          field.addEventListener('input', () => values.set(name, field.value));
+          const row = create('label', 'calculatorAssignment');
+          row.append(create('span', '', name + ' ='), field);
+          variableFields.append(row);
+        }
+      }
+      input.addEventListener('focus', () => { focused = input; });
+      input.addEventListener('input', () => { saved.set(module, input.value); renderAssignments(); });
       const insert = value => {
-        const start = input.selectionStart ?? input.value.length;
-        input.setRangeText(value, start, input.selectionEnd ?? start, 'end');
-        saved.set(module, input.value);
-        input.focus();
+        const field = focused.isConnected ? focused : input;
+        const start = field.selectionStart ?? field.value.length;
+        field.setRangeText(value, start, field.selectionEnd ?? start, 'end');
+        field.dispatchEvent(new Event('input'));
+        field.focus();
       };
       const options = create('div', 'calculatorOptions');
       if (permitsKey(config, 'angle', 2)) {
@@ -246,6 +273,25 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           options.append(chooser);
         }
       }
+      if (permitsKey(config, 'assign_variables', 2)) {
+        assign = button(local('赋值', 'Assign'), () => {
+          const expression = input.value;
+          run(module, 'assign_variables', {expression}, assign, ({variables}) => {
+            output.textContent = history.at(-1)?.result || '0';
+            delete output.dataset.state;
+            if (expression !== input.value) return;
+            const previous = session.assignmentDraft?.values;
+            session.assignmentDraft = {expression, values: new Map(variables.map(name => [name, previous?.get(name) || '']))};
+            renderAssignments();
+            if (variables.length) variableFields.querySelector('input').focus();
+            else output.textContent = local('表达式没有待赋值的变量。', 'The expression has no variables to assign.');
+          });
+        });
+        assign.dataset.calculatorKey = 'assign_variables';
+        assign.setAttribute('aria-controls', variableFields.id);
+        options.append(assign);
+      }
+      renderAssignments();
       form.append(options);
       const keys = create('div', 'calculatorKeys');
       let equals;
@@ -254,11 +300,16 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         const action = key === 'evaluate' ? null : () => {
           if (key === 'clear') {
             stop(); equals.disabled = !permitsKey(config, 'evaluate');
-            input.value = ''; saved.delete(module); output.textContent = '0'; delete output.dataset.state; input.focus(); return;
+            if (assign) assign.disabled = false;
+            const field = focused.isConnected ? focused : input;
+            if (field === input) session.assignmentDraft = null;
+            field.value = ''; field.dispatchEvent(new Event('input'));
+            output.textContent = '0'; delete output.dataset.state; field.focus(); return;
           }
           if (key === 'backspace') {
-            if (input.selectionStart === input.selectionEnd && input.selectionStart > 0)
-              input.setSelectionRange(input.selectionStart - 1, input.selectionEnd);
+            const field = focused.isConnected ? focused : input;
+            if (field.selectionStart === field.selectionEnd && field.selectionStart > 0)
+              field.setSelectionRange(field.selectionStart - 1, field.selectionEnd);
             insert(''); return;
           }
           insert(insertion);
@@ -273,7 +324,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           keyButton.setAttribute('aria-label', local('计算结果', 'Evaluate'));
         }
         if (key === 'backspace') keyButton.setAttribute('aria-label', local('退格', 'Backspace'));
-        if (key === 'clear') keyButton.setAttribute('aria-label', local('清空表达式', 'Clear expression'));
+        if (key === 'clear') keyButton.setAttribute('aria-label', local('清空当前输入', 'Clear current input'));
         keys.append(keyButton);
       }
       form.append(keys);
@@ -296,19 +347,23 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       historyPane.append(create('summary', '', local('本题计算记录', 'Calculation history')), entries);
       renderHistory = () => {
         historyPane.hidden = history.length === 0;
-        entries.replaceChildren(...history.slice().reverse().map(({expression, result}) => {
+        entries.replaceChildren(...history.slice().reverse().map(({expression, assignments, result}) => {
           const row = create('li');
+          const values = Object.entries(assignments || {});
           const reuse = button('', () => {
-            input.value = expression; saved.set(module, expression); input.focus();
+            session.assignmentDraft = values.length ? {expression, values: new Map(values)} : null;
+            input.value = expression; input.dispatchEvent(new Event('input')); input.focus();
           });
-          reuse.append(create('span', '', expression), create('strong', '', '= ' + result));
+          const context = values.map(([name, value]) => name + ' = ' + value).join(', ');
+          reuse.append(create('span', '', context ? expression + '  (' + context + ')' : expression),
+            create('strong', '', '= ' + result));
           row.append(reuse); return row;
         }));
       };
       renderHistory(); form.append(historyPane);
       form.addEventListener('submit', event => {
         event.preventDefault();
-        run(module, 'evaluate', {expression: input.value}, equals);
+        run(module, 'evaluate', {expression: input.value, assignments: Object.fromEntries(currentAssignments() || [])}, equals);
       });
     } else {
       const method = create('select');

@@ -262,6 +262,24 @@ mjx-container[jax="SVG"] text { font-family: "Microsoft YaHei", sans-serif; }
 .notice strong { font-weight: 700; color: #785633; }
 .noticeActions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 7px; }
 .noticeActions .textButton { padding: 2px 0; font-size: 12px; }
+.beginnerHint {
+  position: fixed;
+  z-index: 90;
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 64px);
+  inset-inline-end: 16px;
+  inline-size: max-content;
+  max-inline-size: min(360px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--subtle-accent-background);
+  color: var(--ma-ink);
+  font-size: 14px;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ma-ink) 14%, transparent);
+  pointer-events: none;
+}
+.beginnerHint:empty { padding: 0; border: 0; box-shadow: none; }
+@media print { .beginnerHint { display: none; } }
 .emptyState { padding: 49px 24px; border: 1px solid var(--ma-border); border-radius: 3px; text-align: center; margin-top: 25px; }
 .emptyState h2 { color: var(--ma-navy); font-weight: 400; font-size: 17px; margin: 14px 0 7px; }
 .emptyState p { color: #858585; font-size: 13px; margin: 0; }

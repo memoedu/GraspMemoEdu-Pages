@@ -128,6 +128,29 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 .calculatorDisplay .calculatorExpression::placeholder { color: var(--calculator-screen-muted); opacity: 1; }
 .calculatorDisplay .calculatorExpression:focus-visible { outline: none; }
 .calculatorDisplay:focus-within { box-shadow: inset 0 2px 8px var(--calculator-screen-edge), 0 0 0 2px var(--calculator-accent); }
+.calculatorAssignments:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-block: 5px 10px;
+}
+.calculatorAssignment {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--calculator-screen-text);
+  font: 13px/1.3 var(--calculator-number-font);
+}
+.calculatorAssignment > span { overflow-wrap: anywhere; }
+.calculatorDisplay .calculatorAssignmentValue {
+  flex: 0 0 4.6rem;
+  inline-size: 4.6rem;
+  border-color: var(--calculator-screen-muted);
+  color: var(--calculator-screen-text);
+  background: var(--calculator-screen-edge);
+}
 .calculatorOptions { gap: 6px; flex-wrap: wrap; }
 .calculatorOptions:empty { display: none; }
 .calculatorOptions select { flex: 1 1 145px; width: auto; }

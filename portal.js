@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=3a6f3c011309215f";
-import { createReviewView } from "./review.js?v=3a6f3c011309215f";
-import { renderCourseGraph } from "./course-graph.js?v=3a6f3c011309215f";
-import {questionInput, choiceTypeField} from './question-input.js?v=3a6f3c011309215f';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=3a6f3c011309215f';
-import {enhanceTopicContent} from './topic-content.js?v=3a6f3c011309215f';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=3a6f3c011309215f';
-import {createCatalogPicker} from './catalog-picker.js?v=3a6f3c011309215f';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=3a6f3c011309215f';
-import {createAtomicView} from './atomic.js?v=3a6f3c011309215f';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=3a6f3c011309215f';
-import {sourceAttributions} from './memory-chunk.js?v=3a6f3c011309215f';
-import {createTrainingView} from './training.js?v=3a6f3c011309215f';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=3a6f3c011309215f";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=769a0cb3f2f6366b";
+import { createReviewView } from "./review.js?v=769a0cb3f2f6366b";
+import { renderCourseGraph } from "./course-graph.js?v=769a0cb3f2f6366b";
+import {questionInput, choiceTypeField} from './question-input.js?v=769a0cb3f2f6366b';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {enhanceTopicContent} from './topic-content.js?v=769a0cb3f2f6366b';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=769a0cb3f2f6366b';
+import {createCatalogPicker} from './catalog-picker.js?v=769a0cb3f2f6366b';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=769a0cb3f2f6366b';
+import {createAtomicView} from './atomic.js?v=769a0cb3f2f6366b';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=769a0cb3f2f6366b';
+import {sourceAttributions} from './memory-chunk.js?v=769a0cb3f2f6366b';
+import {createTrainingView} from './training.js?v=769a0cb3f2f6366b';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=769a0cb3f2f6366b";
 
-import {createPaperView} from './review-papers.js?v=3a6f3c011309215f';
-import {createContextLibraryView} from './context-library.js?v=3a6f3c011309215f';
+import {createPaperView} from './review-papers.js?v=769a0cb3f2f6366b';
+import {createContextLibraryView} from './context-library.js?v=769a0cb3f2f6366b';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=3a6f3c011309215f';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3a6f3c011309215f';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=3a6f3c011309215f';
-import {createStudentDashboard} from './student-dashboard.js?v=3a6f3c011309215f';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=769a0cb3f2f6366b';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=769a0cb3f2f6366b';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=769a0cb3f2f6366b';
+import {createStudentDashboard} from './student-dashboard.js?v=769a0cb3f2f6366b';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=3a6f3c011309215f').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=769a0cb3f2f6366b').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1178,6 +1178,13 @@ export function initPortal(bridge) {
     language.addEventListener("change", () => { setLanguage(language.value); location.reload(); });
     const languageHint = node("p", "fieldHint", t("portal.languageHint"));
     form.append(languageLabel, language, languageHint, displayLabel, display, zoneLabel, zone, zones, hint, status, submit);
+    const beginner = node('input'); beginner.type = 'checkbox'; beginner.id = 'beginnerModeEnabled';
+    beginner.checked = bridge.getAccess()?.beginner_mode_enabled ?? profile.beginner_mode_enabled ?? true;
+    beginner.setAttribute('aria-describedby', 'beginnerModeHint');
+    const beginnerLabel = node('label', 'courseHierarchySetting'); beginnerLabel.htmlFor = beginner.id;
+    beginnerLabel.append(beginner, document.createTextNode(t('portal.beginnerMode')));
+    const beginnerHint = node('p', 'fieldHint', t('portal.beginnerModeHint')); beginnerHint.id = 'beginnerModeHint';
+    form.insertBefore(beginnerLabel, status); form.insertBefore(beginnerHint, status);
     const hierarchy = node("input"); hierarchy.type = "checkbox"; hierarchy.id = "courseHierarchyEnabled";
     hierarchy.checked = profile.course_hierarchy_enabled !== false;
     if (allowed("course_hierarchy")) {
@@ -1216,7 +1223,15 @@ export function initPortal(bridge) {
     form.addEventListener("submit", async (event) => {
       event.preventDefault(); if (submit.disabled) return; submit.disabled = true; status.textContent = t("portal.saving.120");
       try {
-        profile = await call("profile", { method: "POST", body: { display_name: defaultGuestName && display.value.trim() === t("portal.guest.12") ? profile.display_name || "游客" : display.value.trim(), timezone: zone.value.trim(), ...(allowed("course_hierarchy") ? {course_hierarchy_enabled: hierarchy.checked} : {}) } });
+        const actor = bridge.getAccess()?.learner_id;
+        const updated = await call("profile", { method: "POST", body: {
+          display_name: defaultGuestName && display.value.trim() === t("portal.guest.12") ? profile.display_name || "游客" : display.value.trim(),
+          timezone: zone.value.trim(), beginner_mode_enabled: beginner.checked,
+          ...(allowed("course_hierarchy") ? {course_hierarchy_enabled: hierarchy.checked} : {}),
+        } });
+        if (actor !== bridge.getAccess()?.learner_id) return;
+        profile = updated;
+        bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled});
         if (trainingPreferences?.eligible) await call('training/preferences', {method: 'POST', body: {self_rating_enabled: selfRating.checked}});
         if (paperPreferences.can_choose || paperPreferences.can_choose_timeout) await call('review-papers/preferences', {method: 'POST', body: {
           ...(paperPreferences.can_choose ? {mode: paperMode.value} : {}),
@@ -1638,6 +1653,7 @@ export function initPortal(bridge) {
             const card = node('article', 'courseChoice');
             card.append(node('h2', '', item.display_name), node('p', '', t('students.topicCounts', {started: item.started_topics, completed: item.completed_topics})),
               node('p', 'inputHint', [item.is_advanced_learner ? t('account.advancedLearner') : t('account.standardLearner'),
+                t(item.is_student ? 'account.student' : 'account.nonStudent'),
                 item.enabled ? '' : t('students.accountDisabled'), item.purpose === 'test' ? t('account.test') : ''].filter(Boolean).join(' · ')),
               link(t('students.view'), `/admin/students?learner=${encode(item.learner_id)}`, 'primaryButton'));
             list.append(card);
@@ -1653,6 +1669,42 @@ export function initPortal(bridge) {
     const detail = node('div'); page.append(detail);
     const refresh = control(t('pause.refresh'), 'secondaryButton', loadDetail); page.append(refresh);
     let busy = false, reportDays = 30;
+    function qualifications(student) {
+      const form = node('form', 'profileForm studentQualifications');
+      form.append(node('h3', '', t('students.qualifications')));
+      const inputs = new Map();
+      for (const [field, labelKey] of [['is_advanced_learner', 'account.advancedLearner'], ['is_student', 'account.student']]) {
+        const label = node('label', 'courseHierarchySetting'), input = node('input');
+        input.type = 'checkbox'; input.checked = student[field]; inputs.set(field, input);
+        label.append(input, document.createTextNode(t(labelKey))); form.append(label);
+      }
+      const status = node('p', 'profileStatus'); status.setAttribute('role', 'status');
+      const save = node('button', 'primaryButton', t('students.saveQualifications')); save.type = 'submit';
+      const changes = () => Object.fromEntries([...inputs].filter(([key, input]) => input.checked !== student[key])
+        .map(([key, input]) => [key, input.checked]));
+      save.disabled = true; form.append(status, save);
+      form.addEventListener('change', () => { save.disabled = !Object.keys(changes()).length; status.textContent = ''; });
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (save.disabled || busy) return;
+        const body = changes();
+        save.disabled = refresh.disabled = busy = true;
+        for (const input of inputs.values()) input.disabled = true;
+        status.textContent = t('portal.saving.120');
+        try {
+          const updated = await bridge.request(reportEndpoint + '/qualifications', {method: 'POST', body});
+          student = updated;
+          for (const [key, input] of inputs) input.checked = student[key];
+          status.textContent = t('students.qualificationsSaved');
+        } catch (error) { status.textContent = translateMessage(error.message); }
+        finally {
+          busy = refresh.disabled = false;
+          for (const input of inputs.values()) input.disabled = false;
+          save.disabled = !Object.keys(changes()).length;
+        }
+      });
+      return form;
+    }
     async function loadDetail() {
       if (busy) return; busy = true; refresh.disabled = true;
       try {
@@ -1661,6 +1713,7 @@ export function initPortal(bridge) {
         detail.replaceChildren(node('h2', '', data.student.display_name),
           node('p', 'inputHint', t('students.updated', {time: date(data.generated_at)})));
         if (!data.student.enabled) detail.append(node('p', 'fieldError', t('students.accountDisabled')));
+        if (!own) detail.append(qualifications(data.student));
         const report = createStudentDashboard(data, {
           request: path => bridge.request(reportEndpoint + '/' + path),
           formatDate: date, timezone: timezone(), days: reportDays,

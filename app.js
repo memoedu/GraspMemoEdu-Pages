@@ -1,17 +1,18 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=3a6f3c011309215f";
-import {answerReady} from './question-input.js?v=3a6f3c011309215f';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=3a6f3c011309215f';
-import {startPresence} from './presence.js?v=3a6f3c011309215f';
-import {createLearningCache} from './learning-cache.js?v=3a6f3c011309215f';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=3a6f3c011309215f';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=769a0cb3f2f6366b";
+import {answerReady} from './question-input.js?v=769a0cb3f2f6366b';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=769a0cb3f2f6366b';
+import {startPresence} from './presence.js?v=769a0cb3f2f6366b';
+import {createLearningCache} from './learning-cache.js?v=769a0cb3f2f6366b';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=769a0cb3f2f6366b';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=3a6f3c011309215f';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=3a6f3c011309215f';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=3a6f3c011309215f';
-import {renderSourceReader} from './learning-ui.js?v=3a6f3c011309215f';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=3a6f3c011309215f';
-import {createTrainingView} from './training.js?v=3a6f3c011309215f';
-import {setQuestionTools} from './question-tools.js?v=3a6f3c011309215f';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=769a0cb3f2f6366b';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=769a0cb3f2f6366b';
+import {renderSourceReader} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {createTrainingView} from './training.js?v=769a0cb3f2f6366b';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=769a0cb3f2f6366b';
+import {setQuestionTools} from './question-tools.js?v=769a0cb3f2f6366b';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -861,7 +862,10 @@ async function mutate(path, payload, { pause = false } = {}) {
     if (generation !== connectionGeneration) return;
     applyState(next, { force: true, announceChange: true });
     notifyOtherTabs();
-    if (path === "skip") announce(t('reader.skipDone'));
+    if (path === "skip") {
+      announce(t('reader.skipDone'));
+      learningHint(access, t('beginner.skipped'), payload.request_id);
+    }
     if (["continue", "select", "skip"].includes(path)) focusStep();
   } catch (error) {
     if (generation !== connectionGeneration) return;
@@ -952,6 +956,10 @@ async function sendSubmission(payload) {
 
 function handleSubmission(result, record = readJSON(recordKey())) {
   if (result.state) applyState(result.state);
+  if (state && result.status === 'judged' && result.state?.revision === state.revision) {
+    const step = stepById(state, state.active_step_id);
+    practiceHint(access, step?.feedback, result.submission_id);
+  }
   if (state?.status === "paused" || state?.status === "completed") return;
   // A late response from an older attempt must not replace polling for a newer one.
   if (state?.pending_submission_id && state.pending_submission_id !== result.submission_id) {
@@ -1667,7 +1675,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=3a6f3c011309215f");
+const { initPortal } = await import("./portal.js?v=769a0cb3f2f6366b");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
@@ -1693,7 +1701,10 @@ portal = initPortal({
     void refreshAccess().catch(error => { if (identityFailure(error)) void recoverIdentity(error); });
   },
   getApiOrigin: () => apiBase || window.location.origin,
-  setAccess: next => { access = next; renderIdentity(); },
+  setAccess: next => {
+    if (next.learner_id !== access?.learner_id || next.beginner_mode_enabled === false) clearLearningHint();
+    access = next; renderIdentity();
+  },
   demoEnabled: () => canUseDemo() && $("guestDemoCheckbox").checked,
   openIdentity, returnToGuest, openTopic, leaveTopic,
 });
