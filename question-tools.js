@@ -1,8 +1,7 @@
-import {getLanguage} from './i18n.js?v=fba711eba541e925';
-import {calculatorTools} from './calculator.js?v=fba711eba541e925';
-import {voiceControls} from './voice-input.js?v=fba711eba541e925';
+import {getLanguage} from './i18n.js?v=32ec15b952d98758';
+import {calculatorToolGroups} from './calculator.js?v=32ec15b952d98758';
+import {voiceControls} from './voice-input.js?v=32ec15b952d98758';
 
-const providers = [({calculate}, english) => calculatorTools(calculate, english)];
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
@@ -21,21 +20,27 @@ export function setQuestionTools(anchor, question) {
   toolbars.delete(anchor);
   if (!anchor.parentNode || !question) return;
   const english = getLanguage() === 'en';
-  const tools = providers.flatMap(provider => provider(question, english));
-  if (!tools.length) return;
+  const groups = calculatorToolGroups(question.calculate, english);
+  if (!groups.length) return;
+  const rail = document.createElement('aside');
+  rail.className = 'questionToolRail';
+  rail.setAttribute('aria-label', english ? 'Tools for this question' : '当前题目的工具');
   const row = document.createElement('div');
   row.className = 'questionToolRow';
   const toolbar = document.createElement('div');
   toolbar.className = 'questionTools';
   toolbar.setAttribute('role', 'toolbar');
   toolbar.setAttribute('aria-label', english ? 'Question tools' : '题目工具');
+  toolbar.setAttribute('aria-orientation', 'vertical');
+  const groupList = document.createElement('div');
+  groupList.className = 'questionToolGroups';
   const message = document.createElement('div');
   message.className = 'questionToolStatus';
   message.setAttribute('role', 'status');
-  const buttons = tools.map(({id, label, icon: path, open}, index) => {
+  const makeButton = ({id, label, icon: path, open}) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.tabIndex = index === 0 ? 0 : -1;
+    button.tabIndex = -1;
     button.className = 'questionToolButton calculatorLaunch';
     button.dataset.questionTool = id;
     button.dataset.readOnly = 'true';
@@ -57,7 +62,19 @@ export function setQuestionTools(anchor, question) {
       }
     });
     return button;
-  });
+  };
+  const buttons = [];
+  for (const {label, tools} of groups) {
+    const group = document.createElement('div');
+    group.className = 'questionToolGroup';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', label);
+    const controls = tools.map(makeButton);
+    group.append(...controls);
+    groupList.append(group);
+    buttons.push(...controls);
+  }
+  buttons[0].tabIndex = 0;
   toolbar.addEventListener('focusin', event => {
     if (buttons.includes(event.target)) for (const button of buttons) button.tabIndex = button === event.target ? 0 : -1;
   });
@@ -66,7 +83,9 @@ export function setQuestionTools(anchor, question) {
     if (index < 0) return;
     const destination = {
       ArrowLeft: (index + buttons.length - 1) % buttons.length,
+      ArrowUp: (index + buttons.length - 1) % buttons.length,
       ArrowRight: (index + 1) % buttons.length,
+      ArrowDown: (index + 1) % buttons.length,
       Home: 0,
       End: buttons.length - 1,
     }[event.key];
@@ -74,8 +93,15 @@ export function setQuestionTools(anchor, question) {
     event.preventDefault();
     buttons[destination].focus();
   });
-  toolbar.append(...buttons, voiceControls());
+  toolbar.append(groupList, voiceControls());
   row.append(toolbar, message);
-  anchor.before(row);
-  toolbars.set(anchor, row);
+  rail.append(row);
+  if (!anchor.parentElement?.classList.contains('questionWorkspace')) {
+    const workspace = document.createElement('div');
+    workspace.className = 'questionWorkspace';
+    anchor.before(workspace);
+    workspace.append(anchor);
+  }
+  anchor.after(rail);
+  toolbars.set(anchor, rail);
 }

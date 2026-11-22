@@ -47,15 +47,12 @@ body:has(.questionCalculator[open][data-layout="center"]) {
 }
 .questionToolRow[data-calculator-layout="center"] {
   position: fixed;
-  inset: var(--calculator-toolbar-top) 10px auto;
+  inset: var(--calculator-toolbar-top) 10px auto auto;
+  inline-size: var(--question-tool-width);
   z-index: 31;
 }
-.questionToolRow[data-calculator-layout="center"] .questionTools {
-  padding: 4px;
-}
-.questionToolRow[data-calculator-layout="center"] .voiceToolPanel {
-  position: absolute;
-  inset-inline-end: 0;
+.questionToolRow[data-calculator-layout="center"] .questionToolGroups {
+  max-block-size: min(26dvh, 240px);
 }
 .questionCalculator[data-layout="side"] {
   position: fixed;

@@ -625,10 +625,12 @@ body.portalModalOpen { overflow: hidden; }
   .atomicPeekButton:hover:not(:disabled), .memoryChunkClose:hover, .memoryChunkTab:hover { background: var(--soft-blue); color: var(--ma-navy); }
 }
 @media (min-width: 1001px) {
-  .unifiedTopicLayout { grid-template-columns: minmax(0, 1fr) 250px; }
-  .unifiedTopicLayout.historyCollapsed { grid-template-columns: minmax(0, 1fr) 40px; }
-  .unifiedTopicLayout > .historySidebar { grid-column: 2; grid-row: 1; }
-  .unifiedTopicLayout > .pageShell { grid-column: 1; grid-row: 1; }
+  .unifiedTopicLayout { grid-template-columns: 250px minmax(0, 1fr); }
+}
+@media (min-width: 768px) {
+  .atomicLayout:not(.atomicAnswerLayout):has(.questionToolRail) { grid-template-columns: 200px minmax(0, 1fr); }
+  .atomicLayout:has(.questionToolRail) > .atomicHistory { grid-column: 1; }
+  .atomicLayout:not(.atomicAnswerLayout):has(.questionToolRail) > .atomicMain { grid-column: 2; }
 }
 @media (max-width: 1080px) and (min-width: 768px) {
   .atomicReadingLayout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
