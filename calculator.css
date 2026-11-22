@@ -23,7 +23,7 @@
   --calculator-number-font: ui-monospace, "Cascadia Mono", Consolas, monospace;
   box-sizing: border-box;
   position: fixed;
-  inset: calc(var(--site-header-height, 50px) + 12px) auto auto 12px;
+  inset: calc(var(--site-header-height, 50px) + 12px) 12px auto auto;
   z-index: 30;
   inline-size: var(--calculator-width);
   max-block-size: calc(100dvh - var(--site-header-height, 50px) - 24px);
@@ -40,12 +40,14 @@
   scrollbar-width: thin;
 }
 @media (min-width: 1100px) {
-  body:has(.questionCalculator[open]) { padding-inline-start: calc(var(--calculator-width) + 24px); }
+  body:has(.questionCalculator[open]) { padding-inline-end: calc(var(--calculator-width) + 24px); }
 }
 @media (width < 1100px) {
   .questionCalculator {
-    inset-inline-start: 8px;
-    inline-size: min(var(--calculator-width), calc(100% - 16px));
+    inset: auto 8px 8px auto;
+    inline-size: min(400px, calc(100% - 16px));
+    max-block-size: min(72dvh, calc(100dvh - var(--calculator-toolbar-bottom, 150px) - 16px));
+    padding: 12px;
   }
   body:has(.questionCalculator[open]) { padding-block-end: min(72dvh, calc(100dvh - 150px)); }
   .questionToolRow[data-calculator-open] {
@@ -54,13 +56,7 @@
     inline-size: var(--question-tool-width);
     z-index: 31;
   }
-  .questionToolRow[data-calculator-open] .questionToolGroups { max-block-size: min(18dvh, 164px); }
-}
-@media (width < 520px) {
-  .questionCalculator {
-    inset-block: auto 8px;
-    max-block-size: min(72dvh, calc(100dvh - var(--calculator-toolbar-bottom, 150px) - 16px));
-  }
+  .questionToolRow[data-calculator-open] .questionToolGroups { max-block-size: min(16dvh, 144px); }
 }
 .calculatorHeader, .calculatorOptions,
 .calculatorToolActions, .calculatorInputModes {
