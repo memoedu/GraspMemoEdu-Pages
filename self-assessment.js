@@ -1,7 +1,7 @@
-import {t} from './i18n.js?v=6099b13a721db914';
-import {answerEmpty} from './question-input.js?v=6099b13a721db914';
-import {prepareLiteralMath} from './math-presentation.js?v=6099b13a721db914';
-import {answerAssessment} from './point-assessment.js?v=6099b13a721db914';
+import {t} from './i18n.js?v=55a8c2a9b5fd9dbd';
+import {answerEmpty} from './question-input.js?v=55a8c2a9b5fd9dbd';
+import {prepareLiteralMath} from './math-presentation.js?v=55a8c2a9b5fd9dbd';
+import {answerAssessment} from './point-assessment.js?v=55a8c2a9b5fd9dbd';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -161,17 +161,25 @@ export function ratingChoices({labels, selected, disabled = false, onRate, binar
   return ratings;
 }
 
+export function showAnswerButton(reveal, {disabled = false, input, label = t('training.show')} = {}) {
+  const show = element('button', 'secondaryButton showAnswer', label);
+  show.type = 'button';
+  show.disabled = disabled;
+  if (input !== undefined) {
+    const refresh = () => { show.hidden = !answerEmpty(input); };
+    input?.addEventListener('input', refresh); refresh();
+  }
+  show.addEventListener('click', () => { if (!show.disabled) void reveal(); });
+  return show;
+}
+
 // Shared controls; each reader keeps its original submission and grading policy.
 export function selfAssessment(question, input, {disabled = false, reveal, rate, explanation} = {}) {
   if (!question.can_self_rate) return null;
   const box = element('div', 'selfAssessment');
   if (!question.revealed) {
-    const show = element('button', 'secondaryButton showAnswer', t('training.show'));
-    show.type = 'button'; show.disabled = disabled;
-    const refresh = () => { show.hidden = !answerEmpty(input); };
-    input?.addEventListener('input', refresh); refresh();
-    show.addEventListener('click', () => { if (!show.disabled) void reveal(); });
-    box.append(show); return box;
+    box.append(showAnswerButton(reveal, {disabled, input: input ?? null}));
+    return box;
   }
   const reference = referenceAnswer(question); if (reference) box.append(reference);
   if (explanation) box.append(element('h3', 'exampleExplanationHeader', t('Explanation · 解析')), prepareAnswerContent(explanation, {explanation: true}));

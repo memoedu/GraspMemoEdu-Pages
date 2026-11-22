@@ -1,11 +1,11 @@
-import {t, learningTitle} from './i18n.js?v=6099b13a721db914';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6099b13a721db914';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6099b13a721db914';
-import {enhanceTopicContent} from './topic-content.js?v=6099b13a721db914';
-import {sourceAttributions} from './memory-chunk.js?v=6099b13a721db914';
-import {mountPassageBlanks} from './composite-input.js?v=6099b13a721db914';
-import {placeContentActions} from './content-report.js?v=6099b13a721db914';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=6099b13a721db914';
+import {t, learningTitle} from './i18n.js?v=55a8c2a9b5fd9dbd';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=55a8c2a9b5fd9dbd';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=55a8c2a9b5fd9dbd';
+import {enhanceTopicContent} from './topic-content.js?v=55a8c2a9b5fd9dbd';
+import {sourceAttributions} from './memory-chunk.js?v=55a8c2a9b5fd9dbd';
+import {mountPassageBlanks} from './composite-input.js?v=55a8c2a9b5fd9dbd';
+import {placeContentActions} from './content-report.js?v=55a8c2a9b5fd9dbd';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=55a8c2a9b5fd9dbd';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;

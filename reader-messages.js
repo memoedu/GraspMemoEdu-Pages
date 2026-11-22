@@ -422,7 +422,7 @@ export const readerMessages = {
     "Not yet, learn first"
   ],
   "尝试完成": ["尝试完成", "Try the example"],
-  "修王子": ["修王子", "View solution"],
+  "reader.showAnswer": ["展示答案", "Show Answer"],
   "已选择未掌握。点击下一页，开始阅读相关讲解。": [
     "已选择未掌握。点击“继续学习”，阅读相关指导。",
     "You chose to learn first. Select Continue learning to read the guidance."
