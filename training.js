@@ -1,33 +1,41 @@
-import {t, translateMessage} from './i18n.js?v=092aa6443a51662d';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=092aa6443a51662d';
-import {answerReady, answerEmpty} from './question-input.js?v=092aa6443a51662d';
-import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=092aa6443a51662d';
-import {helpableContent} from './content-report.js?v=092aa6443a51662d';
-import {ratingChoices} from './self-assessment.js?v=092aa6443a51662d';
-import {pointAssessment} from './point-assessment.js?v=092aa6443a51662d';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=092aa6443a51662d';
-import {learningHint} from './beginner-hints.js?v=092aa6443a51662d';
+import {t, translateMessage} from './i18n.js?v=7f75039d97260881';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=7f75039d97260881';
+import {answerReady, answerEmpty} from './question-input.js?v=7f75039d97260881';
+import {createLearningCache} from './learning-cache.js?v=7f75039d97260881';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=7f75039d97260881';
+import {helpableContent} from './content-report.js?v=7f75039d97260881';
+import {ratingChoices} from './self-assessment.js?v=7f75039d97260881';
+import {pointAssessment} from './point-assessment.js?v=7f75039d97260881';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=7f75039d97260881';
+import {learningHint} from './beginner-hints.js?v=7f75039d97260881';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=092aa6443a51662d';
-import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
-import {voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=7f75039d97260881';
+import {setQuestionTools} from './question-tools.js?v=7f75039d97260881';
+import {voiceAnswerPending} from './voice-input.js?v=7f75039d97260881';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
   function settled(previous, next) {
     const access = getAccess();
-    if (previous.phase === 'done' || next.phase !== 'done' || access?.learning_policy?.scheduled_delivery === false) return;
+    if (previous.attempt_id !== next.attempt_id || previous.phase === 'done' || next.phase !== 'done') return;
     const result = next.result;
-    const key = result?.stopped && result.stop_requested ? 'beginner.trainingStopped' :
-      next.in_error_notebook && !previous.in_error_notebook ? 'beginner.notebook' :
-      result?.scheduled ? 'beginner.trainingScheduled' : null;
-    if (key) learningHint(access, t(key), `training:${next.attempt_id}`);
+    const wrong = result?.correct === false;
+    const messages = [];
+    if (wrong) messages.push(t('beginner.incorrect'));
+    const stopped = result?.stopped && result.stop_requested;
+    const added = next.in_error_notebook && !previous.in_error_notebook;
+    const scheduled = result?.scheduled && access?.learning_policy?.scheduled_delivery !== false;
+    if (stopped) messages.push(t('beginner.trainingStopped'));
+    else if (added) messages.push(t('beginner.notebook'));
+    else if (scheduled) messages.push(t('beginner.trainingScheduled'));
+    else if (!wrong) messages.push(t('beginner.trainingCompleted'));
+    const tone = wrong ? 'incorrect' : stopped ? 'warning' : 'success';
+    learningHint(access, messages.join(' '), `training:${next.attempt_id}`, tone);
   }
   const readerTemplate = document.getElementById('appLayout').cloneNode(true);
   let cacheAccess = getAccess();
@@ -405,7 +413,7 @@ export function createTrainingView(bridge) {
               if (!alive(e, s)) return;
               // Keep the current input, submission and elapsed-time clock intact.
               for (const key of ['in_error_notebook', 'awaiting_first_learning', 'can_review_early', 'due_at']) current[key] = next[key];
-              if (next.in_error_notebook) learningHint(getAccess(), t('beginner.notebook'), `notebook:${state.attempt_id}`);
+              if (next.in_error_notebook) learningHint(getAccess(), t('beginner.notebook'), `notebook:${state.attempt_id}`, 'success');
               refreshNotebook();
             } catch (failure) { if (alive(e, s)) {
               refreshNotebook();
@@ -690,6 +698,7 @@ export function createTrainingView(bridge) {
         if (name==='retry') save('draft',state.attempt_id,null);
         const next = await request('training/state?' + query({attempt_id:state.attempt_id}));
         if (!alive(e,s)) return;
+        settled(state, next);
         current = next;
         if (next.phase==='done') { flushClock(); await refreshGroup(e,s); }
       } catch (failure) {
@@ -747,6 +756,7 @@ export function createTrainingView(bridge) {
       try {
         const next = await adapter('finish', {attempt_id: state.attempt_id, ...(rating ? {rating} : {})});
         if (!alive(e, s)) return;
+        settled(state, next);
         flushClock(); current = next; await refreshGroup(e, s); if (alive(e, s)) renderQuestion();
       } catch (failure) { if (alive(e, s)) error(main, failure); }
     };
@@ -769,7 +779,7 @@ export function createTrainingView(bridge) {
         timer = setTimeout(() => pollAcademy(e, s, next), 1500);
         return;
       }
-      current = next;
+      settled(state, next); current = next;
       if (next.phase === 'done') { flushClock(); await refreshGroup(e, s); }
       if (alive(e, s)) renderQuestion();
     } catch (failure) { if (alive(e, s)) error(main, failure, () => pollAcademy(e, s, state)); }
@@ -834,6 +844,7 @@ export function createTrainingView(bridge) {
             const connectionOnly = old.phase === 'answer' && old.hyperskill?.prepared && updated.hyperskill &&
               JSON.stringify({...updated, hyperskill: {...updated.hyperskill,
                 round_id: old.hyperskill.round_id, opened: old.hyperskill.opened}}) === JSON.stringify(old);
+            if (old.submission_id || read('submission', answerKey(old))) settled(old, updated);
             current = updated; renderSidebar();
             if (connectionOnly) paintHyperskillConnection(); else renderQuestion();
           } else if (sidebarChanged) renderSidebar();

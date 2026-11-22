@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=092aa6443a51662d";
-import {answerReady} from './question-input.js?v=092aa6443a51662d';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=092aa6443a51662d';
-import {startPresence} from './presence.js?v=092aa6443a51662d';
-import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=092aa6443a51662d';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=7f75039d97260881";
+import {answerReady} from './question-input.js?v=7f75039d97260881';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=7f75039d97260881';
+import {startPresence} from './presence.js?v=7f75039d97260881';
+import {createLearningCache} from './learning-cache.js?v=7f75039d97260881';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=7f75039d97260881';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=092aa6443a51662d';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=092aa6443a51662d';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=092aa6443a51662d';
-import {renderSourceReader} from './learning-ui.js?v=092aa6443a51662d';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=092aa6443a51662d';
-import {createTrainingView} from './training.js?v=092aa6443a51662d';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=092aa6443a51662d';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
-import {installAutocomplete} from './autocomplete.js?v=092aa6443a51662d';
-import {expressionCompletions} from './calculator-policy.js?v=092aa6443a51662d';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=092aa6443a51662d';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=7f75039d97260881';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=7f75039d97260881';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=7f75039d97260881';
+import {renderSourceReader} from './learning-ui.js?v=7f75039d97260881';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=7f75039d97260881';
+import {createTrainingView} from './training.js?v=7f75039d97260881';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=7f75039d97260881';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=7f75039d97260881';
+import {installAutocomplete} from './autocomplete.js?v=7f75039d97260881';
+import {expressionCompletions} from './calculator-policy.js?v=7f75039d97260881';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=7f75039d97260881';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=7f75039d97260881';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -521,6 +521,7 @@ function renderIdentityNotice() {
 }
 
 function invalidateIdentityView() {
+  clearLearningHint();
   syncAnswerClock(true);
   identityGeneration += 1;
   connectionGeneration += 1;
@@ -695,6 +696,7 @@ async function refreshAccess(fresh = false) {
     const previous = access;
     const next = await request("access", { skipIdentity: true, timeout: STATE_TIMEOUT, fresh: true });
     if (next.learner_id !== access?.learner_id && access) throw new ApiError(t("当前身份已更新，请重新读取。"), 0, "connection_changed");
+    if (next.beginner_mode_enabled === false) clearLearningHint();
     accessCheckedAt = Date.now();
     access = next;
     renderIdentity();
@@ -781,12 +783,21 @@ function applyState(next, { force = false, announceChange = false } = {}) {
   if (access?.learner_id && next.learner_id !== access.learner_id) throw new ApiError(t("此学习记录不属于当前身份，请刷新。"), 0, "identity_mismatch");
   if (state && next.course_version === state.course_version && next.revision < state.revision) return;
   const accessChanged = next.access && JSON.stringify(next.access) !== JSON.stringify(access);
+  if (next.access?.beginner_mode_enabled === false) clearLearningHint();
   if (next.access) access = next.access;
   if (force || next.course_version !== state?.course_version || !can('review_history')
       || !stepById(next, localStep)) localStep = null;
   if (localStep) next = {...next, current_step_id: localStep};
   const changed = accessChanged || !state || next.course_version !== state.course_version || next.revision !== state.revision || next.current_step_id !== state.current_step_id || next.dependency_ready !== state.dependency_ready || next.guidance_history?.length !== state.guidance_history?.length || JSON.stringify(next.content_references) !== JSON.stringify(state.content_references) || JSON.stringify(next.steps.map(s => s.bank_completed)) !== JSON.stringify(state.steps.map(s => s.bank_completed));
   const previousStep = state?.current_step_id;
+  const submission = readJSON(recordKey());
+  const feedbackStep = stepById(next, next.active_step_id);
+  const feedback = feedbackStep?.feedback;
+  if (feedback?.submission_id && feedback.submission_id === (submission?.payload?.request_id || state?.pending_submission_id)) {
+    const completed = next.modules.some(module => module.attempt_id === feedbackStep.attempt_id && module.status === 'completed');
+    practiceHint(access, feedback, completed ? 'beginner.moduleCompleted' : null);
+    persistSubmission(null);
+  }
   state = next;
   connectionIssue = null;
   identityRecoveryAllowed = true;
@@ -865,13 +876,16 @@ async function mutate(path, payload, { pause = false } = {}) {
   pageMessage = null;
   renderBusy();
   try {
+    const previousStatus = state.status;
     const next = await topicRequest(path, { method: "POST", body: payload });
     if (generation !== connectionGeneration) return;
     applyState(next, { force: true, announceChange: true });
     notifyOtherTabs();
     if (path === "skip") {
       announce(t('reader.skipDone'));
-      learningHint(access, t('beginner.skipped'), payload.request_id);
+      learningHint(access, t('beginner.skipped'), payload.request_id, 'warning');
+    } else if (path === 'continue' && !next.pause && previousStatus !== 'completed' && next.status === 'completed') {
+      learningHint(access, t('beginner.topicCompleted'), payload.request_id, 'success');
     }
     if (["continue", "select", "skip"].includes(path)) focusStep();
   } catch (error) {
@@ -963,10 +977,6 @@ async function sendSubmission(payload) {
 
 function handleSubmission(result, record = readJSON(recordKey())) {
   if (result.state) applyState(result.state);
-  if (state && result.status === 'judged' && result.state?.revision === state.revision) {
-    const step = stepById(state, state.active_step_id);
-    practiceHint(access, step?.feedback, result.submission_id);
-  }
   if (state?.status === "paused" || state?.status === "completed") return;
   // A late response from an older attempt must not replace polling for a newer one.
   if (state?.pending_submission_id && state.pending_submission_id !== result.submission_id) {
@@ -1697,7 +1707,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=092aa6443a51662d");
+const { initPortal } = await import("./portal.js?v=7f75039d97260881");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

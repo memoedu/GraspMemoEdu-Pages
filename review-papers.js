@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=092aa6443a51662d';
-import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
-import {voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=092aa6443a51662d';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=092aa6443a51662d';
-import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
-import {helpableContent, reportableContent} from './content-report.js?v=092aa6443a51662d';
-import {prepareMathContent} from './math-presentation.js?v=092aa6443a51662d';
+import {t, translateMessage} from './i18n.js?v=7f75039d97260881';
+import {setQuestionTools} from './question-tools.js?v=7f75039d97260881';
+import {voiceAnswerPending} from './voice-input.js?v=7f75039d97260881';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=7f75039d97260881';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=7f75039d97260881';
+import {createLearningCache} from './learning-cache.js?v=7f75039d97260881';
+import {helpableContent, reportableContent} from './content-report.js?v=7f75039d97260881';
+import {prepareMathContent} from './math-presentation.js?v=7f75039d97260881';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return prepareMathContent(x); };
-import {createContentTimer} from './content-timer.js?v=092aa6443a51662d';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=092aa6443a51662d';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=092aa6443a51662d';
-import {chunkPeek} from './memory-chunk.js?v=092aa6443a51662d';
-import {pointAssessment} from './point-assessment.js?v=092aa6443a51662d';
-import {trainingAudio} from './training-audio.js?v=092aa6443a51662d';
-import {learningHint} from './beginner-hints.js?v=092aa6443a51662d';
+import {createContentTimer} from './content-timer.js?v=7f75039d97260881';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=7f75039d97260881';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=7f75039d97260881';
+import {chunkPeek} from './memory-chunk.js?v=7f75039d97260881';
+import {pointAssessment} from './point-assessment.js?v=7f75039d97260881';
+import {trainingAudio} from './training-audio.js?v=7f75039d97260881';
+import {learningHint} from './beginner-hints.js?v=7f75039d97260881';
 
 export function createPaperView({root, request, href, getAccess, formatDate, progressChanged, courseSidebar, taskTree}) {
   const template = document.getElementById('appLayout').cloneNode(true);
@@ -25,6 +25,24 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
   let audioControl = null;
   let contentTimer = null, timeoutSync = false, timeoutRetry = null, timerElement = null;
   let activityTimer = null, activitySession = null, activityChain = Promise.resolve();
+  function acceptGrading(next) {
+    const previous = state;
+    state = next;
+    if (!next.job) return;
+    const event = `paper:${next.id}:${next.job}`;
+    if (next.phase === 'grading' && next.job_status !== 'error' && (previous.phase !== 'grading' || previous.job !== next.job)) {
+      const key = next.mode === 'paper' ? 'beginner.paperGrading' : 'beginner.questionGrading';
+      learningHint(getAccess(), t(key), `${event}:grading`, 'info');
+    } else if (next.job_status === 'judged' && (previous.phase === 'grading' || previous.job !== next.job)) {
+      const item = next.mode === 'question' && next.items.find((item, index) => item.completed && !previous.items[index]?.completed);
+      const wrong = item?.result?.correct === false;
+      const messages = [];
+      if (wrong) messages.push(t('beginner.incorrect'));
+      if (next.phase === 'done') messages.push(t('beginner.paperCompleted'));
+      else if (item && !wrong) messages.push(t('beginner.reviewQuestionCompleted'));
+      learningHint(getAccess(), messages.join(' '), `${event}:judged`, wrong ? 'incorrect' : 'success');
+    }
+  }
   function activity(active, keepalive = false) {
     if (!state?.timing || state.phase !== 'answer' || !activitySession) return Promise.resolve();
     const body = {paper_id: state.id, session_id: activitySession, active};
@@ -34,7 +52,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
       const next = await request(`review-papers/activity?subject_id=${encodeURIComponent(subject)}`, {method: 'POST', body, keepalive});
       if (e === epoch && state?.id === body.paper_id) {
         state.timing = next.timing; contentTimer?.update(state.timing);
-        if (next.phase !== 'answer' || next.can_edit === false) { state = next; render(); poll(e); }
+        if (next.phase !== 'answer' || next.can_edit === false) { acceptGrading(next); render(); poll(e); }
       }
     });
     return activityChain;
@@ -175,7 +193,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
       if (next.phase === 'answer' && next.can_edit !== false) {
         state.timing = next.timing; contentTimer?.update(state.timing);
       } else {
-        dirty.clear(); state = next; render(); poll(e);
+        dirty.clear(); acceptGrading(next); render(); poll(e);
       }
       if (next.timeout_pending) error(new Error(next.timeout_pending));
       if (next.phase === 'answer' && next.can_edit === false) timeoutRetry = setTimeout(() => { void synchronizeTimeout(); }, 3000);
@@ -192,7 +210,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
         const next = await post('draft', {paper_id: state.id, expected_revision: state.revision, answers: [draft]});
         if (e !== epoch) return;
         if (dirty.get(index) === draft) { dirty.delete(index); save('draft', index, null); }
-        state = next;
+        acceptGrading(next);
         contentTimer?.update(state.timing);
         if (state.phase !== 'answer' || state.can_edit === false) { dirty.clear(); render(); poll(e); break; }
         for (const [i, value] of dirty) Object.assign(state.items[i], value);
@@ -218,10 +236,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
         ...(index === null ? {} : {index, ...(state.items[index].multi_step ? {step_id: state.items[index].multi_step.current_step_id} : {})})};
       save('submission', 'pending', JSON.stringify(payload));
       const next = await post('submit', payload); if (e !== epoch) return;
-      state = next; render(); poll(e);
-      if (index === null && next.phase === 'grading') {
-        learningHint(getAccess(), t('beginner.paperGrading'), payload.request_id);
-      }
+      acceptGrading(next); render(); poll(e);
     } catch (failure) { error(failure); }
     finally { if (e === epoch) busy = false; }
   }
@@ -261,7 +276,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
       try {
         const next = await request('review-papers/state?paper_id=' + encodeURIComponent(state.id));
         if (e !== epoch) return;
-        state = next;
+        acceptGrading(next);
         if (state.job_status === 'judged') { save('submission', 'pending', null); progressChanged(); }
         render(); poll(e);
       } catch (failure) { if (e === epoch) { error(failure); poll(e); } }
