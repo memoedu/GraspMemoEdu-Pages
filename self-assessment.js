@@ -1,8 +1,7 @@
-import {t} from './i18n.js?v=3f8c0aacb32aa0ad';
-import {renderSavedFormulaText} from './formula-input.js?v=3f8c0aacb32aa0ad';
-import {answerEmpty} from './question-input.js?v=3f8c0aacb32aa0ad';
-import {prepareLiteralMath} from './math-presentation.js?v=3f8c0aacb32aa0ad';
-import {answerAssessment} from './point-assessment.js?v=3f8c0aacb32aa0ad';
+import {t} from './i18n.js?v=5590602bb2f05484';
+import {answerEmpty} from './question-input.js?v=5590602bb2f05484';
+import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=5590602bb2f05484';
+import {answerAssessment} from './point-assessment.js?v=5590602bb2f05484';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -10,29 +9,10 @@ const element = (tag, cls, text) => {
   return node;
 };
 
-let mathFragment = 0;
 export function prepareAnswerContent(root, {explanation = false} = {}) {
   root.classList.add('answerContent');
   if (explanation) prepareExplanationLayout(root);
-  prepareLiteralMath(root);
-  // Each mounted SVG fragment must resolve its own glyphs, even when the same
-  // explanation appears elsewhere in history or in another hidden reader.
-  const ids = new Map();
-  const prefix = `answer-math-${++mathFragment}-`;
-  for (const glyph of root.querySelectorAll('svg defs [id]')) {
-    const old = glyph.id; glyph.id = prefix + old; ids.set(old, glyph.id);
-  }
-  for (const use of root.querySelectorAll('svg use')) {
-    for (const attr of ['href', 'xlink:href']) {
-      const value = use.getAttribute(attr);
-      if (value?.startsWith('#') && ids.has(value.slice(1))) {
-        const next = '#' + ids.get(value.slice(1));
-        if (attr === 'xlink:href') use.setAttributeNS('http://www.w3.org/1999/xlink', attr, next);
-        else use.setAttribute(attr, next);
-      }
-    }
-  }
-  return root;
+  return prepareMathContent(root, {literal: true});
 }
 
 // Split only source boundaries. Moving DOM fragments retains TeX, images,
@@ -85,14 +65,13 @@ export function submittedAnswer(question, answer, display = answer) {
   if (!options.length) {
     const text = display || '';
     const body = element('pre', '', text);
-    if (!spec || spec.type === 'text') renderSavedFormulaText(body, text);
+    if (!spec || spec.type === 'text') renderPlainMath(body, text);
     return body;
   }
   const body = element('div', 'submittedAnswerBody');
   for (const option of options) {
     const row = element('div', 'choiceAnswer');
-    if (option.html) row.innerHTML = option.html;
-    else row.textContent = option.text;
+    setOptionContent(row, option);
     body.append(row);
   }
   return prepareAnswerContent(body);
@@ -107,7 +86,12 @@ export function referenceAnswer(question) {
   const body = element('div', 'courseContent referenceAnswerBody');
   const spec = question.interaction || question.question?.interaction;
   const items = question.choice_feedback?.items;
-  if (items?.length && document.body?.dataset?.subject === 'english') {
+  const correctIds = question.choice_feedback?.correct_ids;
+  const correctOptions = spec?.type === 'choice' && correctIds?.length
+    ? spec.options.filter(option => correctIds.includes(option.id)) : [];
+  if (correctOptions.length) {
+    for (const option of correctOptions) body.append(setOptionContent(element('div', 'choiceAnswer'), option));
+  } else if (items?.length && document.body?.dataset?.subject === 'english') {
     const results = new Map((answerAssessment(question)?.items || [])
       .filter(item => typeof item.correct === 'boolean').map(item => [item.id, item.correct]));
     const controls = spec.controls || spec.blanks || spec[spec.fixed_side] || [];
@@ -128,7 +112,7 @@ export function referenceAnswer(question) {
           answer.append(element('span', 'referenceLetter', String.fromCharCode(65 + options.indexOf(option))));
           if (correct !== true) {
             const text = element('span', 'referenceOptionText');
-            if (option.html) text.innerHTML = option.html; else text.textContent = option.text;
+            setOptionContent(text, option);
             answer.append(document.createTextNode(' · '), text);
           }
         }

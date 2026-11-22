@@ -1,6 +1,7 @@
-import {mountMermaid} from './vendor/mermaid/index.js?v=3f8c0aacb32aa0ad';
-import {renderBacklinks} from './vendor/document-backlinks.mjs?v=3f8c0aacb32aa0ad';
-import {t} from './i18n.js?v=3f8c0aacb32aa0ad';
+import {mountMermaid} from './vendor/mermaid/index.js?v=5590602bb2f05484';
+import {renderBacklinks} from './vendor/document-backlinks.mjs?v=5590602bb2f05484';
+import {t} from './i18n.js?v=5590602bb2f05484';
+import {prepareMathContent} from './math-presentation.js?v=5590602bb2f05484';
 
 export function referenceHref(target) {
   const base = `#/subjects/${encodeURIComponent(target.subject_id)}/topic/${encodeURIComponent(target.topic_id)}`;
@@ -137,6 +138,7 @@ export function enhanceSourceContent(root) {
     image.addEventListener('error', failed, {once:true});
     if (!image.getAttribute('src') || image.complete && !image.naturalWidth) failed();
   }
+  prepareMathContent(root);
 }
 
 export function mountTopicBacklinks(root, references) {

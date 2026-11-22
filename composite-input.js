@@ -1,5 +1,7 @@
 // Hallmark · component: composite-answer · genre: editorial · theme: existing learning UI
 // States: default, hover, focus, active, disabled, loading (parent), error, success.
+import {optionUsesMath, prepareMathContent, setOptionContent} from './math-presentation.js?v=5590602bb2f05484';
+
 const node = (tag, cls, text) => {
   const el = document.createElement(tag); el.className = cls;
   if (text !== undefined) el.textContent = text;
@@ -112,7 +114,8 @@ function takePassageQuestions(container, controls, mounted) {
 // its keyboard, option menu and form semantics.
 export function syncPassageField(field, correct) {
   const wrapper = field.closest?.('.passageBlank');
-  if (!wrapper || document.body?.dataset?.subject !== 'english') return;
+  const rich = field.dataset.mathOptions === 'true';
+  if (!wrapper || !rich && document.body?.dataset?.subject !== 'english') return;
   const text = field.tagName === 'SELECT' ? field.selectedOptions[0]?.dataset.text || ''
     : field.value ?? field.textContent;
   wrapper.dataset.filled = String(Boolean(text));
@@ -127,8 +130,14 @@ export function syncPassageField(field, correct) {
         try { field.showPicker?.(); } catch { /* Keyboard selection remains available. */ }
       });
       wrapper.append(display); wrapper.classList.add('passageSelectWrap');
+      if (rich) wrapper.classList.add('passageMathSelect');
     }
-    display.textContent = text;
+    if (display.dataset.selection !== field.value) {
+      display.dataset.selection = field.value;
+      const selected = passageOptions.get(field)?.find(option => option.id === field.value);
+      if (rich && selected) setOptionContent(display, selected);
+      else display.textContent = text;
+    }
   }
   if (field.tagName === 'TEXTAREA' && !CSS.supports('field-sizing', 'content')) {
     field.style.width = `${Math.max(3, text.length + 1)}ch`;
@@ -232,12 +241,18 @@ export function mountPassageBlanks(container, controls, createField, {numbered =
   return mounted;
 }
 
+const passageOptions = new WeakMap();
 export function passageSelect(control, number, {formId, disabled = false} = {}) {
   const field = node('select', 'passageBlankField passageBlankSelect'); field.dataset.controlId = control.id;
   field.setAttribute('aria-label', control.label || `第 ${number} 空`); field.disabled = disabled;
   if (formId) field.setAttribute('form', formId);
+  if (control.options.some(optionUsesMath)) {
+    field.dataset.mathOptions = 'true';
+    passageOptions.set(field, control.options);
+  }
   control.options.forEach((option, index) => {
-    const item = node('option', '', `${String.fromCharCode(65 + index)} · ${option.text}`);
+    const letter = String.fromCharCode(65 + index);
+    const item = node('option', '', optionUsesMath(option) ? letter : letter + ' · ' + option.text);
     item.value = option.id; item.dataset.text = option.text; field.append(item);
   });
   field.selectedIndex = -1;
@@ -320,6 +335,7 @@ export function compositeInput(spec, {id, value = '', stem, disabled = false, fo
       const part = spec.sections[index], panel = node('section', 'compositeSection');
       if (spec.sections.length > 1) panel.append(node('p', 'stepCounter', `${index + 1} / ${spec.sections.length}`));
       const text = node('div', 'courseContent'); text.innerHTML = part.html; (sourceSections || panel).append(text);
+      prepareMathContent(text);
       const localFields = mountPassageBlanks(text, spec.controls.filter(c => part.control_ids.includes(c.id)), inlineField, gapOptions);
       const localPrompts = split ? takePassageQuestions(text, spec.controls, localFields) : new Map();
       sectionFields.push(...localFields);
@@ -346,8 +362,7 @@ export function compositeInput(spec, {id, value = '', stem, disabled = false, fo
               choice.dataset.answerTruth = String(answerIds.includes(option.id));
             if (formId) radio.setAttribute('form', formId);
             const content = node('span', 'choiceBody');
-            // Rich option HTML uses the same compiled, sanitized source as the question.
-            if (option.html) content.innerHTML = option.html; else content.textContent = option.text;
+            setOptionContent(content, option);
             radio.addEventListener('change', () => { if (radio.checked) changed(control, option.id); });
             choice.append(radio, node('span', 'choiceLetter', String.fromCharCode(65 + optionIndex)), content); list.append(choice);
           });

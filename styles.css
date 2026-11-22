@@ -284,9 +284,12 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .courseContent code { font-family: Consolas, monospace; font-size: .93em; }
 .courseContent blockquote { border-left: 3px solid var(--control-border); margin: 18px 0; padding-left: 15px; color: #666; }
 .exampleExplanationHeader { font-size: 15px; font-weight: 700; color: var(--ma-navy); margin: 27px 0 20px; padding-top: 20px; border-top: 1px solid var(--ma-border); }
-.mathDisplay { margin: 20px 0; text-align: center; overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.mathDisplay { display: block; margin: 20px 0; text-align: center; overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
 .mathDisplay mjx-container { display: block; margin: 0 !important; }
 .mathInline { display: inline; }
+.runtimeMath.mathDisplay .katex-display { margin: 0; }
+:is(.choiceBody,.statementBody,.matchingSlot,.matchingOption,.choiceAnswer) .mathDisplay { margin: 0; }
+.matchingSlot, .matchingOption { max-width: 100%; }
 mjx-container[jax="SVG"] { direction: ltr; }
 mjx-container[jax="SVG"] > svg { max-width: 100%; overflow: visible; vertical-align: middle; }
 mjx-container[jax="SVG"][display="true"] { display: block; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding: 3px 0; }
@@ -501,6 +504,11 @@ body[data-subject="english"] .passageBlank.passageSelectWrap[data-filled="false"
 body[data-subject="english"] .passageSelectWrap .passageBlankSelect { position: absolute; inset: 0 auto auto 0; opacity: 0; width: 1px; height: 1px; min-height: 0; padding: 0; }
 .passageBlankDisplay { cursor: pointer; white-space: pre-wrap; overflow-wrap: anywhere; }
 .passageBlankDisplay:empty { display: inline-block; width: 2.4em; min-height: 1em; }
+.passageMathSelect { display: inline-flex; align-items: center; position: relative; max-width: 100%; }
+.passageMathSelect .passageBlankSelect { position: absolute; inset: 0 auto auto 0; opacity: 0; width: 1px; height: 1px; min-height: 0; padding: 0; }
+.passageMathSelect .passageBlankDisplay { display: inline-block; overflow: auto; max-width: 100%; }
+.passageMathSelect .passageBlankDisplay::after { content: '▾'; padding-inline-start: .3em; }
+.passageMathSelect .passageBlankDisplay p { margin: 0; display: inline; }
 .passageSelectWrap:focus-within { outline: 2px solid var(--link-color); outline-offset: 2px; }
 .passageSelectWrap:has(select:disabled) .passageBlankDisplay { cursor: default; }
 body[data-subject="english"] .passageBlank .passageGrowingText { field-sizing: content; flex: 0 1 auto; width: auto; min-width: 3ch; max-width: 100%; min-height: 1.5em; height: auto; padding: .08em .12em; resize: none; overflow: hidden; white-space: pre-wrap; line-height: 1.65; vertical-align: baseline; }

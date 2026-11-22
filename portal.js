@@ -1,27 +1,28 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=3f8c0aacb32aa0ad";
-import {attachFormulaEditing, renderSavedFormulaText} from './formula-input.js?v=3f8c0aacb32aa0ad';
-import { createReviewView } from "./review.js?v=3f8c0aacb32aa0ad";
-import { renderCourseGraph } from "./course-graph.js?v=3f8c0aacb32aa0ad";
-import {questionInput, choiceTypeField} from './question-input.js?v=3f8c0aacb32aa0ad';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=3f8c0aacb32aa0ad';
-import {enhanceTopicContent} from './topic-content.js?v=3f8c0aacb32aa0ad';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=3f8c0aacb32aa0ad';
-import {createCatalogPicker} from './catalog-picker.js?v=3f8c0aacb32aa0ad';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=3f8c0aacb32aa0ad';
-import {createAtomicView} from './atomic.js?v=3f8c0aacb32aa0ad';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=3f8c0aacb32aa0ad';
-import {sourceAttributions} from './memory-chunk.js?v=3f8c0aacb32aa0ad';
-import {createTrainingView} from './training.js?v=3f8c0aacb32aa0ad';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=3f8c0aacb32aa0ad";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=5590602bb2f05484";
+import {attachFormulaEditing} from './formula-input.js?v=5590602bb2f05484';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=5590602bb2f05484';
+import { createReviewView } from "./review.js?v=5590602bb2f05484";
+import { renderCourseGraph } from "./course-graph.js?v=5590602bb2f05484";
+import {questionInput, choiceTypeField} from './question-input.js?v=5590602bb2f05484';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=5590602bb2f05484';
+import {enhanceTopicContent} from './topic-content.js?v=5590602bb2f05484';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=5590602bb2f05484';
+import {createCatalogPicker} from './catalog-picker.js?v=5590602bb2f05484';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=5590602bb2f05484';
+import {createAtomicView} from './atomic.js?v=5590602bb2f05484';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=5590602bb2f05484';
+import {sourceAttributions} from './memory-chunk.js?v=5590602bb2f05484';
+import {createTrainingView} from './training.js?v=5590602bb2f05484';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=5590602bb2f05484";
 
-import {createPaperView} from './review-papers.js?v=3f8c0aacb32aa0ad';
-import {createContextLibraryView} from './context-library.js?v=3f8c0aacb32aa0ad';
+import {createPaperView} from './review-papers.js?v=5590602bb2f05484';
+import {createContextLibraryView} from './context-library.js?v=5590602bb2f05484';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=3f8c0aacb32aa0ad';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3f8c0aacb32aa0ad';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=3f8c0aacb32aa0ad';
-import {createStudentDashboard} from './student-dashboard.js?v=3f8c0aacb32aa0ad';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=3f8c0aacb32aa0ad';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=5590602bb2f05484';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=5590602bb2f05484';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=5590602bb2f05484';
+import {createStudentDashboard} from './student-dashboard.js?v=5590602bb2f05484';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=5590602bb2f05484';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -41,7 +42,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=3f8c0aacb32aa0ad').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=5590602bb2f05484').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1141,6 +1142,7 @@ export function initPortal(bridge) {
           const fragment = await guideContent(result.html, ticket, currentRoute.subjectId);
           if (ticket !== sequence) return;
           body.replaceChildren(fragment);
+          prepareMathContent(body);
           enhanceMarkdownOutline(body, {expanded: guideExpansion,
             keyPrefix: `guide:${bridge.getAccess()?.learner_id}:${currentRoute.subjectId}`});
           mathStyle(result.math_css, "guideMathStyle");
@@ -1838,7 +1840,7 @@ export function initPortal(bridge) {
     for (const [preview, value] of [[originalPreview, quote.exact], [replacementPreview, replacementInput.value]]) {
       const highlight = node('strong', '', value);
       preview.replaceChildren(document.createTextNode(quote.prefix), highlight, document.createTextNode(quote.suffix));
-      renderSavedFormulaText(highlight, value);
+      renderPlainMath(highlight, value);
     }
   }
   replacementInput.addEventListener('input', previewCorrection);

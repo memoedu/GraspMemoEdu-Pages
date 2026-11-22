@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=3f8c0aacb32aa0ad';
+import {t} from './i18n.js?v=5590602bb2f05484';
 
 const blocks = new WeakMap();
 const helpBlocks = new WeakMap();
@@ -77,6 +77,7 @@ export function reportableContent(element, context, contentBlockId, contentVersi
 function rangeText(range) {
   const fragment = range.cloneContents();
   fragment.querySelectorAll('[data-content-actions], [data-help-action]').forEach(action => action.remove());
+  for (const math of fragment.querySelectorAll('[data-math-source]')) math.replaceWith(document.createTextNode(math.dataset.mathSource));
   for (const input of fragment.querySelectorAll('[data-blank-id]')) input.replaceWith(document.createTextNode(`{{blank:${input.dataset.blankId}}}`));
   return fragment.textContent;
 }
@@ -91,6 +92,8 @@ export function installContentReporting(showFeedback) {
     const selection = document.getSelection();
     if (!selection?.rangeCount || selection.isCollapsed) return null;
     const range = selection.getRangeAt(0), block = blockOf(range.startContainer);
+    const insideMath = node => (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement)?.closest('[data-math-source]');
+    if (insideMath(range.startContainer) || insideMath(range.endContainer)) return null;
     if (!block || block !== blockOf(range.endContainer) || !blocks.has(block) || block.closest('[hidden]')) return null;
     const exact = rangeText(range);
     if (!exact.trim() || [...exact].length > 2000) return null;

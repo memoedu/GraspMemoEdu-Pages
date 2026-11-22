@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=3f8c0aacb32aa0ad';
-import {attachFormulaEditing} from './formula-input.js?v=3f8c0aacb32aa0ad';
-import {prepareLiteralMath} from './math-presentation.js?v=3f8c0aacb32aa0ad';
-import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=3f8c0aacb32aa0ad';
-import {enhanceSourceContent} from './topic-content.js?v=3f8c0aacb32aa0ad';
+import {t} from './i18n.js?v=5590602bb2f05484';
+import {attachFormulaEditing} from './formula-input.js?v=5590602bb2f05484';
+import {setOptionContent} from './math-presentation.js?v=5590602bb2f05484';
+import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=5590602bb2f05484';
+import {enhanceSourceContent} from './topic-content.js?v=5590602bb2f05484';
 
 const node = (tag, cls, text) => {
   const element = document.createElement(tag); element.className = cls;
@@ -55,9 +55,7 @@ export function questionInput(spec, {id, value = '', stem, disabled = false, for
   };
   const options = side => new Map(spec[side].map(item => [item.id, item.text]));
   const optionContent = (element, item) => {
-    if (item?.html) element.innerHTML = item.html; // Compiled with the existing safe Markdown/MathJax importer.
-    else element.textContent = item?.text || '';
-    prepareLiteralMath(element);
+    setOptionContent(element, item);
     if(item?.html)enhanceSourceContent(element);
   };
   const normalize = () => {
