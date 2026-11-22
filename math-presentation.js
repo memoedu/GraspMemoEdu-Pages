@@ -1,5 +1,5 @@
-// Typography for legacy plain mathematical expressions, without changing answers.
-// Already compiled TeX/SVG, code, URLs and ordinary prose remain untouched.
+import {escapedAt, mathSpans} from './math-syntax.js?v=5590602bb2f05484';
+
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
 const letter = /[A-Za-zΑ-Ωα-ω]/;
@@ -72,18 +72,197 @@ function formula(segment) {
   return math;
 }
 
-export function prepareLiteralMath(root) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+const protectedContent = 'mjx-container,math,svg,code,pre,kbd,samp,a,script,style,textarea,input,select,[data-tex],[data-math-source],.katex,[contenteditable="true"]';
+const pendingText = new WeakSet();
+const pendingDisplays = new WeakSet();
+const mountedSvg = new WeakSet();
+let fragmentNumber = 0, renderer;
+
+function loadRenderer() {
+  renderer ||= import('./vendor/formula/editor.mjs?v=5590602bb2f05484').catch(error => { renderer = null; throw error; });
+  return renderer;
+}
+
+function mathText(text, spans, renderLatex, requireComplete = false) {
+  const fragment = document.createDocumentFragment();
+  let from = 0;
+  for (const span of spans) {
+    const node = document.createElement('span');
+    if (!renderLatex(node, span.latex, span.display)) {
+      if (requireComplete) return null;
+      continue;
+    }
+    node.dataset.mathSource = span.raw;
+    node.className = span.display ? 'runtimeMath mathDisplay' : 'runtimeMath mathInline';
+    fragment.append(text.slice(from, span.from), node);
+    from = span.to;
+  }
+  if (!from) return null;
+  fragment.append(text.slice(from));
+  return fragment;
+}
+
+export function renderPlainMath(element, text = element.textContent) {
+  const spans = [...mathSpans(text)];
+  if (!spans.length) return;
+  void loadRenderer().then(({renderLatex}) => {
+    if (element.textContent !== text || element.querySelector('[data-math-source]')) return;
+    const fragment = mathText(text, spans, renderLatex);
+    if (fragment) element.replaceChildren(fragment);
+  }).catch(() => {});
+}
+
+function scopeGlyphs(root) {
+  const svgs = [...root.querySelectorAll('svg')].filter(svg => !mountedSvg.has(svg));
+  if (!svgs.length) return;
+  const ids = new Map(), prefix = 'rendered-math-' + ++fragmentNumber + '-';
+  let count = 0;
+  for (const svg of svgs) {
+    mountedSvg.add(svg);
+    // MathJax cache identifiers can repeat in separate mounts of stored HTML.
+    for (const glyph of svg.querySelectorAll('defs :is([id^="MJX-"],[id^="rendered-math-"])')) {
+      const old = glyph.id;
+      glyph.id = prefix + ++count;
+      if (!ids.has(old)) ids.set(old, glyph.id);
+    }
+  }
+  if (!ids.size) return;
+  for (const svg of svgs) for (const use of svg.querySelectorAll('use')) {
+    const href = use.getAttribute('href');
+    const xlink = use.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (href?.startsWith('#') && ids.has(href.slice(1))) use.setAttribute('href', '#' + ids.get(href.slice(1)));
+    if (xlink?.startsWith('#') && ids.has(xlink.slice(1))) use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#' + ids.get(xlink.slice(1)));
+  }
+}
+
+// Some older imports put the matrix in a display node between two paragraphs
+// and left the enclosing inline formula's delimiters as text. Keep the matrix
+// SVG and restore the inline sequence when its original boundaries survive.
+function joinSplitMath(root) {
+  const legacy = '.mathDisplay:not([data-tex]) > mjx-container[display="true"]';
+  for (const math of root.querySelectorAll(legacy)) {
+    if (pendingDisplays.has(math)) continue;
+    const display = math.parentElement, before = display.previousElementSibling;
+    const start = before?.matches('p') && before.lastChild;
+    if (start?.nodeType !== Node.TEXT_NODE) continue;
+    const dollars = [...start.data.matchAll(/\$/g)].filter(match => !escapedAt(start.data, match.index));
+    if (dollars.length !== 1) continue;
+    const offset = dollars[0].index, prefix = start.data.slice(offset + 1);
+    if (prefix.trim() && !/\\[A-Za-z]|[_^=]/.test(prefix)) continue;
+    const parts = [{text: start, from: offset, raw: start.data.slice(offset), latex: prefix}], blocks = [];
+    let current = display, end;
+    while (current?.firstElementChild?.matches(legacy)) {
+      const after = current.nextElementSibling;
+      if (!after?.matches('p') || after.firstChild?.nodeType !== Node.TEXT_NODE) break;
+      const text = after.firstChild;
+      const close = [...text.data.matchAll(/\$/g)].find(match => !escapedAt(text.data, match.index));
+      const tail = text.data.slice(0, close?.index);
+      blocks.push(current, after);
+      if (close) {
+        parts.push({text, from: 0, raw: tail + '$', latex: tail});
+        end = after;
+        break;
+      }
+      if (after.childNodes.length !== 1 || !/\\[A-Za-z]|[_^=]/.test(tail)) break;
+      parts.push({text, from: 0, raw: tail, latex: tail});
+      current = after.nextElementSibling;
+    }
+    if (!end) continue;
+    for (const block of blocks) if (block.matches('.mathDisplay')) pendingDisplays.add(block.firstElementChild);
+    void loadRenderer().then(({renderLatex}) => {
+      if (before.nextElementSibling !== display || blocks.some(block => block.parentNode !== before.parentNode)
+          || parts.some(part => !part.text.parentNode || !part.text.data.startsWith(part.raw, part.from))) return;
+      const pieces = parts.map(({raw, latex}) => {
+        const fragment = document.createElement('span');
+        fragment.dataset.mathSource = raw;
+        const source = latex.trim();
+        if (!source) fragment.hidden = true;
+        else if (!renderLatex(fragment, /^[\^_]/.test(source) ? '{}' + source : source, false)) return null;
+        return fragment;
+      });
+      if (pieces.some(piece => !piece)) return;
+      for (const [index, {text, from, raw}] of parts.entries()) {
+        const after = text.splitText(from);
+        after.deleteData(0, raw.length);
+        after.before(pieces[index]);
+      }
+      for (const block of blocks) {
+        while (before.nextSibling && before.nextSibling !== block) before.append(before.nextSibling);
+        if (block.matches('.mathDisplay')) {
+          block.classList.replace('mathDisplay', 'mathInline');
+          block.firstElementChild.removeAttribute('display');
+          before.append(block);
+        } else {
+          before.append(...block.childNodes);
+          block.remove();
+        }
+      }
+    }).catch(() => {});
+  }
+}
+
+export function prepareMathContent(root, {literal = false} = {}) {
+  scopeGlyphs(root);
+  const source = root.textContent;
+  if (!/[$\\]/.test(source) && (!literal || !/[Α-Ωα-ω_^=<>≤≥≠+−*\/×·±-]/.test(source))) return root;
+  joinSplitMath(root);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), plain = [];
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    if (!node.parentElement?.closest('mjx-container,math,svg,code,pre,a,[data-tex]')) nodes.push(node);
+    if (!node.parentElement || node.parentElement.closest(protectedContent) || pendingText.has(node)) continue;
+    const text = node.data;
+    if (/[$\\]/.test(text)) {
+      const spans = [...mathSpans(text)];
+      if (!spans.length) continue;
+      pendingText.add(node);
+      void loadRenderer().then(({renderLatex}) => {
+        if (!node.parentNode || node.data !== text) return;
+        const fragment = mathText(text, spans, renderLatex);
+        if (fragment) node.replaceWith(fragment);
+      }).catch(() => {}).finally(() => pendingText.delete(node));
+      continue;
+    }
+    if (literal) plain.push(node);
   }
-  for (const node of nodes) {
-    const segments = literalMathSegments(node.textContent);
+  for (const node of plain) {
+    const segments = literalMathSegments(node.data);
     if (!segments.some(segment => segment.tokens)) continue;
     const fragment = document.createDocumentFragment();
     for (const segment of segments) fragment.append(segment.tokens ? formula(segment) : document.createTextNode(segment.text));
     node.replaceWith(fragment);
   }
   return root;
+}
+
+export function optionUsesMath(item) {
+  return /(?:mjx-container|<math\b)/i.test(item.html || '') || !mathSpans(item.text || '').next().done;
+}
+
+export function setOptionContent(element, item) {
+  const text = item?.text || '';
+  if (!item?.html) element.textContent = text;
+  else {
+    // The HTML field is compiled and sanitized on import.
+    element.innerHTML = item.html;
+    const spans = [...mathSpans(text)];
+    const singleFormula = spans.length === 1 && spans[0].raw === text.trim();
+    // Older Math Academy options split an environment out of its enclosing
+    // inline formula. Re-render from the option source if only fragment
+    // paragraphs and the compiled formulas are present.
+    if (spans.length && element.querySelector('.mathDisplay > mjx-container')
+        && element.textContent.includes('$')
+        && !element.querySelector('img,a,code,pre,table')
+        && (singleFormula || [...element.children].every(child => child.matches('p,.mathDisplay,.mathInline'))
+          && !element.querySelector('em,strong,ul,ol'))) {
+      const first = element.firstChild;
+      void loadRenderer().then(({renderLatex}) => {
+        if (element.firstChild !== first) return;
+        const fragment = mathText(text, spans, renderLatex, true);
+        if (fragment) element.replaceChildren(fragment);
+      }).catch(() => {});
+      scopeGlyphs(element);
+      return element;
+    }
+  }
+  return prepareMathContent(element, {literal: true});
 }
