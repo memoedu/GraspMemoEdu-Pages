@@ -115,10 +115,14 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .helpContentBlock { border: 2px solid var(--ma-blue); }
 .helpContentBlock:focus { outline: 2px solid var(--ma-blue); outline-offset: 3px; }
 .helpContentText { white-space: pre-wrap; }
-.contentReportActions { display: flex; flex-direction: column; align-items: flex-end; gap: 1.5em; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
-.contentReportActions > button { position: static; font-size: inherit; line-height: inherit; padding: 0; }
-.contentReportActions > .requestHelpButton { color: #0874b9; }
-.contentReportActions > .contentQualityButton { color: #c62828; }
+/* Hallmark · content feedback menu · P4 H5 E4 S5 R5 V4 */
+.contentReportActions { position: relative; display: flex; width: max-content; margin: 0 0 12px auto; }
+.contentReportToggle { width: 22px; height: 22px; border: 1px solid #d4dbe0; border-radius: 50%; color: #818181; background: #fff; padding: 0; font-size: 13px; user-select: none; }
+.contentReportToggle:is(:hover, [aria-expanded="true"]) { border-color: var(--control-border); background: var(--soft-blue); }
+.contentReportMenu { position: absolute; inset: 100% 0 auto auto; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; gap: 1.5em; width: max-content; padding: 10px 12px; border: 1px solid var(--ma-border); background: #fff; font-size: 13px; line-height: 1.5; user-select: none; }
+.contentReportMenu > button { position: static; font-size: inherit; line-height: inherit; padding: 0; }
+.contentReportMenu > .requestHelpButton { color: #0874b9; }
+.contentReportMenu > .contentQualityButton { color: #c62828; }
 .trainingNotebookActions { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; }
 .trainingNotebookButton { display: inline-flex; align-items: center; gap: 6px; color: #7e22ce; font-size: 13px; line-height: 1.5; padding: 0 0 2px; border-bottom: 1px solid transparent; border-radius: 0; }
 .trainingNotebookButton:is(:hover, :focus-visible, :active, :disabled) { color: #7e22ce; text-decoration: none; opacity: 1; }
@@ -282,7 +286,7 @@ mjx-container[jax="SVG"] text { font-family: "Microsoft YaHei", sans-serif; }
   *, *::before, *::after { animation-duration: 1.7s !important; transition: none !important; scroll-behavior: auto !important; }
 }
 @media print {
-  .appHeader, .lessonToolbar, .historySidebar, .historyDrawerToggle, .historyScrim, .appLayout::before, .reviewNotice, .learningActions, .stepNavigation, .lessonFooter, .notice, .identityDialog, .waiting { display: none !important; }
+  .appHeader, .lessonToolbar, .historySidebar, .historyDrawerToggle, .historyScrim, .appLayout::before, .reviewNotice, .learningActions, .stepNavigation, .lessonFooter, .notice, .identityDialog, .waiting, .contentReportActions { display: none !important; }
   .appLayout, .appLayout.historyCollapsed { display: block; padding: 0; }
   .pageShell { max-width: none; margin: 0; }
   .lesson { margin: 0; }

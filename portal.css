@@ -253,11 +253,7 @@ button.taskCompleted:hover { border-color: var(--task-hover-border); }
 .answerGroupTitle { border: 1px solid #eaeaea; padding: 15px; color: var(--ma-navy); font-size: 14px; font-weight: 400; margin: 0; }
 .answerRecord { margin: 20px 0; border: 1px solid #eaeaea; }
 .answerRecordHeader { display: flex; justify-content: space-between; align-items: center; padding: 11px 15px; color: #6f6f6f; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
-.answerHelp { width: 22px; height: 22px; border: 1px solid #d4dbe0; border-radius: 50%; color: #818181; background: #fff; padding: 0; font-size: 13px; }
-.answerHelpHost { position: relative; }
-.answerHelpMenu { position: absolute; right: 0; top: 20px; z-index: 5; border: 1px solid #ddd; background: #fff; padding: 5px 0; min-width: 180px; }
-.answerHelpMenu button { border: 0; background: #fff; color: #666; padding: 8px 12px; width: 100%; text-align: left; font-size: 12px; }
-.answerHelpMenu button:hover { background: #f2f2f2; }
+.answerRecordHeader > .contentReportActions { margin: 0; }
 .answerQuestion { padding: 15px; cursor: pointer; }
 .answerMetadata { display: flex; gap: 10px 20px; flex-wrap: wrap; padding: 5px 15px 12px; color: #929292; font-size: 12px; }
 .answerOutcome { margin-left: auto; color: #777; }
@@ -439,7 +435,7 @@ body.portalModalOpen { overflow: hidden; }
   .graphDialog, .feedbackDialog { padding: 18px; }
   .topicBreadcrumb { font-size: 12px; }
 }
-@media print { .topRibbon, .topicBreadcrumb, .portalStart, .answerHelp, .feedbackDialog, .graphDialog { display: none !important; } body { padding-top: 0; } }
+@media print { .topRibbon, .topicBreadcrumb, .portalStart, .feedbackDialog, .graphDialog { display: none !important; } body { padding-top: 0; } }
 .catalogToggle { border: 0; border-bottom: 3px solid transparent; background: transparent; font-family: inherit; font-weight: inherit; line-height: inherit; cursor: pointer; }
 .atomicLayout { display: grid; grid-template-columns: 220px minmax(0, 760px); gap: 36px; margin: 25px auto; }
 .atomicAnswerLayout { grid-template-columns: minmax(0, 760px); justify-content: center; }

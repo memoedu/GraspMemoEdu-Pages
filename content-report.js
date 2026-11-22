@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=8249a057afad057f';
+import {t} from './i18n.js?v=b17c5804797fc6e3';
 
 const blocks = new WeakMap();
 const helpBlocks = new WeakMap();
@@ -26,13 +26,39 @@ function updateHelpButton(element) {
   if (!helpPolicy?.()?.features?.includes('request_help')) { actions?.remove(); return; }
   if (actions) return;
   actions = document.createElement('div'); actions.className = 'contentReportActions'; actions.dataset.contentActions = 'true';
+  const toggle = document.createElement('button');
+  toggle.type = 'button'; toggle.className = 'contentReportToggle'; toggle.textContent = '?';
+  toggle.setAttribute('aria-label', t('portal.question.help.78'));
+  const menu = document.createElement('div'); menu.className = 'contentReportMenu';
+  function setOpen(open) {
+    menu.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+  setOpen(false);
+  actions.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') setOpen(true); });
+  actions.addEventListener('pointerleave', event => {
+    if (event.pointerType === 'mouse' && !menu.contains(document.activeElement)) setOpen(false);
+  });
+  toggle.addEventListener('click', event => setOpen(event.pointerType === 'mouse' || menu.hidden));
+  actions.addEventListener('focusout', event => {
+    if (!actions.contains(event.relatedTarget)) setOpen(false);
+  });
+  actions.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || menu.hidden) return;
+    event.stopPropagation();
+    toggle.focus(); setOpen(false);
+  });
   for (const kind of ['quality', 'help']) {
     const action = document.createElement('button'); action.type = 'button';
     action.className = `textButton ${kind === 'quality' ? 'contentQualityButton' : 'requestHelpButton'}`;
     action.dataset.helpAction = kind; action.textContent = t(kind === 'quality' ? 'help.quality' : 'help.request');
-    action.addEventListener('click', () => showHelp?.({...helpBlocks.get(element), kind}));
-    actions.append(action);
+    action.addEventListener('click', () => {
+      toggle.focus(); setOpen(false);
+      showHelp?.({...helpBlocks.get(element), kind});
+    });
+    menu.append(action);
   }
+  actions.append(toggle, menu);
   if (host === element) element.prepend(actions); else host.append(actions);
 }
 export function installHelpRequests(getAccess, open) {
