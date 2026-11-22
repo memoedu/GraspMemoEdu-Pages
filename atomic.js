@@ -1,15 +1,16 @@
-import {t, translateMessage} from './i18n.js?v=bacb3c1fa9155d6c';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bacb3c1fa9155d6c';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=bacb3c1fa9155d6c';
-import {reportableContent} from './content-report.js?v=bacb3c1fa9155d6c';
-import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=bacb3c1fa9155d6c';
-import {enhanceSourceContent} from './topic-content.js?v=bacb3c1fa9155d6c';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=bacb3c1fa9155d6c';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=bacb3c1fa9155d6c';
-import {pointAssessment} from './point-assessment.js?v=bacb3c1fa9155d6c';
-import {trainingAudio} from './training-audio.js?v=bacb3c1fa9155d6c';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=bacb3c1fa9155d6c';
+import {t, translateMessage} from './i18n.js?v=ad5665f8f97afbd9';
+import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ad5665f8f97afbd9';
+import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
+import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ad5665f8f97afbd9';
+import {enhanceSourceContent} from './topic-content.js?v=ad5665f8f97afbd9';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ad5665f8f97afbd9';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
+import {trainingAudio} from './training-audio.js?v=ad5665f8f97afbd9';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ad5665f8f97afbd9';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -215,6 +216,7 @@ export function createAtomicView(bridge) {
   function renderQuestion(question, history = false) {
     const box = node('section', 'atomicQuestion'); box.dataset.cardId = question.card_id;
     box.append(node('h2', '', question.title));
+    const calculator = calculatorButton(question.calculate); if (calculator) box.append(calculator);
     const stem = marked(question.html, `question:${question.card_id}`, question.card_id);
     const typeField = choiceTypeField(question.interaction); if (typeField) box.append(typeField);
     box.append(stem);

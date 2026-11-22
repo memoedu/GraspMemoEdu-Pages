@@ -1,0 +1,2334 @@
+Bundled license information:
+
+@stdlib/utils-define-property/lib/define_property.js:
+@stdlib/utils-define-property/lib/has_define_property_support.js:
+@stdlib/math-base-special-abs/lib/main.js:
+@stdlib/array-base-filled/lib/main.js:
+@stdlib/array-base-filled/lib/index.js:
+@stdlib/array-base-zeros/lib/main.js:
+@stdlib/array-base-zeros/lib/index.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2021 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/utils-define-property/lib/builtin.js:
+@stdlib/utils-define-property/lib/polyfill.js:
+@stdlib/utils-define-property/lib/index.js:
+@stdlib/utils-define-read-only-property/lib/main.js:
+@stdlib/utils-define-read-only-property/lib/index.js:
+@stdlib/utils-define-nonenumerable-read-only-property/lib/main.js:
+@stdlib/utils-define-nonenumerable-read-only-property/lib/index.js:
+@stdlib/math-base-assert-is-nan/lib/main.js:
+@stdlib/math-base-assert-is-nan/lib/index.js:
+@stdlib/math-base-special-floor/lib/main.js:
+@stdlib/math-base-special-floor/lib/index.js:
+@stdlib/math-base-special-ceil/lib/main.js:
+@stdlib/math-base-special-ceil/lib/index.js:
+@stdlib/math-base-special-trunc/lib/main.js:
+@stdlib/math-base-special-trunc/lib/index.js:
+@stdlib/number-ctor/lib/main.js:
+@stdlib/number-ctor/lib/index.js:
+@stdlib/constants-float64-ninf/lib/index.js:
+@stdlib/constants-float64-pinf/lib/index.js:
+@stdlib/constants-float64-exponent-bias/lib/index.js:
+@stdlib/constants-float64-max-base2-exponent/lib/index.js:
+@stdlib/constants-float64-max-base2-exponent-subnormal/lib/index.js:
+@stdlib/constants-float64-min-base2-exponent-subnormal/lib/index.js:
+@stdlib/math-base-assert-is-infinite/lib/main.js:
+@stdlib/math-base-assert-is-infinite/lib/index.js:
+@stdlib/assert-has-symbol-support/lib/main.js:
+@stdlib/assert-has-symbol-support/lib/index.js:
+@stdlib/assert-has-tostringtag-support/lib/main.js:
+@stdlib/assert-has-tostringtag-support/lib/index.js:
+@stdlib/utils-native-class/lib/tostring.js:
+@stdlib/utils-native-class/lib/main.js:
+@stdlib/assert-has-own-property/lib/main.js:
+@stdlib/assert-has-own-property/lib/index.js:
+@stdlib/symbol-ctor/lib/main.js:
+@stdlib/symbol-ctor/lib/index.js:
+@stdlib/utils-native-class/lib/tostringtag.js:
+@stdlib/utils-native-class/lib/polyfill.js:
+@stdlib/utils-native-class/lib/index.js:
+@stdlib/assert-is-uint32array/lib/main.js:
+@stdlib/assert-is-uint32array/lib/index.js:
+@stdlib/constants-uint32-max/lib/index.js:
+@stdlib/assert-has-uint32array-support/lib/uint32array.js:
+@stdlib/assert-has-uint32array-support/lib/main.js:
+@stdlib/assert-has-uint32array-support/lib/index.js:
+@stdlib/array-uint32/lib/main.js:
+@stdlib/array-uint32/lib/polyfill.js:
+@stdlib/array-uint32/lib/index.js:
+@stdlib/assert-is-float64array/lib/main.js:
+@stdlib/assert-is-float64array/lib/index.js:
+@stdlib/assert-has-float64array-support/lib/float64array.js:
+@stdlib/assert-has-float64array-support/lib/main.js:
+@stdlib/assert-has-float64array-support/lib/index.js:
+@stdlib/array-float64/lib/main.js:
+@stdlib/array-float64/lib/polyfill.js:
+@stdlib/array-float64/lib/index.js:
+@stdlib/assert-is-uint8array/lib/main.js:
+@stdlib/assert-is-uint8array/lib/index.js:
+@stdlib/constants-uint8-max/lib/index.js:
+@stdlib/assert-has-uint8array-support/lib/uint8array.js:
+@stdlib/assert-has-uint8array-support/lib/main.js:
+@stdlib/assert-has-uint8array-support/lib/index.js:
+@stdlib/array-uint8/lib/main.js:
+@stdlib/array-uint8/lib/polyfill.js:
+@stdlib/array-uint8/lib/index.js:
+@stdlib/assert-is-uint16array/lib/main.js:
+@stdlib/assert-is-uint16array/lib/index.js:
+@stdlib/constants-uint16-max/lib/index.js:
+@stdlib/assert-has-uint16array-support/lib/uint16array.js:
+@stdlib/assert-has-uint16array-support/lib/main.js:
+@stdlib/assert-has-uint16array-support/lib/index.js:
+@stdlib/array-uint16/lib/main.js:
+@stdlib/array-uint16/lib/polyfill.js:
+@stdlib/array-uint16/lib/index.js:
+@stdlib/assert-is-little-endian/lib/ctors.js:
+@stdlib/assert-is-little-endian/lib/main.js:
+@stdlib/assert-is-little-endian/lib/index.js:
+@stdlib/number-float64-base-to-words/lib/indices.js:
+@stdlib/number-float64-base-to-words/lib/assign.js:
+@stdlib/number-float64-base-to-words/lib/main.js:
+@stdlib/number-float64-base-to-words/lib/index.js:
+@stdlib/number-float64-base-get-high-word/lib/high.js:
+@stdlib/number-float64-base-get-high-word/lib/main.js:
+@stdlib/number-float64-base-get-high-word/lib/index.js:
+@stdlib/number-float64-base-from-words/lib/indices.js:
+@stdlib/number-float64-base-from-words/lib/main.js:
+@stdlib/number-float64-base-from-words/lib/index.js:
+@stdlib/math-base-special-copysign/lib/main.js:
+@stdlib/math-base-special-copysign/lib/index.js:
+@stdlib/constants-float64-smallest-normal/lib/index.js:
+@stdlib/math-base-special-abs/lib/index.js:
+@stdlib/number-float64-base-normalize/lib/assign.js:
+@stdlib/number-float64-base-normalize/lib/main.js:
+@stdlib/number-float64-base-normalize/lib/index.js:
+@stdlib/constants-float64-high-word-exponent-mask/lib/index.js:
+@stdlib/number-float64-base-exponent/lib/main.js:
+@stdlib/number-float64-base-exponent/lib/index.js:
+@stdlib/math-base-special-ldexp/lib/main.js:
+@stdlib/math-base-special-ldexp/lib/index.js:
+@stdlib/math-base-special-exp/lib/index.js:
+@stdlib/number-float64-base-set-low-word/lib/low.js:
+@stdlib/number-float64-base-set-low-word/lib/main.js:
+@stdlib/number-float64-base-set-low-word/lib/index.js:
+@stdlib/math-base-special-erfc/lib/index.js:
+@stdlib/math-base-special-sqrt/lib/main.js:
+@stdlib/math-base-special-sqrt/lib/index.js:
+@stdlib/stats-base-dists-normal-cdf/lib/main.js:
+@stdlib/utils-constant-function/lib/main.js:
+@stdlib/utils-constant-function/lib/index.js:
+@stdlib/stats-base-dists-degenerate-cdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-cdf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-cdf/lib/index.js:
+@stdlib/stats-base-dists-normal-cdf/lib/factory.js:
+@stdlib/stats-base-dists-normal-cdf/lib/index.js:
+@stdlib/utils-define-nonenumerable-read-only-accessor/lib/main.js:
+@stdlib/utils-define-nonenumerable-read-only-accessor/lib/index.js:
+@stdlib/assert-is-number/lib/primitive.js:
+@stdlib/assert-is-number/lib/tostring.js:
+@stdlib/assert-is-number/lib/try2serialize.js:
+@stdlib/assert-is-number/lib/object.js:
+@stdlib/assert-is-number/lib/main.js:
+@stdlib/assert-is-number/lib/index.js:
+@stdlib/assert-is-positive-number/lib/primitive.js:
+@stdlib/assert-is-positive-number/lib/object.js:
+@stdlib/assert-is-positive-number/lib/main.js:
+@stdlib/assert-is-positive-number/lib/index.js:
+@stdlib/assert-is-nan/lib/primitive.js:
+@stdlib/assert-is-nan/lib/object.js:
+@stdlib/assert-is-nan/lib/main.js:
+@stdlib/assert-is-nan/lib/index.js:
+@stdlib/number-float64-base-set-high-word/lib/high.js:
+@stdlib/number-float64-base-set-high-word/lib/main.js:
+@stdlib/number-float64-base-set-high-word/lib/index.js:
+@stdlib/math-base-special-ln/lib/index.js:
+@stdlib/constants-float64-two-pi/lib/index.js:
+@stdlib/constants-float64-e/lib/index.js:
+@stdlib/stats-base-dists-normal-entropy/lib/main.js:
+@stdlib/stats-base-dists-normal-entropy/lib/index.js:
+@stdlib/stats-base-dists-normal-kurtosis/lib/main.js:
+@stdlib/stats-base-dists-normal-kurtosis/lib/index.js:
+@stdlib/stats-base-dists-normal-mean/lib/main.js:
+@stdlib/stats-base-dists-normal-mean/lib/index.js:
+@stdlib/stats-base-dists-normal-median/lib/main.js:
+@stdlib/stats-base-dists-normal-median/lib/index.js:
+@stdlib/stats-base-dists-normal-mode/lib/main.js:
+@stdlib/stats-base-dists-normal-mode/lib/index.js:
+@stdlib/stats-base-dists-normal-skewness/lib/main.js:
+@stdlib/stats-base-dists-normal-skewness/lib/index.js:
+@stdlib/stats-base-dists-normal-stdev/lib/main.js:
+@stdlib/stats-base-dists-normal-stdev/lib/index.js:
+@stdlib/stats-base-dists-normal-variance/lib/main.js:
+@stdlib/stats-base-dists-normal-variance/lib/index.js:
+@stdlib/math-base-special-log1p/lib/index.js:
+@stdlib/math-base-special-abs2/lib/main.js:
+@stdlib/math-base-special-abs2/lib/index.js:
+@stdlib/stats-base-dists-degenerate-logcdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-logcdf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-logcdf/lib/index.js:
+@stdlib/math-base-assert-is-integer/lib/main.js:
+@stdlib/math-base-assert-is-integer/lib/index.js:
+@stdlib/math-base-assert-is-even/lib/main.js:
+@stdlib/math-base-assert-is-even/lib/index.js:
+@stdlib/math-base-assert-is-odd/lib/main.js:
+@stdlib/math-base-assert-is-odd/lib/index.js:
+@stdlib/number-uint32-base-to-int32/lib/main.js:
+@stdlib/number-uint32-base-to-int32/lib/index.js:
+@stdlib/math-base-special-pow/lib/y_is_infinite.js:
+@stdlib/constants-float64-ln-two/lib/index.js:
+@stdlib/constants-float64-high-word-significand-mask/lib/index.js:
+@stdlib/math-base-special-pow/lib/index.js:
+@stdlib/constants-float64-ln-two-pi/lib/index.js:
+@stdlib/stats-base-dists-normal-logpdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-logpdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-logpdf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-logpdf/lib/index.js:
+@stdlib/stats-base-dists-normal-logpdf/lib/factory.js:
+@stdlib/stats-base-dists-normal-logpdf/lib/index.js:
+@stdlib/stats-base-dists-normal-mgf/lib/main.js:
+@stdlib/stats-base-dists-normal-mgf/lib/factory.js:
+@stdlib/stats-base-dists-normal-mgf/lib/index.js:
+@stdlib/stats-base-dists-normal-pdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-pdf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-pdf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-pdf/lib/index.js:
+@stdlib/stats-base-dists-normal-pdf/lib/factory.js:
+@stdlib/stats-base-dists-normal-pdf/lib/index.js:
+@stdlib/math-base-special-erfinv/lib/index.js:
+@stdlib/stats-base-dists-normal-quantile/lib/main.js:
+@stdlib/stats-base-dists-degenerate-quantile/lib/main.js:
+@stdlib/stats-base-dists-degenerate-quantile/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-quantile/lib/index.js:
+@stdlib/stats-base-dists-normal-quantile/lib/factory.js:
+@stdlib/stats-base-dists-normal-quantile/lib/index.js:
+@stdlib/stats-base-dists-normal-ctor/lib/main.js:
+@stdlib/stats-base-dists-normal-ctor/lib/index.js:
+@stdlib/stats-base-dists-normal/lib/index.js:
+@stdlib/math-base-assert-is-nonnegative-integer/lib/main.js:
+@stdlib/math-base-assert-is-nonnegative-integer/lib/index.js:
+@stdlib/constants-float64-half-ln-two/lib/index.js:
+@stdlib/math-base-special-expm1/lib/index.js:
+@stdlib/constants-float64-fourth-pi/lib/index.js:
+@stdlib/math-base-special-asin/lib/index.js:
+@stdlib/constants-float64-eps/lib/index.js:
+@stdlib/math-base-special-beta/lib/index.js:
+@stdlib/math-base-assert-is-positive-zero/lib/main.js:
+@stdlib/math-base-assert-is-positive-zero/lib/index.js:
+@stdlib/math-base-special-max/lib/main.js:
+@stdlib/math-base-special-max/lib/index.js:
+@stdlib/math-base-assert-is-negative-zero/lib/main.js:
+@stdlib/math-base-assert-is-negative-zero/lib/index.js:
+@stdlib/math-base-special-min/lib/main.js:
+@stdlib/math-base-special-min/lib/index.js:
+@stdlib/constants-float64-max/lib/index.js:
+@stdlib/constants-int32-max/lib/index.js:
+@stdlib/constants-float64-half-pi/lib/index.js:
+@stdlib/constants-float64-pi/lib/index.js:
+@stdlib/math-base-special-kernel-cos/lib/index.js:
+@stdlib/math-base-special-kernel-sin/lib/index.js:
+@stdlib/number-float64-base-get-low-word/lib/low.js:
+@stdlib/number-float64-base-get-low-word/lib/main.js:
+@stdlib/number-float64-base-get-low-word/lib/index.js:
+@stdlib/math-base-special-round/lib/main.js:
+@stdlib/math-base-special-round/lib/index.js:
+@stdlib/math-base-special-rempio2/lib/index.js:
+@stdlib/math-base-special-sin/lib/index.js:
+@stdlib/constants-float64-sqrt-two-pi/lib/index.js:
+@stdlib/constants-float64-eulergamma/lib/index.js:
+@stdlib/math-base-special-gamma/lib/index.js:
+@stdlib/math-base-special-factorial/lib/main.js:
+@stdlib/math-base-special-factorial/lib/index.js:
+@stdlib/math-base-special-gamma-lanczos-sum/lib/index.js:
+@stdlib/constants-float64-gamma-lanczos-g/lib/index.js:
+@stdlib/math-base-special-gamma-delta-ratio/lib/index.js:
+@stdlib/math-base-special-cos/lib/index.js:
+@stdlib/math-base-special-sinpi/lib/main.js:
+@stdlib/math-base-special-sinpi/lib/index.js:
+@stdlib/math-base-special-gammaln/lib/index.js:
+@stdlib/constants-float64-max-ln/lib/index.js:
+@stdlib/constants-float64-sqrt-eps/lib/index.js:
+@stdlib/utils-eval/lib/index.js:
+@stdlib/assert-has-generator-support/lib/main.js:
+@stdlib/assert-has-generator-support/lib/index.js:
+@stdlib/math-base-tools-sum-series/lib/generators.js:
+@stdlib/math-base-tools-sum-series/lib/basic.js:
+@stdlib/math-base-tools-sum-series/lib/index.js:
+@stdlib/constants-float64-min-ln/lib/index.js:
+@stdlib/math-base-tools-evalpoly/lib/main.js:
+@stdlib/math-base-tools-evalpoly/lib/factory.js:
+@stdlib/math-base-tools-evalpoly/lib/index.js:
+@stdlib/math-base-special-gamma-lanczos-sum-expg-scaled/lib/index.js:
+@stdlib/math-base-special-powm1/lib/index.js:
+@stdlib/math-base-special-gamma1pm1/lib/index.js:
+@stdlib/constants-float32-smallest-normal/lib/index.js:
+@stdlib/math-base-tools-continued-fraction/lib/generators.js:
+@stdlib/math-base-tools-continued-fraction/lib/basic.js:
+@stdlib/math-base-tools-continued-fraction/lib/index.js:
+@stdlib/math-base-special-gammainc/lib/index.js:
+@stdlib/math-base-special-maxabs/lib/main.js:
+@stdlib/math-base-special-maxabs/lib/index.js:
+@stdlib/math-base-special-minabs/lib/main.js:
+@stdlib/math-base-special-minabs/lib/index.js:
+@stdlib/constants-float64-max-safe-integer/lib/index.js:
+@stdlib/math-base-special-gcd/lib/bitwise_binary_gcd.js:
+@stdlib/math-base-special-gcd/lib/binary_gcd.js:
+@stdlib/math-base-special-gcd/lib/main.js:
+@stdlib/math-base-special-gcd/lib/index.js:
+@stdlib/math-base-special-binomcoef/lib/main.js:
+@stdlib/math-base-special-binomcoef/lib/index.js:
+@stdlib/math-base-special-kernel-betainc/lib/main.js:
+@stdlib/math-base-special-kernel-betainc/lib/index.js:
+@stdlib/math-base-special-betainc/lib/main.js:
+@stdlib/math-base-special-betainc/lib/index.js:
+@stdlib/stats-base-dists-binomial-cdf/lib/main.js:
+@stdlib/stats-base-dists-binomial-cdf/lib/factory.js:
+@stdlib/stats-base-dists-binomial-cdf/lib/index.js:
+@stdlib/assert-is-integer/lib/integer.js:
+@stdlib/assert-is-integer/lib/primitive.js:
+@stdlib/assert-is-integer/lib/object.js:
+@stdlib/assert-is-integer/lib/main.js:
+@stdlib/assert-is-integer/lib/index.js:
+@stdlib/assert-is-positive-integer/lib/primitive.js:
+@stdlib/assert-is-positive-integer/lib/object.js:
+@stdlib/assert-is-positive-integer/lib/main.js:
+@stdlib/assert-is-positive-integer/lib/index.js:
+@stdlib/assert-is-probability/lib/primitive.js:
+@stdlib/assert-is-probability/lib/object.js:
+@stdlib/assert-is-probability/lib/main.js:
+@stdlib/assert-is-probability/lib/index.js:
+@stdlib/stats-base-dists-binomial-kurtosis/lib/main.js:
+@stdlib/stats-base-dists-binomial-kurtosis/lib/index.js:
+@stdlib/stats-base-dists-binomial-mean/lib/main.js:
+@stdlib/stats-base-dists-binomial-mean/lib/index.js:
+@stdlib/stats-base-dists-binomial-median/lib/main.js:
+@stdlib/stats-base-dists-binomial-median/lib/index.js:
+@stdlib/stats-base-dists-binomial-mode/lib/main.js:
+@stdlib/stats-base-dists-binomial-mode/lib/index.js:
+@stdlib/stats-base-dists-binomial-skewness/lib/main.js:
+@stdlib/stats-base-dists-binomial-skewness/lib/index.js:
+@stdlib/stats-base-dists-binomial-stdev/lib/main.js:
+@stdlib/stats-base-dists-binomial-stdev/lib/index.js:
+@stdlib/stats-base-dists-binomial-variance/lib/main.js:
+@stdlib/stats-base-dists-binomial-variance/lib/index.js:
+@stdlib/constants-float64-ln-sqrt-two-pi/lib/index.js:
+@stdlib/math-base-special-betaln/lib/index.js:
+@stdlib/math-base-special-binomcoefln/lib/main.js:
+@stdlib/math-base-special-binomcoefln/lib/index.js:
+@stdlib/stats-base-dists-binomial-logpmf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-logpmf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-logpmf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-logpmf/lib/index.js:
+@stdlib/stats-base-dists-binomial-logpmf/lib/factory.js:
+@stdlib/stats-base-dists-binomial-logpmf/lib/index.js:
+@stdlib/stats-base-dists-binomial-mgf/lib/main.js:
+@stdlib/stats-base-dists-binomial-mgf/lib/factory.js:
+@stdlib/stats-base-dists-binomial-mgf/lib/index.js:
+@stdlib/stats-base-dists-binomial-pmf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-pmf/lib/main.js:
+@stdlib/stats-base-dists-degenerate-pmf/lib/factory.js:
+@stdlib/stats-base-dists-degenerate-pmf/lib/index.js:
+@stdlib/stats-base-dists-binomial-pmf/lib/factory.js:
+@stdlib/stats-base-dists-binomial-pmf/lib/index.js:
+@stdlib/math-base-special-erfcinv/lib/index.js:
+@stdlib/constants-float64-sqrt-two/lib/index.js:
+@stdlib/stats-base-dists-binomial-quantile/lib/search_left.js:
+@stdlib/stats-base-dists-binomial-quantile/lib/search_right.js:
+@stdlib/stats-base-dists-binomial-quantile/lib/main.js:
+@stdlib/stats-base-dists-binomial-quantile/lib/factory.js:
+@stdlib/stats-base-dists-binomial-quantile/lib/index.js:
+@stdlib/stats-base-dists-binomial-ctor/lib/main.js:
+@stdlib/stats-base-dists-binomial-ctor/lib/index.js:
+@stdlib/stats-base-dists-binomial-entropy/lib/main.js:
+@stdlib/stats-base-dists-binomial-entropy/lib/index.js:
+@stdlib/stats-base-dists-binomial/lib/index.js:
+@stdlib/stats-base-dists-poisson-cdf/lib/main.js:
+@stdlib/stats-base-dists-poisson-cdf/lib/factory.js:
+@stdlib/stats-base-dists-poisson-cdf/lib/index.js:
+@stdlib/math-base-assert-is-negative-integer/lib/main.js:
+@stdlib/math-base-assert-is-negative-integer/lib/index.js:
+@stdlib/math-base-special-factorialln/lib/main.js:
+@stdlib/math-base-special-factorialln/lib/index.js:
+@stdlib/stats-base-dists-poisson-entropy/lib/main.js:
+@stdlib/stats-base-dists-poisson-entropy/lib/index.js:
+@stdlib/stats-base-dists-poisson-kurtosis/lib/main.js:
+@stdlib/stats-base-dists-poisson-kurtosis/lib/index.js:
+@stdlib/stats-base-dists-poisson-mean/lib/main.js:
+@stdlib/stats-base-dists-poisson-mean/lib/index.js:
+@stdlib/stats-base-dists-poisson-median/lib/main.js:
+@stdlib/stats-base-dists-poisson-median/lib/index.js:
+@stdlib/stats-base-dists-poisson-mode/lib/main.js:
+@stdlib/stats-base-dists-poisson-mode/lib/index.js:
+@stdlib/stats-base-dists-poisson-skewness/lib/main.js:
+@stdlib/stats-base-dists-poisson-skewness/lib/index.js:
+@stdlib/stats-base-dists-poisson-stdev/lib/main.js:
+@stdlib/stats-base-dists-poisson-stdev/lib/index.js:
+@stdlib/stats-base-dists-poisson-variance/lib/main.js:
+@stdlib/stats-base-dists-poisson-variance/lib/index.js:
+@stdlib/stats-base-dists-poisson-logpmf/lib/main.js:
+@stdlib/stats-base-dists-poisson-logpmf/lib/factory.js:
+@stdlib/stats-base-dists-poisson-logpmf/lib/index.js:
+@stdlib/stats-base-dists-poisson-mgf/lib/main.js:
+@stdlib/stats-base-dists-poisson-mgf/lib/factory.js:
+@stdlib/stats-base-dists-poisson-mgf/lib/index.js:
+@stdlib/stats-base-dists-poisson-pmf/lib/main.js:
+@stdlib/stats-base-dists-poisson-pmf/lib/factory.js:
+@stdlib/stats-base-dists-poisson-pmf/lib/index.js:
+@stdlib/stats-base-dists-poisson-quantile/lib/search.js:
+@stdlib/stats-base-dists-poisson-quantile/lib/main.js:
+@stdlib/stats-base-dists-poisson-quantile/lib/factory.js:
+@stdlib/stats-base-dists-poisson-quantile/lib/index.js:
+@stdlib/stats-base-dists-poisson-ctor/lib/main.js:
+@stdlib/stats-base-dists-poisson-ctor/lib/index.js:
+@stdlib/stats-base-dists-poisson/lib/index.js:
+@stdlib/stats-base-dists-t-cdf/lib/main.js:
+@stdlib/stats-base-dists-t-cdf/lib/factory.js:
+@stdlib/stats-base-dists-t-cdf/lib/index.js:
+@stdlib/math-base-special-kernel-tan/lib/index.js:
+@stdlib/math-base-special-tan/lib/index.js:
+@stdlib/math-base-special-digamma/lib/rational_approximation.js:
+@stdlib/math-base-special-digamma/lib/index.js:
+@stdlib/stats-base-dists-t-entropy/lib/main.js:
+@stdlib/stats-base-dists-t-entropy/lib/index.js:
+@stdlib/stats-base-dists-t-kurtosis/lib/main.js:
+@stdlib/stats-base-dists-t-kurtosis/lib/index.js:
+@stdlib/stats-base-dists-t-mean/lib/main.js:
+@stdlib/stats-base-dists-t-mean/lib/index.js:
+@stdlib/stats-base-dists-t-median/lib/main.js:
+@stdlib/stats-base-dists-t-median/lib/index.js:
+@stdlib/stats-base-dists-t-mode/lib/main.js:
+@stdlib/stats-base-dists-t-mode/lib/index.js:
+@stdlib/stats-base-dists-t-skewness/lib/main.js:
+@stdlib/stats-base-dists-t-skewness/lib/index.js:
+@stdlib/stats-base-dists-t-stdev/lib/main.js:
+@stdlib/stats-base-dists-t-stdev/lib/index.js:
+@stdlib/stats-base-dists-t-variance/lib/main.js:
+@stdlib/stats-base-dists-t-variance/lib/index.js:
+@stdlib/constants-float64-ln-half/lib/index.js:
+@stdlib/stats-base-dists-t-logcdf/lib/main.js:
+@stdlib/stats-base-dists-t-logcdf/lib/factory.js:
+@stdlib/stats-base-dists-t-logcdf/lib/index.js:
+@stdlib/stats-base-dists-t-logpdf/lib/main.js:
+@stdlib/stats-base-dists-t-logpdf/lib/factory.js:
+@stdlib/stats-base-dists-t-logpdf/lib/index.js:
+@stdlib/stats-base-dists-t-pdf/lib/main.js:
+@stdlib/stats-base-dists-t-pdf/lib/factory.js:
+@stdlib/stats-base-dists-t-pdf/lib/index.js:
+@stdlib/math-base-special-acos/lib/index.js:
+@stdlib/math-base-special-signum/lib/main.js:
+@stdlib/math-base-special-signum/lib/index.js:
+@stdlib/constants-float32-max/lib/index.js:
+@stdlib/math-base-special-gammaincinv/lib/higher_newton.js:
+@stdlib/math-base-special-gammaincinv/lib/lambdaeta.js:
+@stdlib/math-base-special-gammaincinv/lib/chepolsum.js:
+@stdlib/math-base-special-gammaincinv/lib/stirling.js:
+@stdlib/math-base-special-gammaincinv/lib/gamstar.js:
+@stdlib/math-base-special-gammaincinv/lib/eps1.js:
+@stdlib/math-base-special-gammaincinv/lib/eps2.js:
+@stdlib/math-base-special-gammaincinv/lib/eps3.js:
+@stdlib/math-base-special-gammaincinv/lib/compute.js:
+@stdlib/math-base-special-gammaincinv/lib/main.js:
+@stdlib/math-base-special-gammaincinv/lib/index.js:
+@stdlib/constants-float64-smallest-subnormal/lib/index.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/index.js:
+@stdlib/stats-base-dists-t-quantile/lib/main.js:
+@stdlib/stats-base-dists-t-quantile/lib/factory.js:
+@stdlib/stats-base-dists-t-quantile/lib/index.js:
+@stdlib/stats-base-dists-t-ctor/lib/main.js:
+@stdlib/stats-base-dists-t-ctor/lib/index.js:
+@stdlib/stats-base-dists-t/lib/index.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/string-base-format-interpolate/lib/is_number.js:
+@stdlib/string-base-format-interpolate/lib/zero_pad.js:
+@stdlib/string-base-format-interpolate/lib/format_integer.js:
+@stdlib/string-base-format-interpolate/lib/is_string.js:
+@stdlib/string-base-format-interpolate/lib/format_double.js:
+@stdlib/string-base-format-interpolate/lib/space_pad.js:
+@stdlib/string-base-format-interpolate/lib/main.js:
+@stdlib/string-base-format-interpolate/lib/index.js:
+@stdlib/string-base-format-tokenize/lib/main.js:
+@stdlib/string-base-format-tokenize/lib/index.js:
+@stdlib/string-format/lib/is_string.js:
+@stdlib/string-format/lib/main.js:
+@stdlib/string-format/lib/index.js:
+@stdlib/constants-float64-high-word-sign-mask/lib/index.js:
+@stdlib/constants-float64-high-word-abs-mask/lib/index.js:
+@stdlib/math-base-special-exp/lib/polyval_p.js:
+@stdlib/math-base-special-erfc/lib/polyval_pp.js:
+@stdlib/math-base-special-erfc/lib/polyval_qq.js:
+@stdlib/math-base-special-erfc/lib/polyval_pa.js:
+@stdlib/math-base-special-erfc/lib/polyval_qa.js:
+@stdlib/math-base-special-erfc/lib/polyval_ra.js:
+@stdlib/math-base-special-erfc/lib/polyval_sa.js:
+@stdlib/math-base-special-erfc/lib/polyval_rb.js:
+@stdlib/math-base-special-erfc/lib/polyval_sb.js:
+@stdlib/math-base-special-ln/lib/polyval_p.js:
+@stdlib/math-base-special-ln/lib/polyval_q.js:
+@stdlib/math-base-special-log1p/lib/polyval_lp.js:
+@stdlib/math-base-special-erfcx/lib/index.js:
+@stdlib/stats-base-dists-normal-logcdf/lib/main.js:
+@stdlib/stats-base-dists-normal-logcdf/lib/factory.js:
+@stdlib/stats-base-dists-normal-logcdf/lib/index.js:
+@stdlib/math-base-special-erfinv/lib/rational_p1q1.js:
+@stdlib/math-base-special-erfinv/lib/rational_p2q2.js:
+@stdlib/math-base-special-erfinv/lib/rational_p3q3.js:
+@stdlib/math-base-special-erfinv/lib/rational_p4q4.js:
+@stdlib/math-base-special-erfinv/lib/rational_p5q5.js:
+@stdlib/math-base-special-expm1/lib/polyval_q.js:
+@stdlib/math-base-special-asin/lib/rational_pq.js:
+@stdlib/math-base-special-asin/lib/rational_rs.js:
+@stdlib/math-base-special-kernel-cos/lib/polyval_c13.js:
+@stdlib/math-base-special-kernel-cos/lib/polyval_c46.js:
+@stdlib/function-ctor/lib/main.js:
+@stdlib/function-ctor/lib/index.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c0.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c1.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c2.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c3.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c4.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c5.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c6.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c7.js:
+@stdlib/math-base-special-gammainc/lib/polyval_c8.js:
+@stdlib/math-base-special-gamma-lanczos-sum-expg-scaled/lib/rational_pq.js:
+@stdlib/math-base-special-erfcinv/lib/rational_p1q1.js:
+@stdlib/math-base-special-erfcinv/lib/rational_p2q2.js:
+@stdlib/math-base-special-erfcinv/lib/rational_p3q3.js:
+@stdlib/math-base-special-erfcinv/lib/rational_p4q4.js:
+@stdlib/math-base-special-erfcinv/lib/rational_p5q5.js:
+@stdlib/math-base-special-kernel-tan/lib/polyval_t_odd.js:
+@stdlib/math-base-special-kernel-tan/lib/polyval_t_even.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co14.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co15.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co16.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co17.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co18.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co19.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co20.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co21.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co22.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co1.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co2.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co3.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co4.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co5.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co6.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co7.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co8.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co9.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co10.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co11.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co12.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/polyval_co13.js:
+@stdlib/math-base-special-gammaincinv/lib/polyval_ak1.js:
+@stdlib/math-base-special-gammaincinv/lib/polyval_ak2.js:
+@stdlib/math-base-special-gammaincinv/lib/polyval_c.js:
+@stdlib/math-base-special-gammaincinv/lib/polyval_d.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak0bk0.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak1bk1.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak2bk2.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak3bk3.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak4bk4.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak5bk5.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak6bk6.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak7bk7.js:
+@stdlib/math-base-special-gammaincinv/lib/rational_ak8bk8.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2022 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/math-base-special-exp/lib/expmulti.js:
+@stdlib/math-base-special-exp/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyrights, licenses, and long comment were part of the original implementation available as part of [Go]{@link https://github.com/golang/go/blob/cb07765045aed5104a3df31507564ac99e6ddce8/src/math/exp.go}, which in turn was based on an implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/e_exp.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (c) 2009 The Go Authors. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions are
+  * met:
+  *
+  *    * Redistributions of source code must retain the above copyright
+  * notice, this list of conditions and the following disclaimer.
+  *    * Redistributions in binary form must reproduce the above
+  * copyright notice, this list of conditions and the following disclaimer
+  * in the documentation and/or other materials provided with the
+  * distribution.
+  *    * Neither the name of Google Inc. nor the names of its
+  * contributors may be used to endorse or promote products derived from
+  * this software without specific prior written permission.
+  *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * ```
+  *
+  * ```text
+  * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-erfc/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/s_erf.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-ln/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright and license were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/e_log.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-log1p/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FDLIBM]{@link http://www.netlib.org/fdlibm/s_log1p.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-erfcx/lib/erfcx_y100.js:
+@stdlib/math-base-special-erfcx/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2022 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [SciPy]{@link https://github.com/scipy/scipy/blob/ed14bf0a66440a4d164581499fda662121963a56/scipy/special/Faddeeva.cc}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (c) 2012 Massachusetts Institute of Technology
+  *
+  * Permission is hereby granted, free of charge, to any person obtaining
+  * a copy of this software and associated documentation files (the
+  * "Software"), to deal in the Software without restriction, including
+  * without limitation the rights to use, copy, modify, merge, publish,
+  * distribute, sublicense, and/or sell copies of the Software, and to
+  * permit persons to whom the Software is furnished to do so, subject to
+  * the following conditions:
+  *
+  * The above copyright notice and this permission notice shall be
+  * included in all copies or substantial portions of the Software.
+  *
+  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  * ```
+  */
+
+@stdlib/math-base-special-pow/lib/x_is_zero.js:
+@stdlib/math-base-special-pow/lib/y_is_huge.js:
+@stdlib/math-base-special-pow/lib/log2ax.js:
+@stdlib/math-base-special-pow/lib/logx.js:
+@stdlib/math-base-special-pow/lib/pow2.js:
+@stdlib/math-base-special-pow/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright and license were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/s_pow.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/constants-float64-num-high-word-significand-bits/lib/index.js:
+@stdlib/math-base-special-pow/lib/polyval_l.js:
+@stdlib/math-base-special-pow/lib/polyval_w.js:
+@stdlib/math-base-special-pow/lib/polyval_p.js:
+@stdlib/math-base-special-beta/lib/lanczos_sum_expg_scaled.js:
+@stdlib/math-base-special-gamma/lib/polyval_s.js:
+@stdlib/math-base-special-gamma/lib/rational_pq.js:
+@stdlib/math-base-special-gamma-lanczos-sum/lib/rational_pq.js:
+@stdlib/math-base-special-gammaln/lib/polyval_a1.js:
+@stdlib/math-base-special-gammaln/lib/polyval_a2.js:
+@stdlib/math-base-special-gammaln/lib/polyval_r.js:
+@stdlib/math-base-special-gammaln/lib/polyval_s.js:
+@stdlib/math-base-special-gammaln/lib/polyval_t1.js:
+@stdlib/math-base-special-gammaln/lib/polyval_t2.js:
+@stdlib/math-base-special-gammaln/lib/polyval_t3.js:
+@stdlib/math-base-special-gammaln/lib/polyval_u.js:
+@stdlib/math-base-special-gammaln/lib/polyval_v.js:
+@stdlib/math-base-special-gammaln/lib/polyval_w.js:
+@stdlib/math-base-special-gamma1pm1/lib/rational_p1q1.js:
+@stdlib/math-base-special-gamma1pm1/lib/rational_p2q2.js:
+@stdlib/math-base-special-gamma1pm1/lib/rational_p3q3.js:
+@stdlib/math-base-special-digamma/lib/polyval_p.js:
+@stdlib/math-base-special-digamma/lib/rational_pq.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2024 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/math-base-special-erfinv/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_48_0/boost/math/special_functions/detail/erf_inv.hpp}. This implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-expm1/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FDLIBM]{@link http://www.netlib.org/fdlibm/s_expm1.c} and [FreeBSD]{@link https://svnweb.freebsd.org/base/release/12.2.0/lib/msun/src/s_expm1.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-asin/lib/main.js:
+@stdlib/math-base-special-acos/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C code, long comment, copyright, license, and constants are from [Cephes]{@link http://www.netlib.org/cephes}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright 1984, 1995, 2000 by Stephen L. Moshier
+  *
+  * Some software in this archive may be from the book _Methods and Programs for Mathematical Functions_ (Prentice-Hall or Simon & Schuster International, 1989) or from the Cephes Mathematical Library, a commercial product. In either event, it is copyrighted by the author. What you see here may be used freely but it comes with no support or guarantee.
+  *
+  * Stephen L. Moshier
+  * moshier@na-net.ornl.gov
+  * ```
+  */
+
+@stdlib/math-base-special-beta/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{http://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-cos/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/12.2.0/lib/msun/src/k_cos.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-sin/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/k_sin.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-rempio2/lib/kernel_rempio2.js:
+@stdlib/math-base-special-rempio2/lib/rempio2_medium.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright and license were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/k_rem_pio2.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-rempio2/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright and license were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/e_rem_pio2.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  *
+  * Optimized by Bruce D. Evans.
+  * ```
+  */
+
+@stdlib/math-base-special-sin/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/s_sin.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-gamma/lib/stirling_approximation.js:
+@stdlib/math-base-special-gamma/lib/small_approximation.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C code, copyright, license, and constants are from [Cephes]{@link http://www.netlib.org/cephes}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
+  *
+  * Some software in this archive may be from the book _Methods and Programs for Mathematical Functions_ (Prentice-Hall or Simon & Schuster International, 1989) or from the Cephes Mathematical Library, a commercial product. In either event, it is copyrighted by the author. What you see here may be used freely but it comes with no support or guarantee.
+  *
+  * Stephen L. Moshier
+  * moshier@na-net.ornl.gov
+  * ```
+  */
+
+@stdlib/math-base-special-gamma/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C code, long comment, copyright, license, and constants are from [Cephes]{@link http://www.netlib.org/cephes}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
+  *
+  * Some software in this archive may be from the book _Methods and Programs for Mathematical Functions_ (Prentice-Hall or Simon & Schuster International, 1989) or from the Cephes Mathematical Library, a commercial product. In either event, it is copyrighted by the author. What you see here may be used freely but it comes with no support or guarantee.
+  *
+  * Stephen L. Moshier
+  * moshier@na-net.ornl.gov
+  * ```
+  */
+
+@stdlib/constants-float64-max-nth-factorial/lib/index.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2025 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/math-base-special-gamma-lanczos-sum/lib/main.js:
+@stdlib/math-base-special-gamma-lanczos-sum-expg-scaled/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_64_0/boost/math/special_functions/lanczos.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-gamma-delta-ratio/lib/gamma_delta_ratio_lanczos.js:
+@stdlib/math-base-special-gamma-delta-ratio/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006-7, 2013-14.
+  * Copyright Paul A. Bristow 2007, 2013-14.
+  * Copyright Nikhar Agrawal 2013-14.
+  * Copyright Christopher Kormanyos 2013-14.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-cos/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/s_cos.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-gammaln/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/12.2.0/lib/msun/src/e_lgamma_r.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-gammainc/lib/tgamma_i_large_x_series.js:
+@stdlib/math-base-special-gammainc/lib/tgamma_i_large_x.js:
+@stdlib/math-base-special-gammainc/lib/igamma_final.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2025 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_88_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  * (C) Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-gammainc/lib/finite_gamma_q.js:
+@stdlib/math-base-special-gammainc/lib/finite_half_gamma_q.js:
+@stdlib/math-base-special-gammainc/lib/full_igamma_prefix.js:
+@stdlib/math-base-special-gammainc/lib/igamma_temme_large.js:
+@stdlib/math-base-special-gammainc/lib/lower_incomplete_gamma_series.js:
+@stdlib/math-base-special-gammainc/lib/lower_gamma_series.js:
+@stdlib/math-base-special-gammainc/lib/small_gamma2_series.js:
+@stdlib/math-base-special-gammainc/lib/tgamma_small_upper_part.js:
+@stdlib/math-base-special-gammainc/lib/upper_incomplete_gamma_fract.js:
+@stdlib/math-base-special-gammainc/lib/upper_gamma_fraction.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_88_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  * (C) Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-log1pmx/lib/log1p_series.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2023 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_83_0/boost/math/special_functions/log1p.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2005-2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  */
+
+@stdlib/math-base-special-log1pmx/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2023 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_83_0/boost/math/special_functions/log1p.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2005-2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-log1pmx/lib/index.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2023 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+@stdlib/math-base-special-gammainc/lib/regularised_gamma_prefix.js:
+@stdlib/math-base-special-kernel-betainc/lib/regularized_gamma_prefix.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_64_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006-7, 2013-14.
+  * Copyright Paul A. Bristow 2007, 2013-14.
+  * Copyright Nikhar Agrawal 2013-14.
+  * Copyright Christopher Kormanyos 2013-14.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-powm1/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/powm1.hpp}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-gamma1pm1/lib/lgamma_small_imp.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/detail/lgamma_small.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006-7, 2013-14.
+  * (C) Copyright Paul A. Bristow 2007, 2013-14.
+  * (C) Copyright Nikhar Agrawal 2013-14.
+  * (C) Copyright Christopher Kormanyos 2013-14.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-gamma1pm1/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006-7, 2013-14.
+  * (C) Copyright Paul A. Bristow 2007, 2013-14.
+  * (C) Copyright Nikhar Agrawal 2013-14.
+  * (C) Copyright Christopher Kormanyos 2013-14.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-gammainc/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_88_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006-7, 2013-14.
+  * (C) Copyright Paul A. Bristow 2007, 2013-14.
+  * (C) Copyright Nikhar Agrawal 2013-14.
+  * (C) Christopher Kormanyos 2013-14.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/full_igamma_prefix.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_37_0/boost/math/special_functions/gamma.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  * (C) Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/beta_small_b_large_a_series.js:
+@stdlib/math-base-special-kernel-betainc/lib/ibeta_fraction2.js:
+@stdlib/math-base-special-kernel-betainc/lib/binomial_ccdf.js:
+@stdlib/math-base-special-kernel-betainc/lib/ibeta_a_step.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_61_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/rising_factorial_ratio.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_37_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/ibeta_power_terms.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_62_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/ibeta_series.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_64_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betainc/lib/assign.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_61_0/boost/math/special_functions/beta.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  * (C) Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-betaln/lib/dceval.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The code is adapted from the Fortran routine from the FNLIB library of the [SLATEC Common Mathematical Library]{@link https://netlib.org/slatec/fnlib/dcsevl.f}.
+  *
+  * The original code was developed by W. Fullerton of Los Alamos Scientific Laboratory, a governmental institution, and is therefore public domain.
+  */
+
+@stdlib/math-base-special-betaln/lib/gamma_correction.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The code is adapted from the Fortran routine from the FNLIB library of the [SLATEC Common Mathematical Library]{@link https://netlib.org/fn/d9lgmc.f}.
+  *
+  * The original code was developed by W. Fullerton of Los Alamos Scientific Laboratory, a governmental institution, and is therefore public domain.
+  */
+
+@stdlib/math-base-special-betaln/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The code is adapted from the Fortran routine from the FNLIB library of the [SLATEC Common Mathematical Library]{@link https://www.netlib.org/slatec/fnlib/albeta.f}.
+  *
+  * The original code was developed by W. Fullerton of Los Alamos Scientific Laboratory, a governmental institution, and is therefore public domain.
+  */
+
+@stdlib/math-base-special-erfcinv/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_81_0/boost/math/special_functions/detail/erf_inv.hpp}. This implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-tan/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/12.2.0/lib/msun/src/k_tan.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-tan/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The following copyright, license, and long comment were part of the original implementation available as part of [FreeBSD]{@link https://svnweb.freebsd.org/base/release/9.3.0/lib/msun/src/s_tan.c}. The implementation follows the original, but has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+  * software is freely granted, provided that this notice
+  * is preserved.
+  * ```
+  */
+
+@stdlib/math-base-special-digamma/lib/asymptotic_expansion.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/math_toolkit/special/sf_gamma/digamma.html}. The implementation follows the original but has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-digamma/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link https://www.boost.org/doc/libs/1_85_0/boost/math/special_functions/digamma.hpp}. The implementation follows the original but has been modified for JavaScript.
+  *
+  * ```text
+  * (C) Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betaincinv/lib/inverse_students_t_body_series.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/inverse_students_t.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/find_ibeta_inv_from_t_dist.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_62_0/boost/math/special_functions/detail/t_distribution_inv.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  * Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betaincinv/lib/inverse_students_t_tail_series.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/inverse_students_t_hill.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_61_0/boost/math/special_functions/detail/t_distribution_inv.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  * Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betaincinv/lib/temme1.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/temme2.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/temme3.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/ibeta_roots.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_64_0/boost/math/special_functions/detail/ibeta_inverse.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  * Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betaincinv/lib/root_finder.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/main.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_62_0/boost/math/special_functions/detail/ibeta_inverse.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  * Copyright Paul A. Bristow 2007.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */
+
+@stdlib/math-base-special-kernel-betaincinv/lib/newton_raphson.js:
+@stdlib/math-base-special-kernel-betaincinv/lib/halley_iterate.js:
+  /**
+  * @license Apache-2.0
+  *
+  * Copyright (c) 2018 The Stdlib Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+  *
+  * ## Notice
+  *
+  * The original C++ code and copyright notice are from the [Boost library]{@link http://www.boost.org/doc/libs/1_62_0/boost/math/tools/roots.hpp}. The implementation has been modified for JavaScript.
+  *
+  * ```text
+  * Copyright John Maddock 2006.
+  *
+  * Use, modification and distribution are subject to the
+  * Boost Software License, Version 1.0. (See accompanying file
+  * LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+  * ```
+  */

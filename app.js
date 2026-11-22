@@ -1,16 +1,16 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=bacb3c1fa9155d6c";
-import {answerReady} from './question-input.js?v=bacb3c1fa9155d6c';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=bacb3c1fa9155d6c';
-import {startPresence} from './presence.js?v=bacb3c1fa9155d6c';
-import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=bacb3c1fa9155d6c';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=ad5665f8f97afbd9";
+import {answerReady} from './question-input.js?v=ad5665f8f97afbd9';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=ad5665f8f97afbd9';
+import {startPresence} from './presence.js?v=ad5665f8f97afbd9';
+import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=ad5665f8f97afbd9';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=bacb3c1fa9155d6c';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=bacb3c1fa9155d6c';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=bacb3c1fa9155d6c';
-import {renderSourceReader} from './learning-ui.js?v=bacb3c1fa9155d6c';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=bacb3c1fa9155d6c';
-import {createTrainingView} from './training.js?v=bacb3c1fa9155d6c';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=ad5665f8f97afbd9';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=ad5665f8f97afbd9';
+import {renderSourceReader} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {createTrainingView} from './training.js?v=ad5665f8f97afbd9';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1662,7 +1662,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=bacb3c1fa9155d6c");
+const { initPortal } = await import("./portal.js?v=ad5665f8f97afbd9");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
