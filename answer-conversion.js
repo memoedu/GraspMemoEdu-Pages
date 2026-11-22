@@ -1,4 +1,5 @@
-import {getLanguage} from './i18n.js?v=7f75039d97260881';
+import {getLanguage} from './i18n.js?v=494edfbe780e6c86';
+import {attachLiteralAnswer} from './formula-input.js?v=494edfbe780e6c86';
 
 const targets = new WeakMap();
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
@@ -264,6 +265,8 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
   field.className = 'answerInput';
   field.rows = 2; field.maxLength = Math.max(4000, input.maxLength); field.spellcheck = false; field.autocomplete = 'off';
   label.append(field);
+  attachLiteralAnswer(field);
+  if (spec?.type === 'text' && spec.grading === 'exact') attachLiteralAnswer(input);
   const button = document.createElement('button'), status = document.createElement('span');
   button.type = 'button'; button.className = 'secondaryButton';
   button.textContent = local('转换', 'Convert'); button.title = 'Ctrl+Enter';

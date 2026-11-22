@@ -73,8 +73,9 @@ export const permitsBasedLog = config => permitsKey(config, basedLogKey[0]) &&
   permitsKey(config, 'open') && permitsKey(config, 'close');
 
 export function keyCompletions(keys, config) {
-  return keys.flatMap(([id, label, value, tier]) => permitsKey(config, id, tier) && value
-    ? [{label, value, keys: [value, label, id]}] : []);
+  const aliases = {'*': '×', '/': '÷', '-': '−', 'sqrt(': '√', 'log_': 'logₐ'};
+  return keys.flatMap(([id, , value, tier]) => permitsKey(config, id, tier) && value
+    ? [{label: value.replace(/\($/, '') || value, value, keys: aliases[value] ? [value, aliases[value]] : [value]}] : []);
 }
 
 export function expressionCompletions(config = {level: 'scientific'}, {previousAnswer = true, variable, equation} = {}) {

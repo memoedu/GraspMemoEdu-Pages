@@ -1,6 +1,7 @@
 // Hallmark · component: composite-answer · genre: editorial · theme: existing learning UI
 // States: default, hover, focus, active, disabled, loading (parent), error, success.
-import {optionUsesMath, prepareMathContent, setOptionContent} from './math-presentation.js?v=7f75039d97260881';
+import {optionUsesMath, prepareMathContent, setOptionContent} from './math-presentation.js?v=494edfbe780e6c86';
+import {attachLiteralAnswer} from './formula-input.js?v=494edfbe780e6c86';
 
 const node = (tag, cls, text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -314,6 +315,7 @@ export function compositeInput(spec, {id, value = '', stem, disabled = false, fo
     field.dataset.controlId = control.id;
     if (control.type !== 'select') {
       field.autocomplete = 'off'; field.maxLength = 2000;
+      attachLiteralAnswer(field);
       field.setAttribute('aria-label', control.label || `第 ${number} 空`);
       if (formId) field.setAttribute('form', formId);
       if (control.input_type === 'number') field.inputMode = 'decimal';
@@ -375,6 +377,7 @@ export function compositeInput(spec, {id, value = '', stem, disabled = false, fo
           field.setAttribute('aria-label', control.label || control.id); if (formId) field.setAttribute('form', formId);
           field.type = 'text'; field.autocomplete = 'off'; if (control.input_type === 'number') field.inputMode = 'decimal';
           field.value = values[control.id]; wrap.append(label, field);
+          attachLiteralAnswer(field);
           field.addEventListener('input', () => changed(control, field.value)); panel.append(wrap);
         }
       }

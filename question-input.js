@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=7f75039d97260881';
-import {attachFormulaEditing} from './formula-input.js?v=7f75039d97260881';
-import {setOptionContent} from './math-presentation.js?v=7f75039d97260881';
-import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=7f75039d97260881';
-import {enhanceSourceContent} from './topic-content.js?v=7f75039d97260881';
+import {t} from './i18n.js?v=494edfbe780e6c86';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=494edfbe780e6c86';
+import {setOptionContent} from './math-presentation.js?v=494edfbe780e6c86';
+import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=494edfbe780e6c86';
+import {enhanceSourceContent} from './topic-content.js?v=494edfbe780e6c86';
 
 const node = (tag, cls, text) => {
   const element = document.createElement(tag); element.className = cls;
@@ -249,8 +249,11 @@ export function questionInput(spec, {id, value = '', stem, disabled = false, for
       field.addEventListener('keydown', event => answerShortcut(event, formId, disabled));
       return field;
     }, gapOptions);
-    if (spec.grading === 'semantic' && !disabled) {
-      for (const {field} of passageFields) attachFormulaEditing(field, {group: 'answer', launch: false});
+    if (!disabled) {
+      for (const {field} of passageFields) {
+        if (spec.grading === 'semantic') attachFormulaEditing(field, {group: 'answer', launch: false});
+        else attachLiteralAnswer(field);
+      }
     }
     syncPassage();
   }

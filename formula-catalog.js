@@ -1,4 +1,4 @@
-import {expressionCompletions} from './calculator-policy.js?v=7f75039d97260881';
+import {expressionCompletions} from './calculator-policy.js?v=494edfbe780e6c86';
 
 export const formulaToken = /(\\?[a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
 
@@ -22,9 +22,28 @@ const explicit = [
 ];
 
 const special = new Map(explicit.map(item => [item.label, item]));
-const operators = {'*': '\\times', '/': '\\div', '^': '\\square^{#?}', '!': '\\square!',
+const operators = {'*': '\\times', '/': '\\div', '^': '^{#?}', '_': '_{#?}', '!': '!',
   '-': '-', '+': '+', '=': '=', '(': '(', ')': ')', ',': ',', '.': '.'};
-const standardFunctions = new Set(['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'ln', 'log', 'exp', 'abs']);
+const standardFunctions = new Set(['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'ln', 'log', 'exp']);
+const symbols = {pi: '\\pi', hbar: '\\hbar', g0: 'g_{0}', k_B: 'k_{B}', N_A: 'N_{A}', q_e: 'q_{e}'};
+const functionHead = name => standardFunctions.has(name) ? '\\' + name : '\\operatorname{' + name + '}';
+// A calculator completion inserts its native prefix. A formula template also supplies its argument slots.
+export function nativeFormulaSample(value) {
+  if (value === 'log_') return '\\log_{\\square}';
+  if (value.endsWith('(') && /^[A-Za-z][A-Za-z0-9]*\($/.test(value)) {
+    const name = value.slice(0, -1);
+    return (name === 'log10' ? '\\log_{10}' : functionHead(name)) + '(';
+  }
+  if (value === '^') return '\\mathord{\\char94}';
+  return symbols[value] ?? operators[value] ?? (/^[a-z0-9]+$/i.test(value) ? value : '');
+}
+export function matchesCompletion(item, term) {
+  const prefix = term.toLowerCase();
+  if (item.latex === term && term !== '!') return false;
+  // Keep the spelled-out function available from "fa". Its postfix operator is keyed only by "!".
+  if (item.label === 'factorial' && prefix.replace(/^\\/, '').length < 2) return false;
+  return (item.keys || [item.value, item.label]).some(key => key.toLowerCase().startsWith(prefix));
+}
 const shared = expressionCompletions().flatMap(({label, value, keys}) => {
   if (value === 'log_' || special.has(label) || /^\d$/.test(value)) return [];
   if (value.endsWith('(')) {
@@ -32,14 +51,53 @@ const shared = expressionCompletions().flatMap(({label, value, keys}) => {
     if (special.has(name)) return [];
     if (name === 'abs') return [template(name, '\\left|#?\\right|')];
     if (name === 'log10') return [functionTemplate(name, '\\log_{10}')];
-    const head = standardFunctions.has(name) ? '\\' + name : '\\operatorname{' + name + '}';
-    return [functionTemplate(name, head)];
+    return [functionTemplate(name, functionHead(name))];
   }
-  const latex = operators[value] ?? (/^[A-Za-z]+$/.test(value) ? value : '');
-  return latex ? [template(label, latex, undefined, keys || [label, value])] : [];
+  const latex = symbols[value] ?? operators[value] ?? (/^[A-Za-z]+$/.test(value) ? value : '');
+  return latex ? [template(value, latex, undefined, keys || [value])] : [];
 });
 
-export const formulaTemplates = [...explicit, ...shared];
+export const formulaTemplates = [...explicit, ...shared, template('_', '_{#?}', undefined, ['_'])];
+
+export function followingArgument(source, offset) {
+  if (source[offset] !== '(') return null;
+  let depth = 1;
+  for (let end = offset + 1; end < source.length; end++) {
+    if (source[end] === '(') depth++;
+    if (source[end] === ')' && --depth === 0) return {body: source.slice(offset + 1, end), end: end + 1};
+  }
+  return null;
+}
+
+// Prose and exact-match answers share a text field. Only recognised mathematical runs
+// go to MathLive's parser. Ordinary words, URLs, and their original offsets stay intact.
+const mathWords = new Set([...formulaTemplates.map(item => item.label.toLowerCase()), 'arcsin', 'arccos', 'arctan', 'lim']);
+export function bareMathRuns(value) {
+  if (value.length > 4000) return [];
+  const runs = [];
+  // Split on prose words and punctuation. A TeX control word and its arguments are one run.
+  const pieces = /\\[A-Za-z]+|[A-Za-z]+|[0-9]+|[ \t]+|[α-ωΑ-Ωπ√∞≤≥≠±×÷−+*/^_!=()[\]{}.,|<>-]/gy;
+  let start = 0, end = 0;
+  function finish() {
+    const raw = value.slice(start, end).trim();
+    const standalone = raw && raw === value.trim();
+    const operand = /[a-z\dα-ω\\√∞]/i.test(raw);
+    const notation = /[\\α-ωΑ-Ω√∞≤≥≠±×÷−+*/^_!=()[\]{}|<>-]/.test(raw);
+    if (raw && (standalone && (operand || notation) || operand && notation)) {
+      const from = start + value.slice(start, end).indexOf(raw);
+      runs.push({from, to: from + raw.length, raw});
+    }
+  }
+  while (end < value.length) {
+    pieces.lastIndex = end;
+    const token = pieces.exec(value)?.[0];
+    if (!token || /^[A-Za-z]{2,}$/.test(token) && !mathWords.has(token.toLowerCase())) {
+      finish(); end += token?.length || 1; start = end;
+    } else end += token.length;
+  }
+  finish();
+  return runs;
+}
 
 // Preserve complete delimited fragments and untouched prose exactly in drafts.
 const formulaPattern = /(?<!\\)(?:\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([^\n]+?)\\\)|\$(?!\$)([^$\n]+?)(?<!\\)\$(?!\$))/g;

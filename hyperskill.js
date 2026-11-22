@@ -1,7 +1,7 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=7f75039d97260881';
-import {attachFormulaEditing} from './formula-input.js?v=7f75039d97260881';
-import {enhanceSourceContent} from './topic-content.js?v=7f75039d97260881';
-import {mountAnswerConversion} from './answer-conversion.js?v=7f75039d97260881';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=494edfbe780e6c86';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=494edfbe780e6c86';
+import {enhanceSourceContent} from './topic-content.js?v=494edfbe780e6c86';
+import {mountAnswerConversion} from './answer-conversion.js?v=494edfbe780e6c86';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -50,7 +50,7 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
           for(const option of field.options) {
             const o=node('option','',option);o.value=option;control.append(o);
           }
-        } else {control.type='text';control.autocomplete='off';control.spellcheck=false;}
+        } else {control.type='text';control.autocomplete='off';control.spellcheck=false;attachLiteralAnswer(control);}
         control.value=current[number]||'';controls.push(control);
         control.addEventListener('input',()=>{current[number]=control.value;emit();});
         fragment.append(control);
