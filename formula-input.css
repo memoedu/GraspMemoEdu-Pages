@@ -1,0 +1,70 @@
+.formulaSourceHidden {
+  display: none !important;
+}
+.formulaInputButton {
+  justify-self: start;
+  font-size: .85em;
+}
+.formulaInput[hidden], .formulaInputButton[hidden] {
+  display: none;
+}
+.formulaInput .ProseMirror {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-block-size: 3.25em;
+  padding: .55em .7em;
+  border: 1px solid var(--border-color, #aaa);
+  border-radius: .4em;
+  cursor: text;
+}
+.formulaInput .ProseMirror:focus-within {
+  outline: 2px solid var(--link-color);
+  outline-offset: 1px;
+}
+.formulaInput .ProseMirror p {
+  margin: 0;
+}
+.formulaInput .siteFormula {
+  display: inline-block;
+  vertical-align: middle;
+  max-inline-size: 100%;
+}
+.formulaInput math-field {
+  font-size: 1.05em;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: .3em;
+  --caret-color: var(--link-color);
+  max-inline-size: 100%;
+}
+.formulaInput math-field:focus-within,
+.formulaInput .is-formula-selected math-field {
+  border-color: var(--link-color);
+  outline: none;
+}
+.formulaInput math-field::part(menu-toggle) {
+  display: none;
+}
+.formulaInput .siteFormulaDisplay {
+  display: block;
+  text-align: center;
+}
+.chatEditor .formulaInput .ProseMirror {
+  min-block-size: 170px;
+}
+.passageBlank .formulaInput {
+  display: inline-block;
+  min-inline-size: 5ch;
+}
+.passageBlank .formulaInput[hidden] {
+  display: none;
+}
+.passageBlank .formulaInput .ProseMirror {
+  min-block-size: auto;
+  padding: .15em .35em;
+}
+.inputCompletions .completionFormula {
+  display: inline-block;
+  margin-inline-start: .6em;
+}

@@ -1,16 +1,25 @@
-import {getLanguage} from './i18n.js?v=ca8a42ff138b8431';
+import {getLanguage} from './i18n.js?v=0013e04b6e675b18';
 
 const targets = new WeakMap();
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
 export const answerConversionChange = 'answerconversionchange';
 let requestConversion;
+let commandInputEnabled = false;
 
 export function installAnswerConversion(request) {
   requestConversion = body => request('answer-conversion', {method: 'POST', body, timeout: 35000});
 }
 
+export function setAnswerCommandInputEnabled(enabled) {
+  if (commandInputEnabled === enabled) return;
+  commandInputEnabled = enabled;
+  for (const input of document.querySelectorAll('[data-answer-conversion]')) {
+    targets.get(input)?.showCommandInput(enabled);
+  }
+}
+
 export function answerTarget(root = document, {topic = false} = {}) {
-  const found = Array.from(root.querySelectorAll('[data-answer-conversion]'), box => targets.get(box))
+  const found = Array.from(root.querySelectorAll('[data-answer-conversion]'), input => targets.get(input))
     .filter(target => target?.available() && (!topic || target.topic));
   return found.length === 1 ? found[0] : null;
 }
@@ -229,7 +238,6 @@ function plan(spec, input) {
 export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
   const box = document.createElement('div');
   box.className = 'answerConversion';
-  box.dataset.answerConversion = '';
   const label = document.createElement('label'), field = document.createElement('textarea');
   label.textContent = local('用文字填写答题控件', 'Fill answer controls from text');
   field.className = 'answerInput';
@@ -239,7 +247,13 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
   button.type = 'button'; button.className = 'secondaryButton';
   button.textContent = local('转换', 'Convert'); button.title = 'Ctrl+Enter';
   status.setAttribute('role', 'status');
-  box.append(label, button, status); form.append(box);
+  function showCommandInput(show) {
+    box.hidden = !show;
+    if (show) box.append(label, button, status);
+    else box.replaceChildren();
+  }
+  showCommandInput(commandInputEnabled);
+  form.append(box);
   let busy = false, revision = 0;
   const enabled = () => !input.disabled && !input.readOnly;
   const refresh = () => {
@@ -247,18 +261,20 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
     button.disabled = !enabled() || busy || !field.value.trim();
     button.textContent = busy ? local('转换中…', 'Converting…') : local('转换', 'Convert');
   };
-  const available = () => enabled() && form.isConnected && !form.closest('[hidden], [inert]') && box.getClientRects().length > 0;
+  const available = () => enabled() && form.contains(input) && form.isConnected &&
+    !form.closest('[hidden], [inert]') && form.getClientRects().length > 0;
   input.addEventListener('input', () => { revision++; });
   field.addEventListener('input', () => { revision++; status.textContent = ''; refresh(); });
   new MutationObserver(() => { revision++; refresh(); document.dispatchEvent(new Event(answerConversionChange)); })
     .observe(input, {attributes: true, attributeFilter: ['disabled', 'readonly']});
-  const convert = async (text = field.value, guard = () => true) => {
-    if (!available() || busy || !text.trim()) return false;
+  const convert = async (text, guard = () => true) => {
+    if (!available() || busy || !guard() || !text.trim()) return false;
     if (text.length > field.maxLength) {
       status.textContent = local('转换文字过长，请缩短后重试。', 'The text is too long. Shorten it and try again.');
       return false;
     }
-    field.value = text; busy = true; refresh();
+    if (!box.hidden) field.value = text;
+    busy = true; refresh();
     const version = revision, current = input.value;
     const failure = () => {
       status.textContent = local('无法对应到答题控件，请改写后重试。', 'The answer could not be mapped to the controls. Edit it and try again.');
@@ -288,10 +304,11 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
       busy = false; refresh();
     }
   };
-  button.addEventListener('click', () => void convert());
+  const convertCommand = () => void convert(field.value, () => !box.hidden);
+  button.addEventListener('click', convertCommand);
   field.addEventListener('keydown', event => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) {
-      event.preventDefault(); event.stopPropagation(); void convert();
+      event.preventDefault(); event.stopPropagation(); convertCommand();
     }
   });
   refresh();
@@ -299,5 +316,6 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
     const version = revision, value = input.value;
     return () => available() && revision === version && input.value === value;
   };
-  targets.set(box, {available, convert, pin, topic});
+  input.dataset.answerConversion = '';
+  targets.set(input, {available, convert, pin, topic, showCommandInput});
 }

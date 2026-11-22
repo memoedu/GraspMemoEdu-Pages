@@ -1,14 +1,15 @@
-import {t, learningTitle} from './i18n.js?v=ca8a42ff138b8431';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca8a42ff138b8431';
-import {enhanceTopicContent} from './topic-content.js?v=ca8a42ff138b8431';
-import {sourceAttributions} from './memory-chunk.js?v=ca8a42ff138b8431';
-import {mountPassageBlanks} from './composite-input.js?v=ca8a42ff138b8431';
-import {placeContentActions} from './content-report.js?v=ca8a42ff138b8431';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
-import {setQuestionTools} from './question-tools.js?v=ca8a42ff138b8431';
-import {enableVoiceAnswer} from './voice-input.js?v=ca8a42ff138b8431';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {t, learningTitle} from './i18n.js?v=0013e04b6e675b18';
+import {attachFormulaEditing} from './formula-input.js?v=0013e04b6e675b18';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=0013e04b6e675b18';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=0013e04b6e675b18';
+import {enhanceTopicContent} from './topic-content.js?v=0013e04b6e675b18';
+import {sourceAttributions} from './memory-chunk.js?v=0013e04b6e675b18';
+import {mountPassageBlanks} from './composite-input.js?v=0013e04b6e675b18';
+import {placeContentActions} from './content-report.js?v=0013e04b6e675b18';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=0013e04b6e675b18';
+import {setQuestionTools} from './question-tools.js?v=0013e04b6e675b18';
+import {enableVoiceAnswer} from './voice-input.js?v=0013e04b6e675b18';
+import {mountAnswerConversion} from './answer-conversion.js?v=0013e04b6e675b18';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -350,6 +351,7 @@ export function answerEditor(step, stem, value, {formId = 'answerForm', inputId 
   const submit = node('button', 'primaryButton', t('Submit'));
   submit.id = submitId; submit.type = 'submit'; submit.setAttribute('form', formId); submit.disabled = !answerReady(input);
   bottom.append(hint, submit); form.append(label, control?.element || input, error);
+  if (!structured && step.interaction?.grading !== 'exact') attachFormulaEditing(input, {group: 'answer'});
   mountAnswerConversion(form, input, step.interaction, {topic});
   return {form, input, submit, bottom};
 }

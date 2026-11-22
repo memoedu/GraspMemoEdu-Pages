@@ -1,7 +1,8 @@
-import {t} from './i18n.js?v=ca8a42ff138b8431';
-import {answerEmpty} from './question-input.js?v=ca8a42ff138b8431';
-import {prepareLiteralMath} from './math-presentation.js?v=ca8a42ff138b8431';
-import {answerAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
+import {t} from './i18n.js?v=0013e04b6e675b18';
+import {renderSavedFormulaText} from './formula-input.js?v=0013e04b6e675b18';
+import {answerEmpty} from './question-input.js?v=0013e04b6e675b18';
+import {prepareLiteralMath} from './math-presentation.js?v=0013e04b6e675b18';
+import {answerAssessment} from './point-assessment.js?v=0013e04b6e675b18';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -81,7 +82,12 @@ export function submittedAnswer(question, answer, display = answer) {
   let value; try { value = JSON.parse(answer); } catch { /* Keep literal free answers. */ }
   const selected = spec?.type === 'choice' ? new Set(spec.multiple ? value?.selected || [] : [value?.selected]) : new Set();
   const options = spec?.options?.filter(option => selected.has(option.id)) || [];
-  if (!options.length) return element('pre', '', display || '');
+  if (!options.length) {
+    const text = display || '';
+    const body = element('pre', '', text);
+    if (!spec || spec.type === 'text') renderSavedFormulaText(body, text);
+    return body;
+  }
   const body = element('div', 'submittedAnswerBody');
   for (const option of options) {
     const row = element('div', 'choiceAnswer');

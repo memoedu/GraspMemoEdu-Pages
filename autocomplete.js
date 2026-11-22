@@ -1,8 +1,9 @@
-import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=ca8a42ff138b8431';
+import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=0013e04b6e675b18';
 
 export const autocompleteGroups = ['calculator', 'answer', 'other'];
 const preferenceKey = 'graspmemoedu:autocomplete';
 const sources = new WeakMap();
+const surfaces = new WeakMap();
 const token = /([a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
 const wholeValue = /^(.+)$/s;
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -23,18 +24,32 @@ export function setAutocompleteEnabled(group, enabled) {
 
 // Source items may be strings or {label, value, keys}. The provider is evaluated
 // as the user types so live worksheet state can determine what is offered.
-export function setInputCompletions(field, provider, {whole = false, match = token} = {}) {
-  sources.set(field, {provider, whole, match: whole ? wholeValue : match});
+export function setInputCompletions(field, provider, {whole = false, match = token, apply} = {}) {
+  sources.set(field, {provider, whole, match: whole ? wholeValue : match, apply});
+}
+
+export function setCompletionSurface(element, group, read) {
+  surfaces.set(element, {group, read});
+  return () => surfaces.delete(element);
+}
+
+export function refreshCompletionSurface(element) {
+  element.dispatchEvent(new Event('autocompletequery', {bubbles: true}));
 }
 
 export function installAutocomplete(defaultCandidates) {
-  let field, group, source, queryValue, queryCursor, applying = false, navigated = false;
+  let field, group, source, snapshot, queryValue, queryCursor, applying = false, navigated = false;
   class NativeFieldEditor extends Editor {
     getBeforeCursor() {
-      return field.selectionStart === field.selectionEnd ? field.value.slice(0, field.selectionStart) : null;
+      return snapshot ? 'candidate'
+        : field.selectionStart === field.selectionEnd ? field.value.slice(0, field.selectionStart) : null;
     }
 
     getCursorOffset() {
+      if (snapshot) {
+        const bounds = snapshot.bounds;
+        return {left: bounds.left, top: bounds.bottom + 3, clientTop: bounds.top, lineHeight: bounds.height || 20};
+      }
       const bounds = field.getBoundingClientRect();
       const caret = caretCoordinates(field, field.selectionEnd);
       const lineHeight = parseFloat(getComputedStyle(field).lineHeight) || 20;
@@ -44,21 +59,29 @@ export function installAutocomplete(defaultCandidates) {
     }
 
     applySearchResult(result) {
+      applying = true;
+      try { this.apply(result); }
+      finally { applying = false; }
+    }
+
+    apply(result) {
+      if (snapshot) {
+        if (snapshot.current()) snapshot.apply(result.data);
+        return;
+      }
       const before = this.getBeforeCursor();
       if (before === null) return;
       const match = result.getReplacementData(before);
       if (!match) return;
       const {value} = result.data;
       const after = field.value.slice(match.end);
-      const tail = /^[a-z_]/i.test(before[match.start]) ? after.match(/^[a-z_0-9]*/i)[0] : '';
+      const tail = /^[\\a-z_]/i.test(before[match.start]) ? after.match(/^[a-z_0-9]*/i)[0] : '';
       const existingOpen = value.endsWith('(') && after[tail.length] === '(';
       const end = source?.whole ? field.value.length : match.end + tail.length + Number(existingOpen);
+      if (source?.apply?.(result.data, match.start, end)) return;
       if (field.maxLength >= 0 && field.value.length - (end - match.start) + value.length > field.maxLength) return;
-      applying = true;
-      try {
-        field.setRangeText(value, match.start, end, 'end');
-        field.dispatchEvent(new Event('input', {bubbles: true}));
-      } finally { applying = false; }
+      field.setRangeText(value, match.start, end, 'end');
+      field.dispatchEvent(new Event('input', {bubbles: true}));
     }
   }
 
@@ -67,6 +90,7 @@ export function installAutocomplete(defaultCandidates) {
   const completion = new Textcomplete(editor, [{
     match: text => (source?.match || token).exec(text),
     search(term, receive) {
+      if (snapshot) { receive(snapshot.candidates); return; }
       const candidates = source ? source.provider() : defaultCandidates;
       const prefix = term.toLocaleLowerCase();
       receive(candidates.map(candidate => typeof candidate === 'string' ? {label: candidate, value: candidate} : candidate)
@@ -74,7 +98,10 @@ export function installAutocomplete(defaultCandidates) {
           && (keys || [value, label]).some(key => key.toLocaleLowerCase().startsWith(prefix))));
     },
     replace: () => '', // Textcomplete locates the replacement range; insert the literal candidate in the native field.
-    template: candidate => escape(candidate.label),
+    template: candidate => candidate.preview
+      ? '<span class="completionFormula" aria-hidden="true">' + candidate.preview + '</span>'
+        + '<span class="completionFormulaLabel">' + escape(candidate.label) + '</span>'
+      : escape(candidate.label),
   }], {dropdown: {parent, className: 'inputCompletions', maxCount: 8, rotate: true, style: {position: 'fixed'}}});
 
   const menu = parent.firstElementChild;
@@ -124,11 +151,34 @@ export function installAutocomplete(defaultCandidates) {
   function dismiss() {
     completion.hide();
     field = null;
+    snapshot = null;
   }
+
+  function useField(target, nextGroup) {
+    if (target === field) return;
+    dismiss();
+    field = target;
+    group = nextGroup;
+    source = sources.get(target);
+    (target.closest('dialog') || document.body).append(menu);
+  }
+
+  document.addEventListener('autocompletequery', event => {
+    if (applying) return;
+    const target = event.target, surface = surfaces.get(target);
+    if (!surface || !autocompleteEnabled(surface.group) || document.activeElement !== target) return;
+    const data = surface.read();
+    if (!data?.candidates.length) { if (target === field) dismiss(); return; }
+    useField(target, surface.group);
+    snapshot = data;
+    navigated = false;
+    editor.emitChangeEvent();
+  }, true);
 
   function input(event) {
     if (applying) return;
     const target = event.target;
+    if (surfaces.has(target) || target.closest?.('[data-formula-surface]')) return;
     if (event.isComposing || document.activeElement !== target ||
         !target.matches('textarea, input:is([type="text"], [type="search"], [type="url"], [type="tel"], :not([type]))') ||
         target.matches(':disabled, [readonly]') || target.closest('[hidden], [inert], [data-autocomplete="off"]') ||
@@ -138,13 +188,7 @@ export function installAutocomplete(defaultCandidates) {
       : target.form?.matches('.answerForm, .atomicAnswerForm') ||
         target.closest('.questionInteraction, .passageBlankText, .hyperskillCodeEditor') ? 'answer' : 'other');
     if (!autocompleteEnabled(nextGroup)) return dismiss();
-    if (target !== field) {
-      dismiss();
-      field = target;
-      group = nextGroup;
-      source = sources.get(target);
-      (target.closest('dialog') || document.body).append(menu);
-    }
+    useField(target, nextGroup);
     navigated = false;
     queryValue = field.value;
     queryCursor = field.selectionEnd;
@@ -154,7 +198,7 @@ export function installAutocomplete(defaultCandidates) {
   document.addEventListener('input', input, true);
   document.addEventListener('compositionend', input, true);
   document.addEventListener('compositionstart', dismiss, true);
-  document.addEventListener('focusout', event => { if (event.target === field) dismiss(); }, true);
+  document.addEventListener('focusout', event => { if (!applying && event.target === field) dismiss(); }, true);
   document.addEventListener('pointerdown', event => { if (!menu.contains(event.target)) dismiss(); }, true);
   document.addEventListener('scroll', event => { if (event.target !== menu && event.target !== field) dismiss(); }, true);
   window.addEventListener('hashchange', dismiss);
@@ -168,7 +212,7 @@ export function installAutocomplete(defaultCandidates) {
   });
   document.addEventListener('keydown', event => {
     if (!field || event.target !== field || !completion.isShown()) return;
-    if (field.value !== queryValue || field.selectionStart !== queryCursor || field.selectionEnd !== queryCursor ||
+    if ((snapshot ? !snapshot.current() : field.value !== queryValue || field.selectionStart !== queryCursor || field.selectionEnd !== queryCursor) ||
         !autocompleteEnabled(group) || event.isComposing) return dismiss();
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return dismiss();
     let handled;

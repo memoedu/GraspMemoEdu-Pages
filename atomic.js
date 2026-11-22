@@ -1,19 +1,20 @@
-import {t, translateMessage} from './i18n.js?v=ca8a42ff138b8431';
-import {setQuestionTools} from './question-tools.js?v=ca8a42ff138b8431';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=ca8a42ff138b8431';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca8a42ff138b8431';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ca8a42ff138b8431';
-import {reportableContent} from './content-report.js?v=ca8a42ff138b8431';
-import {createLearningCache} from './learning-cache.js?v=ca8a42ff138b8431';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ca8a42ff138b8431';
-import {enhanceSourceContent} from './topic-content.js?v=ca8a42ff138b8431';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ca8a42ff138b8431';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ca8a42ff138b8431';
-import {pointAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
-import {trainingAudio} from './training-audio.js?v=ca8a42ff138b8431';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ca8a42ff138b8431';
-import {learningHint} from './beginner-hints.js?v=ca8a42ff138b8431';
+import {t, translateMessage} from './i18n.js?v=0013e04b6e675b18';
+import {attachFormulaEditing} from './formula-input.js?v=0013e04b6e675b18';
+import {setQuestionTools} from './question-tools.js?v=0013e04b6e675b18';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=0013e04b6e675b18';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=0013e04b6e675b18';
+import {mountAnswerConversion} from './answer-conversion.js?v=0013e04b6e675b18';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=0013e04b6e675b18';
+import {reportableContent} from './content-report.js?v=0013e04b6e675b18';
+import {createLearningCache} from './learning-cache.js?v=0013e04b6e675b18';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=0013e04b6e675b18';
+import {enhanceSourceContent} from './topic-content.js?v=0013e04b6e675b18';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=0013e04b6e675b18';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=0013e04b6e675b18';
+import {pointAssessment} from './point-assessment.js?v=0013e04b6e675b18';
+import {trainingAudio} from './training-audio.js?v=0013e04b6e675b18';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=0013e04b6e675b18';
+import {learningHint} from './beginner-hints.js?v=0013e04b6e675b18';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -254,6 +255,7 @@ export function createAtomicView(bridge) {
       input = node('textarea', 'answerInput'); input.id = 'atomicAnswer'; input.maxLength = 2000;
       input.value = value; input.disabled = disabled; input.rows = 3;
       form.append(label, input);
+      if (!disabled && question.interaction?.grading !== 'exact') attachFormulaEditing(input, {group: 'answer'});
     }
     const send = node('button', 'primaryButton', t(state.pending_submission_id ? 'atomic.judging' : 'atomic.submit'));
     const refreshSubmit = () => { send.disabled = disabled || (!answerReady(input) && !voiceAnswerPending(form)); };

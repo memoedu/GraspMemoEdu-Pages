@@ -1,7 +1,8 @@
-import {t} from './i18n.js?v=ca8a42ff138b8431';
-import {prepareLiteralMath} from './math-presentation.js?v=ca8a42ff138b8431';
-import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=ca8a42ff138b8431';
-import {enhanceSourceContent} from './topic-content.js?v=ca8a42ff138b8431';
+import {t} from './i18n.js?v=0013e04b6e675b18';
+import {attachFormulaEditing} from './formula-input.js?v=0013e04b6e675b18';
+import {prepareLiteralMath} from './math-presentation.js?v=0013e04b6e675b18';
+import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=0013e04b6e675b18';
+import {enhanceSourceContent} from './topic-content.js?v=0013e04b6e675b18';
 
 const node = (tag, cls, text) => {
   const element = document.createElement(tag); element.className = cls;
@@ -250,6 +251,9 @@ export function questionInput(spec, {id, value = '', stem, disabled = false, for
       field.addEventListener('keydown', event => answerShortcut(event, formId, disabled));
       return field;
     }, gapOptions);
+    if (spec.grading === 'semantic' && !disabled) {
+      for (const {field} of passageFields) attachFormulaEditing(field, {group: 'answer', launch: false});
+    }
     syncPassage();
   }
   function mountChoiceBlank() {

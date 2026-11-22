@@ -1,26 +1,27 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=ca8a42ff138b8431";
-import { createReviewView } from "./review.js?v=ca8a42ff138b8431";
-import { renderCourseGraph } from "./course-graph.js?v=ca8a42ff138b8431";
-import {questionInput, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=ca8a42ff138b8431';
-import {enhanceTopicContent} from './topic-content.js?v=ca8a42ff138b8431';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=ca8a42ff138b8431';
-import {createCatalogPicker} from './catalog-picker.js?v=ca8a42ff138b8431';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=ca8a42ff138b8431';
-import {createAtomicView} from './atomic.js?v=ca8a42ff138b8431';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=ca8a42ff138b8431';
-import {sourceAttributions} from './memory-chunk.js?v=ca8a42ff138b8431';
-import {createTrainingView} from './training.js?v=ca8a42ff138b8431';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=ca8a42ff138b8431";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=0013e04b6e675b18";
+import {attachFormulaEditing, renderSavedFormulaText} from './formula-input.js?v=0013e04b6e675b18';
+import { createReviewView } from "./review.js?v=0013e04b6e675b18";
+import { renderCourseGraph } from "./course-graph.js?v=0013e04b6e675b18";
+import {questionInput, choiceTypeField} from './question-input.js?v=0013e04b6e675b18';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=0013e04b6e675b18';
+import {enhanceTopicContent} from './topic-content.js?v=0013e04b6e675b18';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=0013e04b6e675b18';
+import {createCatalogPicker} from './catalog-picker.js?v=0013e04b6e675b18';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=0013e04b6e675b18';
+import {createAtomicView} from './atomic.js?v=0013e04b6e675b18';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=0013e04b6e675b18';
+import {sourceAttributions} from './memory-chunk.js?v=0013e04b6e675b18';
+import {createTrainingView} from './training.js?v=0013e04b6e675b18';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=0013e04b6e675b18";
 
-import {createPaperView} from './review-papers.js?v=ca8a42ff138b8431';
-import {createContextLibraryView} from './context-library.js?v=ca8a42ff138b8431';
+import {createPaperView} from './review-papers.js?v=0013e04b6e675b18';
+import {createContextLibraryView} from './context-library.js?v=0013e04b6e675b18';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=ca8a42ff138b8431';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca8a42ff138b8431';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=ca8a42ff138b8431';
-import {createStudentDashboard} from './student-dashboard.js?v=ca8a42ff138b8431';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=ca8a42ff138b8431';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=0013e04b6e675b18';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=0013e04b6e675b18';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=0013e04b6e675b18';
+import {createStudentDashboard} from './student-dashboard.js?v=0013e04b6e675b18';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=0013e04b6e675b18';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -40,7 +41,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=ca8a42ff138b8431').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=0013e04b6e675b18').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1189,6 +1190,13 @@ export function initPortal(bridge) {
       completionSetting.append(label);
     }
     form.insertBefore(completionSetting, status);
+    const commandInput = node('input'); commandInput.type = 'checkbox'; commandInput.id = 'answerCommandInputEnabled';
+    commandInput.checked = bridge.getAccess()?.answer_command_input_enabled ?? profile.answer_command_input_enabled ?? false;
+    commandInput.setAttribute('aria-describedby', 'answerCommandInputHint');
+    const commandLabel = node('label', 'courseHierarchySetting');
+    commandLabel.append(commandInput, document.createTextNode(t('portal.answerCommandInput')));
+    const commandHint = node('p', 'fieldHint', t('portal.answerCommandInputHint')); commandHint.id = 'answerCommandInputHint';
+    form.insertBefore(commandLabel, status); form.insertBefore(commandHint, status);
     const beginner = node('input'); beginner.type = 'checkbox'; beginner.id = 'beginnerModeEnabled';
     beginner.checked = bridge.getAccess()?.beginner_mode_enabled ?? profile.beginner_mode_enabled ?? true;
     beginner.setAttribute('aria-describedby', 'beginnerModeHint');
@@ -1238,11 +1246,13 @@ export function initPortal(bridge) {
         const updated = await call("profile", { method: "POST", body: {
           display_name: defaultGuestName && display.value.trim() === t("portal.guest.12") ? profile.display_name || "游客" : display.value.trim(),
           timezone: zone.value.trim(), beginner_mode_enabled: beginner.checked,
+          answer_command_input_enabled: commandInput.checked,
           ...(allowed("course_hierarchy") ? {course_hierarchy_enabled: hierarchy.checked} : {}),
         } });
         if (actor !== bridge.getAccess()?.learner_id) return;
         profile = updated;
-        bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled});
+        bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled,
+          answer_command_input_enabled: profile.answer_command_input_enabled});
         if (trainingPreferences?.eligible) await call('training/preferences', {method: 'POST', body: {self_rating_enabled: selfRating.checked}});
         if (paperPreferences.can_choose || paperPreferences.can_choose_timeout) await call('review-papers/preferences', {method: 'POST', body: {
           ...(paperPreferences.can_choose ? {mode: paperMode.value} : {}),
@@ -1419,7 +1429,7 @@ export function initPortal(bridge) {
       bold: t('help.editorBold'), italic: t('help.editorItalic'), list: t('help.editorList'),
       math: t('help.editorMath'), preview: t('help.editorPreview'), uploading: t('help.imageUploading'),
       invalidImage: t('help.imageInvalid'), tooMany: t('help.imagesTooMany'), tooLong: t('help.imageTextTooLong')}, {
-      dropTarget: panel,
+      dropTarget: panel, attachFormula: attachFormulaEditing,
       upload: data => bridge.request('help-images', {method: 'POST', body: {
         report_id: item.is_main ? item.learner_id : item.id, is_main: !!item.is_main, data}}),
       onUploading: value => {submit.disabled = cancel.disabled = value;
@@ -1826,12 +1836,16 @@ export function initPortal(bridge) {
     const quote = feedbackContext.correction?.quote;
     if (!quote) return;
     for (const [preview, value] of [[originalPreview, quote.exact], [replacementPreview, replacementInput.value]]) {
-      preview.replaceChildren(document.createTextNode(quote.prefix), node('strong', '', value), document.createTextNode(quote.suffix));
+      const highlight = node('strong', '', value);
+      preview.replaceChildren(document.createTextNode(quote.prefix), highlight, document.createTextNode(quote.suffix));
+      renderSavedFormulaText(highlight, value);
     }
   }
   replacementInput.addEventListener('input', previewCorrection);
   const feedbackActions = node("div", "dialogActions"), feedbackCancel = control(t("portal.cancel.125"), "secondaryButton", () => feedbackDialog.close()), feedbackSubmit = node("button", "primaryButton", t("portal.submit.126")); feedbackSubmit.type = "submit";
   feedbackActions.append(feedbackCancel, feedbackSubmit); feedbackForm.append(feedbackHeading, correctionFields, feedbackLabel, helpFeedback.element, feedbackInput, feedbackStatus, feedbackActions); feedbackDialog.append(feedbackForm); document.body.append(feedbackDialog);
+  const feedbackFormula = attachFormulaEditing(feedbackInput), replacementFormula = attachFormulaEditing(replacementInput);
+  feedbackForm.noValidate = true;
   function showFeedback(context = {}) {
     if (feedbackBusy || feedbackDialog.open) return;
     const matchesSelected = !context.topic_id || selectedDashboard()?.topics?.some((topic) => topic.id === context.topic_id);
@@ -1845,10 +1859,19 @@ export function initPortal(bridge) {
     previewCorrection();
     feedbackStatus.textContent = ""; feedbackInput.value = ""; feedbackInput.hidden = false; feedbackLabel.hidden = false; feedbackSubmit.hidden = false; feedbackCancel.textContent = t("portal.cancel.125");
     if (!feedbackDialog.open) feedbackDialog.showModal();
-    (correction ? replacementInput : feedbackInput).focus();
+    feedbackFormula.sync(); replacementFormula.sync();
+    const formula = correction ? replacementFormula : feedbackFormula;
+    if (formula.visible) formula.focusAt(0);
+    else (correction ? replacementInput : feedbackInput).focus();
   }
   feedbackForm.addEventListener("submit", async (event) => {
-    event.preventDefault(); if (feedbackBusy || (!feedbackContext.correction && !feedbackContext.help_request && !feedbackInput.value.trim())) return;
+    event.preventDefault(); if (feedbackBusy) return;
+    if (!feedbackContext.correction && !feedbackContext.help_request && !feedbackInput.value.trim()) {
+      feedbackStatus.textContent = feedbackLabel.textContent;
+      if (feedbackFormula.visible) feedbackFormula.focusAt(0);
+      else feedbackInput.focus();
+      return;
+    }
     feedbackBusy = true; feedbackSubmit.disabled = true; feedbackClose.disabled = true; feedbackCancel.disabled = true; feedbackStatus.textContent = t(feedbackContext.help_request ? feedbackContext.kind === 'quality' ? 'help.qualitySaving' : 'help.saving' : "portal.saving.feedback.128");
     try {
       feedbackInput.disabled = true; replacementInput.disabled = true; helpFeedback.disable(true);
@@ -1865,7 +1888,8 @@ export function initPortal(bridge) {
     finally { feedbackBusy = false; feedbackSubmit.disabled = false; feedbackClose.disabled = false; feedbackCancel.disabled = false; feedbackInput.disabled = false; replacementInput.disabled = false; helpFeedback.disable(false); }
   });
   feedbackDialog.addEventListener("cancel", (event) => { if (feedbackBusy) event.preventDefault(); });
-  feedbackDialog.addEventListener('close', () => { feedbackContext = {}; feedbackInput.value = ''; replacementInput.value = ''; helpFeedback.reset(); });
+  feedbackDialog.addEventListener('close', () => { feedbackContext = {}; feedbackInput.value = ''; replacementInput.value = '';
+    feedbackFormula.sync(); replacementFormula.sync(); helpFeedback.reset(); });
   const contentReporting = installContentReporting(showFeedback);
   helpReporting = installHelpRequests(bridge.getAccess, context => showFeedback({...context, help_request: true, request_id: crypto.randomUUID()}));
 

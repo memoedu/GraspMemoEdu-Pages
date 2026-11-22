@@ -1,6 +1,7 @@
-import {getLanguage} from './i18n.js?v=ca8a42ff138b8431';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=ca8a42ff138b8431';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {getLanguage} from './i18n.js?v=0013e04b6e675b18';
+import {activeFormulaField} from './formula-input.js?v=0013e04b6e675b18';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=0013e04b6e675b18';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=0013e04b6e675b18';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -18,6 +19,8 @@ function editable(field) {
 }
 
 function destination(field) {
+  const formula = activeFormulaField(field);
+  if (formula) return {...formula, profile: formula.field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
   if (!editable(field)) return null;
   return {field, value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
     to: field.selectionEnd ?? field.value.length,
@@ -26,7 +29,7 @@ function destination(field) {
 
 function currentDestination() {
   const active = document.activeElement;
-  const target = destination(editable(active) ? active : active?.closest('.questionTools') ? lastField : null);
+  const target = destination(active?.closest('.questionTools') ? lastField : active);
   const modal = currentModal();
   if (target && (!modal || modal.contains(target.field))) return target;
   const answer = !modal && answerTarget(document, {topic: true});
@@ -34,6 +37,7 @@ function currentDestination() {
 }
 
 function insert(target, text) {
+  if (target.insert) return target.insert(text);
   const {field, value, from, to} = target;
   if (!editable(field) || field.value !== value) return false;
   if (field.maxLength >= 0 && value.length - (to - from) + text.length > field.maxLength) return false;
@@ -102,7 +106,7 @@ async function fillAnswer(job) {
   } else if (!valid()) {
     current = null;
     update(strings('作答位置已变化。请在当前题目重新录音。', 'The answer location changed. Record again for the current question.'));
-  } else setPhase(job, 'conversion_failed', strings('未能填入答题控件。请检查转换框中的文字。', 'Could not update the controls. Check the text in the conversion box.'));
+  } else setPhase(job, 'conversion_failed', strings('未能填入答案。可重试填入，或取消后重新录音。', 'Could not fill in the answer. Retry, or cancel and record again.'));
 }
 
 async function start() {
@@ -171,7 +175,7 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   identity = getIdentity;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
   document.addEventListener('focusin', event => {
-    if (editable(event.target)) lastField = event.target;
+    if (editable(event.target) || activeFormulaField(event.target)) lastField = event.target;
     else if (!event.target.closest('.questionTools') && current?.phase !== 'ready') lastField = null;
     paint();
   });
