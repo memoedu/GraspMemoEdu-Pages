@@ -1,5 +1,5 @@
-import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=769a0cb3f2f6366b';
-import {toolInputs} from './calculator-inputs.js?v=769a0cb3f2f6366b';
+import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3325cfcbaaa73678';
+import {toolInputs} from './calculator-inputs.js?v=3325cfcbaaa73678';
 
 let active = null;
 let preferredLayout = 'side';
@@ -103,6 +103,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   if (active?.launch === launch) return;
   active?.close(false);
   const local = (zh, en) => english ? en : zh;
+  const toolRow = launch.closest('.questionToolRow');
   const dialog = create('dialog', 'questionCalculator');
   dialog.dataset.module = module;
   dialog.setAttribute('aria-labelledby', 'questionCalculatorTitle');
@@ -130,16 +131,24 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const observe = new MutationObserver(() => {
     if (!launch.isConnected) close(false);
   });
+  const measure = () => dialog.style.setProperty('--calculator-toolbar-bottom',
+    Math.round(toolRow?.getBoundingClientRect().bottom || 0) + 'px');
+  const resizeTools = new ResizeObserver(measure);
+  if (toolRow) resizeTools.observe(toolRow);
   const onResize = () => setLayout(preferredLayout, false);
   function setLayout(mode, remember = true) {
     if (remember) preferredLayout = mode;
     const dock = mode === 'side' && wide.matches;
+    const top = (document.querySelector('.topRibbon')?.getBoundingClientRect().bottom ?? 0) + 4;
+    toolRow?.style.setProperty('--calculator-toolbar-top', top + 'px');
+    dialog.style.setProperty('--calculator-toolbar-top', top + 'px');
+    if (toolRow) toolRow.dataset.calculatorLayout = dock ? 'side' : 'center';
     side.disabled = !wide.matches;
     if (dialog.open && dialog.dataset.layout === (dock ? 'side' : 'center')) return;
     if (dialog.open) dialog.close();
     dialog.dataset.layout = dock ? 'side' : 'center';
-    if (dock) dialog.show();
-    else dialog.showModal();
+    dialog.show();
+    measure();
     center.setAttribute('aria-pressed', String(!dock));
     side.setAttribute('aria-pressed', String(dock));
     (dialog.querySelector('input, textarea') || closeButton).focus({preventScroll: true});
@@ -153,9 +162,13 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   function close(returnFocus) {
     if (closed) return;
     closed = true;
-    observe.disconnect(); wide.removeEventListener('change', onResize);
+    observe.disconnect(); resizeTools.disconnect(); window.removeEventListener('resize', onResize);
     stop();
     dialog.close(); dialog.remove();
+    if (toolRow) {
+      delete toolRow.dataset.calculatorLayout;
+      toolRow.style.removeProperty('--calculator-toolbar-top');
+    }
     launch.setAttribute('aria-expanded', 'false');
     if (returnFocus && launch.isConnected) launch.focus({preventScroll: true});
     if (active?.launch === launch) active = null;
@@ -183,7 +196,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=769a0cb3f2f6366b', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=3325cfcbaaa73678', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -400,9 +413,9 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   }
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(true); });
   dialog.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && dialog.dataset.layout === 'side') { event.preventDefault(); close(true); }
+    if (event.key === 'Escape') { event.preventDefault(); close(true); }
   });
-  wide.addEventListener('change', onResize);
+  window.addEventListener('resize', onResize);
   document.body.append(dialog); worksheet(); setLayout(preferredLayout);
   launch.setAttribute('aria-expanded', 'true');
   observe.observe(document.body, {childList: true, subtree: true});

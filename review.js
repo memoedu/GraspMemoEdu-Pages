@@ -1,11 +1,12 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=769a0cb3f2f6366b';
-import {setQuestionTools} from './question-tools.js?v=769a0cb3f2f6366b';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=769a0cb3f2f6366b';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=769a0cb3f2f6366b';
-import {reportableContent} from './content-report.js?v=769a0cb3f2f6366b';
-import {createLearningCache} from './learning-cache.js?v=769a0cb3f2f6366b';
-import {enhanceTopicContent} from './topic-content.js?v=769a0cb3f2f6366b';
-import {practiceHint} from './beginner-hints.js?v=769a0cb3f2f6366b';
+import { t, translateMessage, learningTitle } from './i18n.js?v=3325cfcbaaa73678';
+import {setQuestionTools} from './question-tools.js?v=3325cfcbaaa73678';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=3325cfcbaaa73678';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3325cfcbaaa73678';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3325cfcbaaa73678';
+import {reportableContent} from './content-report.js?v=3325cfcbaaa73678';
+import {createLearningCache} from './learning-cache.js?v=3325cfcbaaa73678';
+import {enhanceTopicContent} from './topic-content.js?v=3325cfcbaaa73678';
+import {practiceHint} from './beginner-hints.js?v=3325cfcbaaa73678';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -232,13 +233,23 @@ export function createReviewView(bridge) {
     }
     if (editable) {
       const form = node('form', 'learningActions answerForm'); form.id = 'reviewAnswerForm'; form.addEventListener('submit', submit);
+      enableVoiceAnswer(form, {defer: !structured && question.interaction?.grading !== 'exact'});
       const control = structured ? questionInput(question.interaction, {id: 'reviewAnswerInput', stem,
         value: read(draftKey()) || '', formId: 'reviewAnswerForm', disabled: busy || !can('submit_answer')}) : null;
       const label = node(structured ? 'p' : 'label', '', t('你的答案')); label.htmlFor = 'reviewAnswerInput';
       const input = control?.input || node('textarea', 'answerInput'); input.id = 'reviewAnswerInput'; input.rows = 3; input.maxLength = 2000; input.spellcheck = false;
       input.value = read(draftKey()) || ''; input.disabled = busy;
-      input.addEventListener('input', () => { write(draftKey(), input.value); root.querySelector('#reviewSubmitButton').disabled = busy || !answerReady(input) || !can('submit_answer'); });
-      input.addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) submit(event); });
+      const refreshSubmit = () => {
+        const send = card.querySelector('#reviewSubmitButton');
+        if (send) send.disabled = busy || (!answerReady(input) && !voiceAnswerPending(form)) || !can('submit_answer');
+      };
+      form.addEventListener('voiceinputchange', refreshSubmit);
+      input.addEventListener('input', () => { write(draftKey(), input.value); refreshSubmit(); });
+      input.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) {
+          event.preventDefault(); form.requestSubmit(card.querySelector('#reviewSubmitButton') || undefined);
+        }
+      });
       form.append(label, control?.element || input);
       form.append(node('p', 'inputHint', t(question.interaction?.type === 'choice' ? 'question.choiceHint' : question.interaction?.grading === 'exact' ? 'question.exactHint'
         : question.interaction?.grading === 'semantic' ? 'question.semanticHint'
@@ -260,7 +271,7 @@ export function createReviewView(bridge) {
     if (!isCurrent) nav.append(button(t('下一页'), 'primaryButton', () => choose(pageIds[index + 1])));
     else if (state.actions.includes('continue')) nav.append(button(t('下一页'), 'primaryButton', () => mutate('continue', payload()), 'reviewContinueButton'));
     else if (state.actions.includes('submit')) {
-      const send = button(t('Submit'), 'primaryButton', submit, 'reviewSubmitButton'); send.disabled = busy;
+      const send = node('button', 'primaryButton', t('Submit')); send.id = 'reviewSubmitButton'; send.type = 'submit'; send.disabled = busy;
       send.setAttribute('form', 'reviewAnswerForm'); nav.append(send);
     } else if (state.status !== 'in_progress') nav.append(home());
     for (const item of nav.querySelectorAll('button')) if (busy) item.disabled = true;

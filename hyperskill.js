@@ -1,5 +1,5 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=769a0cb3f2f6366b';
-import {enhanceSourceContent} from './topic-content.js?v=769a0cb3f2f6366b';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=3325cfcbaaa73678';
+import {enhanceSourceContent} from './topic-content.js?v=3325cfcbaaa73678';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -194,7 +194,7 @@ export function hyperskillQuestion(box,{question,history,disabled,data,draft,onD
     box.append(node('p','inputHint','已通过，正在同步学习记录。'));
     return box;
   }
-  const form=node('form','atomicAnswerForm');form.id='hyperskillAnswerForm';
+  const form=node('form','atomicAnswerForm');form.id='hyperskillAnswerForm';form.dataset.voiceAnswer='true';
   let input;
   if(data.interaction) {
     const type=choiceTypeField(data.interaction);if(type)form.append(type);

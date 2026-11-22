@@ -1,20 +1,21 @@
-import {t, translateMessage} from './i18n.js?v=769a0cb3f2f6366b';
-import {setQuestionTools} from './question-tools.js?v=769a0cb3f2f6366b';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=769a0cb3f2f6366b';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=769a0cb3f2f6366b';
-import {createLearningCache} from './learning-cache.js?v=769a0cb3f2f6366b';
-import {helpableContent, reportableContent} from './content-report.js?v=769a0cb3f2f6366b';
+import {t, translateMessage} from './i18n.js?v=3325cfcbaaa73678';
+import {setQuestionTools} from './question-tools.js?v=3325cfcbaaa73678';
+import {voiceAnswerPending} from './voice-input.js?v=3325cfcbaaa73678';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=3325cfcbaaa73678';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=3325cfcbaaa73678';
+import {createLearningCache} from './learning-cache.js?v=3325cfcbaaa73678';
+import {helpableContent, reportableContent} from './content-report.js?v=3325cfcbaaa73678';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return x; };
-import {createContentTimer} from './content-timer.js?v=769a0cb3f2f6366b';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=769a0cb3f2f6366b';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=769a0cb3f2f6366b';
-import {chunkPeek} from './memory-chunk.js?v=769a0cb3f2f6366b';
-import {pointAssessment} from './point-assessment.js?v=769a0cb3f2f6366b';
-import {trainingAudio} from './training-audio.js?v=769a0cb3f2f6366b';
-import {learningHint} from './beginner-hints.js?v=769a0cb3f2f6366b';
+import {createContentTimer} from './content-timer.js?v=3325cfcbaaa73678';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=3325cfcbaaa73678';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=3325cfcbaaa73678';
+import {chunkPeek} from './memory-chunk.js?v=3325cfcbaaa73678';
+import {pointAssessment} from './point-assessment.js?v=3325cfcbaaa73678';
+import {trainingAudio} from './training-audio.js?v=3325cfcbaaa73678';
+import {learningHint} from './beginner-hints.js?v=3325cfcbaaa73678';
 
 export function createPaperView({root, request, href, getAccess, formatDate, progressChanged, courseSidebar, taskTree}) {
   const template = document.getElementById('appLayout').cloneNode(true);
@@ -291,7 +292,8 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
       const editor = answerEditor(item, stem, item.answer, {formId: 'paperAnswerForm', inputId: 'paperAnswer', submitId: 'paperSubmit'}); input = editor.input;
       const label = item.multi_step ? 'question.submitStep' : state.mode === 'question' ? 'paper.submitOne' : selected < state.items.length - 1 ? 'paper.next' : 'paper.submitAll'; editor.submit.textContent = t(label);
       editor.form.append(editor.bottom); main.append(editor.form);
-      const refresh = () => { editor.submit.disabled = !state.can_submit || !answerReady(input); };
+      const refresh = () => { editor.submit.disabled = !state.can_submit || (!answerReady(input) && !voiceAnswerPending(editor.form)); };
+      editor.form.addEventListener('voiceinputchange', refresh);
       input.addEventListener('input', () => { remember(); refresh(); clearTimeout(saveTimer); saveTimer = setTimeout(() => { void flush().catch(failure => { if (reader) reader.refs.saveStatus.textContent = t('paper.savedLocal'); error(failure); }); }, 650); });
       input.addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) { event.preventDefault(); editor.form.requestSubmit(); } });
       editor.form.addEventListener('submit', event => { event.preventDefault(); if (editor.submit.disabled) return; if (item.multi_step || state.mode === 'question') void submit(selected); else if (selected < state.items.length - 1) void select(selected + 1); else void submit(); });
