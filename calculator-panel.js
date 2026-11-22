@@ -1,7 +1,7 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=ca8a42ff138b8431';
-import {toolInputs} from './calculator-inputs.js?v=ca8a42ff138b8431';
-import {setInputCompletions} from './autocomplete.js?v=ca8a42ff138b8431';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=4ef74d27767b2a3b';
+import {toolInputs} from './calculator-inputs.js?v=4ef74d27767b2a3b';
+import {setInputCompletions} from './autocomplete.js?v=4ef74d27767b2a3b';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=4ef74d27767b2a3b';
 
 let active = null;
 let preferredLayout = 'side';
@@ -142,7 +142,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     if (closed) return;
     transferring = false; refreshTransfer();
     if (applied) close(true);
-    else transferStatus.textContent = local('无法填入答题控件，请检查转换框。', 'Could not fill the controls. Check the conversion box.');
+    else transferStatus.textContent = local('未能填入答案。请检查计算结果后重试。', 'Could not fill in the answer. Check the result and try again.');
   });
   const footer = create('div', 'calculatorTransfer');
   footer.append(transferStatus, transfer); dialog.append(footer);
@@ -231,7 +231,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=ca8a42ff138b8431', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=4ef74d27767b2a3b', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;

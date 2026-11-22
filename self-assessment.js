@@ -1,7 +1,7 @@
-import {t} from './i18n.js?v=ca8a42ff138b8431';
-import {answerEmpty} from './question-input.js?v=ca8a42ff138b8431';
-import {prepareLiteralMath} from './math-presentation.js?v=ca8a42ff138b8431';
-import {answerAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
+import {t} from './i18n.js?v=4ef74d27767b2a3b';
+import {answerEmpty} from './question-input.js?v=4ef74d27767b2a3b';
+import {prepareLiteralMath} from './math-presentation.js?v=4ef74d27767b2a3b';
+import {answerAssessment} from './point-assessment.js?v=4ef74d27767b2a3b';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
