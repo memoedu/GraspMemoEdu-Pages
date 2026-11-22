@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=b17c5804797fc6e3";
-import {answerReady} from './question-input.js?v=b17c5804797fc6e3';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=b17c5804797fc6e3';
-import {startPresence} from './presence.js?v=b17c5804797fc6e3';
-import {createLearningCache} from './learning-cache.js?v=b17c5804797fc6e3';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=b17c5804797fc6e3';
+import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=6099b13a721db914";
+import {answerReady} from './question-input.js?v=6099b13a721db914';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=6099b13a721db914';
+import {startPresence} from './presence.js?v=6099b13a721db914';
+import {createLearningCache} from './learning-cache.js?v=6099b13a721db914';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=6099b13a721db914';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=b17c5804797fc6e3';
-import {selfAssessment} from './self-assessment.js?v=b17c5804797fc6e3';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=b17c5804797fc6e3';
-import {renderSourceReader} from './learning-ui.js?v=b17c5804797fc6e3';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=b17c5804797fc6e3';
-import {createTrainingView} from './training.js?v=b17c5804797fc6e3';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=6099b13a721db914';
+import {selfAssessment} from './self-assessment.js?v=6099b13a721db914';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=6099b13a721db914';
+import {renderSourceReader} from './learning-ui.js?v=6099b13a721db914';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=6099b13a721db914';
+import {createTrainingView} from './training.js?v=6099b13a721db914';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1324,6 +1324,14 @@ function renderStep(step) {
     area.append(el("p", "choiceNotice", t("已选择未掌握。点击下一页，开始阅读相关讲解。")));
     target.append(area);
   }
+  if (actions.includes("attempt_example") || actions.includes("view_solution")) {
+    const area = el("div", "learningActions");
+    const choices = el("div", "choiceActions");
+    if (actions.includes("attempt_example")) choices.append(button(t("尝试完成"), "primaryButton", () => mutate("choose", mutationPayload({ choice: "attempt_example" }))));
+    if (actions.includes("view_solution")) choices.append(button(t("修王子"), "secondaryButton", () => mutate("choose", mutationPayload({ choice: "view_solution" }))));
+    area.append(choices);
+    target.append(area);
+  }
   if (actions.includes("submit")) target.append(answerForm(step, stem));
   if (state.pending_submission_id && step.id === state.active_step_id) {
     const wait = el("div", "waiting");
@@ -1630,7 +1638,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=b17c5804797fc6e3");
+const { initPortal } = await import("./portal.js?v=6099b13a721db914");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
