@@ -1,16 +1,16 @@
-import { t, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=55a8c2a9b5fd9dbd";
-import {answerReady} from './question-input.js?v=55a8c2a9b5fd9dbd';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=55a8c2a9b5fd9dbd';
-import {startPresence} from './presence.js?v=55a8c2a9b5fd9dbd';
-import {createLearningCache} from './learning-cache.js?v=55a8c2a9b5fd9dbd';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=55a8c2a9b5fd9dbd';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=bacb3c1fa9155d6c";
+import {answerReady} from './question-input.js?v=bacb3c1fa9155d6c';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=bacb3c1fa9155d6c';
+import {startPresence} from './presence.js?v=bacb3c1fa9155d6c';
+import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=bacb3c1fa9155d6c';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=55a8c2a9b5fd9dbd';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=55a8c2a9b5fd9dbd';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=55a8c2a9b5fd9dbd';
-import {renderSourceReader} from './learning-ui.js?v=55a8c2a9b5fd9dbd';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=55a8c2a9b5fd9dbd';
-import {createTrainingView} from './training.js?v=55a8c2a9b5fd9dbd';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=bacb3c1fa9155d6c';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=bacb3c1fa9155d6c';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=bacb3c1fa9155d6c';
+import {renderSourceReader} from './learning-ui.js?v=bacb3c1fa9155d6c';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=bacb3c1fa9155d6c';
+import {createTrainingView} from './training.js?v=bacb3c1fa9155d6c';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1194,9 +1194,31 @@ function renderHistory() {
 }
 function historyGroup(title, status, steps, className = "", currentAttempt = null) {
     const attempts = [...new Set(steps.map(step => step.attempt_id).filter(Boolean))];
-    return readerHistoryGroup({title, status, className, items: steps.map(step => {
+    const examples = new Map(), practiceCounts = new Map();
+    for (const step of steps) {
+      if (step.kind !== 'example') continue;
+      if (!examples.has(step.module_id)) examples.set(step.module_id, []);
+      examples.get(step.module_id).push(step);
+    }
+    const ordered = steps.flatMap(step => {
+      if (step.kind !== 'example' && step.kind !== 'practice') return [step];
+      const first = examples.get(step.module_id) || [];
+      examples.delete(step.module_id);
+      return step.kind === 'example' ? first : [...first, step];
+    });
+    return readerHistoryGroup({title, status, className, items: ordered.map(step => {
       let label = step.kind === "introduction" ? readerStepTitle(step) : step.kind === "completion" ? t("学习结果") : step.kind === "example" ? t("Example") : learningTitle(step.title);
       if (step.kind === "example" && step.phase === "reading") label += t(" · 讲解");
+      if (step.kind === 'practice') {
+        const practiceNumber = (practiceCounts.get(step.module_id) || 0) + 1;
+        practiceCounts.set(step.module_id, practiceNumber);
+        const digits = '一二三四五六七八九';
+        const tens = Math.floor(practiceNumber / 10);
+        const units = practiceNumber % 10;
+        const ordinal = tens >= 10 ? practiceNumber
+          : (tens > 1 ? digits[tens - 1] : '') + (tens ? '十' : '') + (units ? digits[units - 1] : '');
+        label = t('reader.practiceNumber', {number: getLanguage() === 'en' ? practiceNumber : ordinal});
+      }
       const marks = [];
       if (step.id === state.active_step_id && readingStatus() !== 'completed') marks.push(t('当前'));
       else if (currentAttempt && step.attempt_id !== currentAttempt && step.kind !== 'introduction') marks.push(t('reader.historyAttempt', {attempt: attempts.indexOf(step.attempt_id) + 1}));
@@ -1640,7 +1662,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=55a8c2a9b5fd9dbd");
+const { initPortal } = await import("./portal.js?v=bacb3c1fa9155d6c");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
