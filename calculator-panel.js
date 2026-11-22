@@ -1,10 +1,9 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=0013e04b6e675b18';
-import {toolInputs} from './calculator-inputs.js?v=0013e04b6e675b18';
-import {setInputCompletions} from './autocomplete.js?v=0013e04b6e675b18';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=0013e04b6e675b18';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=c690e85f04a2d459';
+import {toolInputs} from './calculator-inputs.js?v=c690e85f04a2d459';
+import {setInputCompletions} from './autocomplete.js?v=c690e85f04a2d459';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=c690e85f04a2d459';
 
 let active = null;
-let preferredLayout = 'side';
 const create = (tag, className = '', text) => {
   const item = document.createElement(tag);
   item.className = className;
@@ -111,14 +110,9 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   dialog.setAttribute('aria-labelledby', 'questionCalculatorTitle');
   const headline = create('header', 'calculatorHeader');
   const title = create('h2', '', local(zh, en)); title.id = 'questionCalculatorTitle';
-  const layout = create('div', 'calculatorLayout');
-  const layoutToggle = create('div', 'calculatorLayoutToggle');
-  const center = button(local('居中', 'Center'), () => setLayout('center'));
-  const side = button(local('侧栏', 'Side panel'), () => setLayout('side'));
-  const closeButton = button('×', () => close(true));
+  const closeButton = button('×', () => close(true), 'button', 'calculatorControl calculatorClose');
   closeButton.setAttribute('aria-label', local('关闭计算器', 'Close calculator'));
-  layoutToggle.append(center, side);
-  layout.append(layoutToggle, closeButton); headline.append(title, layout); dialog.append(headline);
+  headline.append(title, closeButton); dialog.append(headline);
 
   const content = create('div', 'calculatorContent');
   const output = create('div', 'calculatorResult');
@@ -157,32 +151,15 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     refreshTransfer();
   }
   let renderHistory = () => {};
-  const wide = matchMedia('(min-width: 1100px)');
   const observe = new MutationObserver(() => {
     if (!launch.isConnected) close(false);
   });
-  const measure = () => dialog.style.setProperty('--calculator-toolbar-bottom',
-    Math.round(toolRow?.getBoundingClientRect().bottom || 0) + 'px');
+  const narrow = matchMedia('(width < 520px)');
+  const measure = () => {
+    if (narrow.matches && toolRow) dialog.style.setProperty('--calculator-toolbar-bottom',
+      Math.ceil(toolRow.getBoundingClientRect().bottom) + 'px');
+  };
   const resizeTools = new ResizeObserver(measure);
-  if (toolRow) resizeTools.observe(toolRow);
-  const onResize = () => setLayout(preferredLayout, false);
-  function setLayout(mode, remember = true) {
-    if (remember) preferredLayout = mode;
-    const dock = mode === 'side' && wide.matches;
-    const top = (document.querySelector('.topRibbon')?.getBoundingClientRect().bottom ?? 0) + 4;
-    toolRow?.style.setProperty('--calculator-toolbar-top', top + 'px');
-    dialog.style.setProperty('--calculator-toolbar-top', top + 'px');
-    if (toolRow) toolRow.dataset.calculatorLayout = dock ? 'side' : 'center';
-    side.disabled = !wide.matches;
-    if (dialog.open && dialog.dataset.layout === (dock ? 'side' : 'center')) return;
-    if (dialog.open) dialog.close();
-    dialog.dataset.layout = dock ? 'side' : 'center';
-    dialog.show();
-    measure();
-    center.setAttribute('aria-pressed', String(!dock));
-    side.setAttribute('aria-pressed', String(dock));
-    (dialog.querySelector('input, textarea') || closeButton).focus({preventScroll: true});
-  }
   function stop() {
     clearTimeout(timer);
     worker?.terminate();
@@ -192,14 +169,11 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   function close(returnFocus) {
     if (closed) return;
     closed = true;
-    observe.disconnect(); resizeTools.disconnect(); window.removeEventListener('resize', onResize);
+    observe.disconnect(); resizeTools.disconnect(); window.removeEventListener('resize', measure);
     document.removeEventListener(answerConversionChange, refreshTransfer);
     stop();
     dialog.close(); dialog.remove();
-    if (toolRow) {
-      delete toolRow.dataset.calculatorLayout;
-      toolRow.style.removeProperty('--calculator-toolbar-top');
-    }
+    if (toolRow) delete toolRow.dataset.calculatorOpen;
     launch.setAttribute('aria-expanded', 'false');
     if (returnFocus && launch.isConnected) launch.focus({preventScroll: true});
     if (active?.launch === launch) active = null;
@@ -231,7 +205,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=0013e04b6e675b18', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=c690e85f04a2d459', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -377,8 +351,6 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         };
         const keyButton = button(name, action, key === 'evaluate' ? 'submit' : 'button', 'calculatorKey');
         keyButton.dataset.calculatorKey = key;
-        keyButton.dataset.kind = key.startsWith('digit_') ? 'number'
-          : ['add', 'subtract', 'divide', 'multiply', 'power'].includes(key) ? 'operator' : 'function';
         keyButton.disabled = !permitsKey(config, key, minimum);
         if (key === 'evaluate') {
           equals = keyButton; keyButton.classList.add('calculatorPrimary');
@@ -464,9 +436,16 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   dialog.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); close(true); }
   });
-  window.addEventListener('resize', onResize);
+  worksheet();
+  refreshTransfer();
+  if (toolRow) toolRow.dataset.calculatorOpen = '';
+  (content.querySelector('input, textarea') || closeButton).autofocus = true;
+  document.body.append(dialog);
+  measure();
+  dialog.show();
   document.addEventListener(answerConversionChange, refreshTransfer);
-  document.body.append(dialog); worksheet(); setLayout(preferredLayout); refreshTransfer();
+  window.addEventListener('resize', measure);
+  if (toolRow) resizeTools.observe(toolRow);
   launch.setAttribute('aria-expanded', 'true');
   observe.observe(document.body, {childList: true, subtree: true});
   active = {launch, close};

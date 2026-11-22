@@ -1,5 +1,5 @@
-import {getLanguage} from './i18n.js?v=0013e04b6e675b18';
-import {calculatorToolGroups} from './calculator.js?v=0013e04b6e675b18';
+import {getLanguage} from './i18n.js?v=c690e85f04a2d459';
+import {calculatorToolGroups} from './calculator.js?v=c690e85f04a2d459';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -123,16 +123,12 @@ export function setQuestionTools(anchor, question) {
     button.setAttribute('aria-haspopup', 'dialog');
     button.setAttribute('aria-expanded', 'false');
     button.append(icon(path));
-    button.addEventListener('click', async () => {
-      if (button.hasAttribute('aria-busy')) return;
-      button.setAttribute('aria-busy', 'true');
+    button.addEventListener('click', () => {
       message.textContent = '';
       try {
-        await open(button);
+        open(button);
       } catch {
-        if (button.isConnected) message.textContent = english ? 'Tool couldn’t load. Select it again to retry.' : '工具加载失败，请再次点击重试。';
-      } finally {
-        button.removeAttribute('aria-busy');
+        message.textContent = english ? 'Tool couldn’t open. Select it again to retry.' : '工具未能打开，请再次点击重试。';
       }
     });
     return button;

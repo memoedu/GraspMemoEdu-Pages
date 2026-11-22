@@ -57,14 +57,14 @@ export const functions = {
 };
 
 export const keypad = [
-  ['open', '(', '('], ['close', ')', ')'], ['constant_pi', 'π', 'pi'], ['constant_e', 'e', 'e'], ['backspace', '⌫', ''],
-  ['sqrt', '√', 'sqrt('], ['power', 'xʸ', '^'], ['ln', 'ln', 'ln('], ['log10', 'log₁₀', 'log10('], ['abs', '|x|', 'abs('],
-  ['sin', 'sin', 'sin(', 2], ['cos', 'cos', 'cos(', 2], ['tan', 'tan', 'tan(', 2], ['exp', 'exp', 'exp(', 2], ['factorial', 'x!', '!', 2],
-  ['asin', 'sin⁻¹', 'asin(', 2], ['acos', 'cos⁻¹', 'acos(', 2], ['atan', 'tan⁻¹', 'atan(', 2], ['combinations', 'nCr', 'nCr(', 2], ['permutations', 'nPr', 'nPr(', 2],
   ['digit_7', '7', '7'], ['digit_8', '8', '8'], ['digit_9', '9', '9'], ['divide', '÷', '/'], ['clear', 'AC', ''],
   ['digit_4', '4', '4'], ['digit_5', '5', '5'], ['digit_6', '6', '6'], ['multiply', '×', '*'], ['ans', 'Ans', 'ans'],
   ['digit_1', '1', '1'], ['digit_2', '2', '2'], ['digit_3', '3', '3'], ['subtract', '−', '-'], ['comma', ',', ','],
   ['digit_0', '0', '0'], ['decimal', '.', '.'], ['exponent_notation', 'EXP', 'E', 2], ['add', '+', '+'], ['evaluate', '=', ''],
+  ['open', '(', '('], ['close', ')', ')'], ['constant_pi', 'π', 'pi'], ['constant_e', 'e', 'e'], ['backspace', '⌫', ''],
+  ['sqrt', '√', 'sqrt('], ['power', 'xʸ', '^'], ['ln', 'ln', 'ln('], ['log10', 'log₁₀', 'log10('], ['abs', '|x|', 'abs('],
+  ['sin', 'sin', 'sin(', 2], ['cos', 'cos', 'cos(', 2], ['tan', 'tan', 'tan(', 2], ['exp', 'exp', 'exp(', 2], ['factorial', 'x!', '!', 2],
+  ['asin', 'sin⁻¹', 'asin(', 2], ['acos', 'cos⁻¹', 'acos(', 2], ['atan', 'tan⁻¹', 'atan(', 2], ['combinations', 'nCr', 'nCr(', 2], ['permutations', 'nPr', 'nPr(', 2],
 ];
 
 export const basedLogKey = ['log_base', 'logₐ', 'log_'];
