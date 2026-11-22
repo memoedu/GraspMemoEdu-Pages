@@ -1,7 +1,7 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=8fb8fe43a072b8d3';
-import {toolInputs} from './calculator-inputs.js?v=8fb8fe43a072b8d3';
-import {setInputCompletions} from './autocomplete.js?v=8fb8fe43a072b8d3';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=8fb8fe43a072b8d3';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3f8c0aacb32aa0ad';
+import {toolInputs} from './calculator-inputs.js?v=3f8c0aacb32aa0ad';
+import {setInputCompletions} from './autocomplete.js?v=3f8c0aacb32aa0ad';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=3f8c0aacb32aa0ad';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -184,7 +184,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const observe = new MutationObserver(() => {
     if (!launch.isConnected) close(false);
   });
-  const narrow = matchMedia('(width < 520px)');
+  const narrow = matchMedia('(width < 1100px)');
   const measure = () => {
     if (narrow.matches && toolRow) dialog.style.setProperty('--calculator-toolbar-bottom',
       Math.ceil(toolRow.getBoundingClientRect().bottom) + 'px');
@@ -236,7 +236,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=8fb8fe43a072b8d3', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=3f8c0aacb32aa0ad', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
