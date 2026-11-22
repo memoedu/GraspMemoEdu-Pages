@@ -1,6 +1,5 @@
-import {getLanguage} from './i18n.js?v=3c49628d0cb4aeef';
-import {calculatorToolGroups} from './calculator.js?v=3c49628d0cb4aeef';
-import {voiceControls} from './voice-input.js?v=3c49628d0cb4aeef';
+import {getLanguage} from './i18n.js?v=bca9627f8ea46c76';
+import {calculatorToolGroups} from './calculator.js?v=bca9627f8ea46c76';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -15,6 +14,85 @@ function icon(path) {
   return svg;
 }
 
+function toolbarButtons(toolbar) {
+  return [...toolbar.querySelectorAll('.questionToolButton')].filter(button => !button.closest('[hidden]'));
+}
+
+function setTabStop(toolbar, selected) {
+  const buttons = toolbarButtons(toolbar);
+  const active = selected || buttons.find(button => button.tabIndex === 0) || buttons[0];
+  for (const button of buttons) button.tabIndex = button === active ? 0 : -1;
+}
+
+function createToolbar(label, orientation) {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'questionTools';
+  toolbar.setAttribute('role', 'toolbar');
+  toolbar.setAttribute('aria-label', label);
+  toolbar.setAttribute('aria-orientation', orientation);
+  const marker = icon('M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z');
+  marker.classList.add('toolbarMarker');
+  toolbar.append(marker);
+  toolbar.addEventListener('focusin', event => {
+    if (event.target.matches('.questionToolButton')) setTabStop(toolbar, event.target);
+  });
+  toolbar.addEventListener('keydown', event => {
+    const buttons = toolbarButtons(toolbar);
+    const index = buttons.indexOf(event.target);
+    if (index < 0) return;
+    const destination = {
+      ArrowLeft: (index + buttons.length - 1) % buttons.length,
+      ArrowUp: (index + buttons.length - 1) % buttons.length,
+      ArrowRight: (index + 1) % buttons.length,
+      ArrowDown: (index + 1) % buttons.length,
+      Home: 0,
+      End: buttons.length - 1,
+    }[event.key];
+    if (typeof destination !== 'number') return;
+    event.preventDefault();
+    buttons[destination].focus();
+  });
+  return toolbar;
+}
+
+export function installToolbars(host, voice) {
+  const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
+  const pageToolbar = createToolbar(label(), 'horizontal');
+  host.append(pageToolbar);
+  let modalToolbar;
+  const sync = () => {
+    const modal = voice.hidden ? null : [...document.querySelectorAll('dialog:modal')].at(-1);
+    if (modalToolbar && modalToolbar.parentElement !== modal) {
+      modalToolbar.remove();
+      modalToolbar = null;
+    }
+    if (modal && !modalToolbar) {
+      modalToolbar = createToolbar(label(), 'horizontal');
+      modalToolbar.classList.add('dialogTools');
+      modal.prepend(modalToolbar);
+    }
+    const questionToolbar = voice.hidden ? null :
+      [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
+    const toolbar = modalToolbar || questionToolbar || pageToolbar;
+    const hidePageTools = voice.hidden || toolbar !== pageToolbar;
+    if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
+    if (voice.parentElement !== toolbar) {
+      const previous = voice.parentElement;
+      toolbar.append(voice);
+      if (previous) setTabStop(previous);
+      setTabStop(toolbar);
+    }
+    if (pageToolbar.getAttribute('aria-label') !== label()) pageToolbar.setAttribute('aria-label', label());
+    if (modalToolbar && modalToolbar.getAttribute('aria-label') !== label()) modalToolbar.setAttribute('aria-label', label());
+  };
+  sync();
+  // Route changes can replace a question rail or open a native modal.
+  // Always transfer the one voice control to the currently usable toolbar.
+  new MutationObserver(sync).observe(document.body, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden'],
+  });
+}
+
 export function setQuestionTools(anchor, question) {
   toolbars.get(anchor)?.remove();
   toolbars.delete(anchor);
@@ -27,11 +105,7 @@ export function setQuestionTools(anchor, question) {
   rail.setAttribute('aria-label', english ? 'Tools for this question' : '当前题目的工具');
   const row = document.createElement('div');
   row.className = 'questionToolRow';
-  const toolbar = document.createElement('div');
-  toolbar.className = 'questionTools';
-  toolbar.setAttribute('role', 'toolbar');
-  toolbar.setAttribute('aria-label', english ? 'Question tools' : '题目工具');
-  toolbar.setAttribute('aria-orientation', 'vertical');
+  const toolbar = createToolbar(english ? 'Question tools' : '题目工具', 'vertical');
   const groupList = document.createElement('div');
   groupList.className = 'questionToolGroups';
   const message = document.createElement('div');
@@ -63,7 +137,6 @@ export function setQuestionTools(anchor, question) {
     });
     return button;
   };
-  const buttons = [];
   for (const {label, tools} of groups) {
     const group = document.createElement('div');
     group.className = 'questionToolGroup';
@@ -72,28 +145,9 @@ export function setQuestionTools(anchor, question) {
     const controls = tools.map(makeButton);
     group.append(...controls);
     groupList.append(group);
-    buttons.push(...controls);
   }
-  buttons[0].tabIndex = 0;
-  toolbar.addEventListener('focusin', event => {
-    if (buttons.includes(event.target)) for (const button of buttons) button.tabIndex = button === event.target ? 0 : -1;
-  });
-  toolbar.addEventListener('keydown', event => {
-    const index = buttons.indexOf(event.target);
-    if (index < 0) return;
-    const destination = {
-      ArrowLeft: (index + buttons.length - 1) % buttons.length,
-      ArrowUp: (index + buttons.length - 1) % buttons.length,
-      ArrowRight: (index + 1) % buttons.length,
-      ArrowDown: (index + 1) % buttons.length,
-      Home: 0,
-      End: buttons.length - 1,
-    }[event.key];
-    if (typeof destination !== 'number') return;
-    event.preventDefault();
-    buttons[destination].focus();
-  });
-  toolbar.append(groupList, voiceControls());
+  toolbar.append(groupList);
+  setTabStop(toolbar);
   row.append(toolbar, message);
   rail.append(row);
   if (!anchor.parentElement?.classList.contains('questionWorkspace')) {

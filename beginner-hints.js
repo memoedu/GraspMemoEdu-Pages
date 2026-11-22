@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=3c49628d0cb4aeef';
+import {t} from './i18n.js?v=bca9627f8ea46c76';
 
 let region, timer, frame, lastEvent;
 

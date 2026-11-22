@@ -1,13 +1,13 @@
-import {getLanguage} from './i18n.js?v=3c49628d0cb4aeef';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=3c49628d0cb4aeef';
+import {getLanguage} from './i18n.js?v=bca9627f8ea46c76';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=bca9627f8ea46c76';
 
-const widgets = new Set();
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
 const strings = (zh, en) => getLanguage() === 'en' ? en : zh;
 const changed = 'voiceinputchange';
 const audioLimitMs = 119000;
-let lastField, current, presenter, fallback, statusTimer, status = '', available = () => false, identity = () => null, transcribe;
+let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe;
+let paint = () => {};
 
 function editable(field) {
   return field?.isConnected && !field.closest('[hidden], [inert], [data-no-voice]') &&
@@ -35,19 +35,6 @@ function insert(target, text) {
   }
   field.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: text}));
   return true;
-}
-
-function calculatorVoiceControl() {
-  return document.querySelector('.questionToolRow[data-calculator-layout="center"] .voiceTool');
-}
-
-function paint() {
-  if (!presenter?.isConnected) presenter = currentModal()?.querySelector(':scope > .voiceTool') || fallback;
-  if (presenter === fallback) presenter = calculatorVoiceControl() || fallback;
-  for (const widget of widgets) {
-    if (!widget.root.isConnected) { widgets.delete(widget); continue; }
-    widget.paint();
-  }
 }
 
 function update(message = '') {
@@ -155,7 +142,7 @@ function currentModal() {
   return Array.from(document.querySelectorAll('dialog:modal')).at(-1);
 }
 
-export function installVoiceInput({host, canUse, getIdentity, request}) {
+export function installVoiceInput({canUse, getIdentity, request}) {
   available = canUse;
   identity = getIdentity;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
@@ -166,27 +153,8 @@ export function installVoiceInput({host, canUse, getIdentity, request}) {
   document.addEventListener(changed, () => {
     for (const form of document.querySelectorAll('[data-voice-answer]')) form.dispatchEvent(new Event(changed));
   });
-  fallback = voiceControls();
-  host.append(fallback);
-  let modalWidget;
-  const syncDialogs = () => {
-    const modal = currentModal();
-    if (modalWidget && modalWidget.parentElement !== modal) {
-      modalWidget.remove();
-      modalWidget = null;
-      if (current) paint();
-    }
-    if (modal && available() && !modalWidget) {
-      modalWidget = voiceControls();
-      modal.prepend(modalWidget);
-      if (current) { presenter = modalWidget; paint(); }
-    }
-    if (current && presenter === fallback && calculatorVoiceControl()) paint();
-  };
-  new MutationObserver(syncDialogs).observe(document.body, {
-    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'data-calculator-layout'],
-  });
   addEventListener('pagehide', resetVoiceInput);
+  return voiceControls();
 }
 
 export function refreshVoiceInput() {
@@ -194,7 +162,7 @@ export function refreshVoiceInput() {
   else paint();
 }
 
-export function voiceControls() {
+function voiceControls() {
   const root = document.createElement('div');
   root.className = 'voiceTool';
   const button = (label, action, path) => {
@@ -214,11 +182,7 @@ export function voiceControls() {
     if (!path) control.textContent = name;
     return control;
   };
-  const mic = button(() => strings('录音输入', 'Voice input'), () => {
-    presenter = root;
-    if (current) paint();
-    else void start();
-  }, microphoneIcon);
+  const mic = button(() => strings('录音输入', 'Voice input'), () => void start(), microphoneIcon);
   const pause = button(() => '', () => {
     const paused = current.phase === 'paused';
     current.recorder[paused ? 'resume' : 'pause']();
@@ -237,14 +201,15 @@ export function voiceControls() {
   const panel = document.createElement('div'); panel.className = 'voiceToolPanel';
   const message = document.createElement('span'); message.setAttribute('role', 'status');
   panel.append(message, pause, end, retry, use, cancel); root.append(mic, panel);
-  const widget = {root, paint() {
+  paint = () => {
     const phase = current?.phase;
     const recording = phase === 'recording' || phase === 'paused';
-    root.hidden = !available();
+    const hidden = !available();
+    if (root.hidden !== hidden) root.hidden = hidden;
     mic.disabled = phase === 'opening';
     mic.setAttribute('aria-pressed', String(Boolean(recording)));
     const label = strings('录音输入', 'Voice input'); mic.title = label; mic.setAttribute('aria-label', label);
-    panel.hidden = !status || presenter !== root;
+    panel.hidden = !status;
     if (message.textContent !== status) message.textContent = status;
     pause.hidden = end.hidden = !recording;
     pause.textContent = phase === 'paused' ? strings('继续录音', 'Resume recording') : strings('暂停录音', 'Pause recording');
@@ -253,7 +218,7 @@ export function voiceControls() {
     retry.textContent = current?.submit ? strings('重试转写并提交', 'Retry transcription and submit') : strings('重试转写', 'Retry transcription');
     retry.setAttribute('aria-label', retry.textContent);
     use.hidden = phase !== 'ready'; cancel.hidden = !phase;
-  }};
-  widgets.add(widget); widget.paint();
+  };
+  paint();
   return root;
 }
