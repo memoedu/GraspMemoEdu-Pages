@@ -1,9 +1,10 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=bacb3c1fa9155d6c';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bacb3c1fa9155d6c';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=bacb3c1fa9155d6c';
-import {reportableContent} from './content-report.js?v=bacb3c1fa9155d6c';
-import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
-import {enhanceTopicContent} from './topic-content.js?v=bacb3c1fa9155d6c';
+import { t, translateMessage, learningTitle } from './i18n.js?v=ad5665f8f97afbd9';
+import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ad5665f8f97afbd9';
+import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
+import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
+import {enhanceTopicContent} from './topic-content.js?v=ad5665f8f97afbd9';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -207,7 +208,10 @@ export function createReviewView(bridge) {
     reportableContent(stem, reportContext, `question:${questionId}`, question.content_version || state.course_version);
     const editable = isCurrent && state.status === 'in_progress' && state.actions.includes('submit');
     const structured = question.interaction && question.interaction.type !== 'text';
-    card.append(node('h2', 'stepTitle', t('review.questionNumber', {number: index + 1})), stem);
+    const heading = node('div', 'stepHeader');
+    heading.append(node('h2', 'stepTitle', t('review.questionNumber', {number: index + 1})));
+    const calculator = calculatorButton(question.calculate); if (calculator) heading.append(calculator);
+    card.append(heading, stem);
     const typeField = choiceTypeField(question.interaction); if (typeField) stem.before(typeField);
     if (structured && !editable) card.append(questionInput(question.interaction, {id: 'reviewSubmittedInteraction',
       stem, value: answer?.answer || (isCurrent ? read(draftKey()) || '' : ''), disabled: true, feedback: question.choice_feedback}).element);

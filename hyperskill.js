@@ -1,5 +1,5 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=bacb3c1fa9155d6c';
-import {enhanceSourceContent} from './topic-content.js?v=bacb3c1fa9155d6c';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
+import {enhanceSourceContent} from './topic-content.js?v=ad5665f8f97afbd9';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;

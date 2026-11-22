@@ -1,0 +1,4 @@
+Bundled license information:
+
+nerdamer/dist/bundle.js:
+  /*! For license information please see bundle.js.LICENSE.txt */

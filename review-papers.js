@@ -1,18 +1,19 @@
-import {t, translateMessage} from './i18n.js?v=bacb3c1fa9155d6c';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=bacb3c1fa9155d6c';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=bacb3c1fa9155d6c';
-import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
-import {helpableContent, reportableContent} from './content-report.js?v=bacb3c1fa9155d6c';
+import {t, translateMessage} from './i18n.js?v=ad5665f8f97afbd9';
+import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
+import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
+import {helpableContent, reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return x; };
-import {createContentTimer} from './content-timer.js?v=bacb3c1fa9155d6c';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=bacb3c1fa9155d6c';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=bacb3c1fa9155d6c';
-import {chunkPeek} from './memory-chunk.js?v=bacb3c1fa9155d6c';
-import {pointAssessment} from './point-assessment.js?v=bacb3c1fa9155d6c';
-import {trainingAudio} from './training-audio.js?v=bacb3c1fa9155d6c';
+import {createContentTimer} from './content-timer.js?v=ad5665f8f97afbd9';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=ad5665f8f97afbd9';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=ad5665f8f97afbd9';
+import {chunkPeek} from './memory-chunk.js?v=ad5665f8f97afbd9';
+import {pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
+import {trainingAudio} from './training-audio.js?v=ad5665f8f97afbd9';
 
 export function createPaperView({root, request, href, getAccess, formatDate, progressChanged, courseSidebar, taskTree}) {
   const template = document.getElementById('appLayout').cloneNode(true);
@@ -268,6 +269,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
     const item = state.items[selected], refs = reader.refs, main = refs.stepCard;
     renderReviewReader(refs, {...state, selected, onSelect: select});
     const heading = node('div', 'stepHeader'); heading.append(node('h2', 'stepTitle', t('training.exercise', {number: selected + 1})), node('span', 'stepCounter', t(state.mode === 'paper' ? 'paper.paperMode' : 'paper.questionMode')));
+    const calculator = calculatorButton(item.calculate); if (calculator) heading.append(calculator);
     let stem = content(item, 'question', item.html); main.replaceChildren(heading);
     if (state.phase === 'done') main.append(node('p', 'completionBanner', t('paper.finished')), node('p', '', t('paper.summary', {correct: state.items.filter(q => q.result?.correct).length, count: state.items.length})));
     main.append(node('p', 'inputHint', t(state.mode === 'paper' ? 'paper.paperHint' : 'paper.questionHint')));
