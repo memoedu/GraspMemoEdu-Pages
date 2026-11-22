@@ -1,17 +1,18 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=be658212c777c70e";
-import {answerReady} from './question-input.js?v=be658212c777c70e';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=be658212c777c70e';
-import {startPresence} from './presence.js?v=be658212c777c70e';
-import {createLearningCache} from './learning-cache.js?v=be658212c777c70e';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=be658212c777c70e';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=769a0cb3f2f6366b";
+import {answerReady} from './question-input.js?v=769a0cb3f2f6366b';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=769a0cb3f2f6366b';
+import {startPresence} from './presence.js?v=769a0cb3f2f6366b';
+import {createLearningCache} from './learning-cache.js?v=769a0cb3f2f6366b';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=769a0cb3f2f6366b';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=be658212c777c70e';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=be658212c777c70e';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=be658212c777c70e';
-import {renderSourceReader} from './learning-ui.js?v=be658212c777c70e';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=be658212c777c70e';
-import {createTrainingView} from './training.js?v=be658212c777c70e';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=be658212c777c70e';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=769a0cb3f2f6366b';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=769a0cb3f2f6366b';
+import {renderSourceReader} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {createTrainingView} from './training.js?v=769a0cb3f2f6366b';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=769a0cb3f2f6366b';
+import {setQuestionTools} from './question-tools.js?v=769a0cb3f2f6366b';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -585,6 +586,7 @@ function clearLearningView() {
   stateBusy = false;
   pollBusy = false;
   $("courseShell").hidden = true;
+  setQuestionTools($("stepCard"));
   $("stepCard").replaceChildren();
   $("moduleResult").replaceChildren();
   $("lessonTitle").textContent = t("site.title");
@@ -1283,6 +1285,7 @@ function renderStep(step) {
     const bankKey = JSON.stringify([state.course_version, reference.version, step.id, access?.learner_id, access?.features]);
     if (topicTrainingKey !== bankKey) {
       stopTopicTraining(); target.replaceChildren(); target.dataset.stepId = step.id;
+      setQuestionTools(target);
       const heading = readingSectionHeading(step.section); if (heading) target.append(heading);
       const host = el('div', 'topicBankQuestion'); target.append(host);
       topicTrainingKey = bankKey;
@@ -1290,7 +1293,7 @@ function renderStep(step) {
         (path.includes('?') ? '&' : '?') + new URLSearchParams({subject_id: topicSubjectId}), options),
         getAccess: () => access, href: path => '#/subjects/' + topicSubjectId + path,
         formatDate: value => new Date(value).toLocaleString(), progressChanged: () => portal?.progressChanged()});
-      void topicTraining.mount(reference, host, () => refreshState({force: true}));
+      void topicTraining.mount(reference, host, () => refreshState({force: true}), target);
     }
     for (const nav of [...target.children].filter(n => n.classList.contains('stepNavigation'))) nav.remove();
     target.querySelector(':scope > .bankRequiredNotice')?.remove();
@@ -1311,12 +1314,14 @@ function renderStep(step) {
   target.dataset.stepId = step?.id || "";
   target.replaceChildren();
   if (!step) {
+    setQuestionTools(target);
     const title = el("h2", "stepTitle", t("正在同步学习内容"));
     title.id = "stepTitle";
     target.append(title);
     return;
   }
   if (step.kind === "completion") {
+    setQuestionTools(target);
     renderCompletion(target);
     renderStepNavigation(target, step, []);
     mountTopicBacklinks(target, state.content_references);
@@ -1670,7 +1675,7 @@ async function openTopic(id, subjectId, initial = null) {
 // Discover the API while the portal's modules load. Requests still await the
 // same validated deployment and identity; failure uses the normal retry UI.
 void ensureDeployment().catch(() => {});
-const { initPortal } = await import("./portal.js?v=be658212c777c70e");
+const { initPortal } = await import("./portal.js?v=769a0cb3f2f6366b");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

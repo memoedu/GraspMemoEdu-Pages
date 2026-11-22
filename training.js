@@ -1,20 +1,21 @@
-import {t, translateMessage} from './i18n.js?v=be658212c777c70e';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=be658212c777c70e';
-import {answerReady, answerEmpty} from './question-input.js?v=be658212c777c70e';
-import {createLearningCache} from './learning-cache.js?v=be658212c777c70e';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=be658212c777c70e';
-import {helpableContent} from './content-report.js?v=be658212c777c70e';
-import {ratingChoices} from './self-assessment.js?v=be658212c777c70e';
-import {pointAssessment} from './point-assessment.js?v=be658212c777c70e';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=be658212c777c70e';
-import {learningHint} from './beginner-hints.js?v=be658212c777c70e';
+import {t, translateMessage} from './i18n.js?v=769a0cb3f2f6366b';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=769a0cb3f2f6366b';
+import {answerReady, answerEmpty} from './question-input.js?v=769a0cb3f2f6366b';
+import {createLearningCache} from './learning-cache.js?v=769a0cb3f2f6366b';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=769a0cb3f2f6366b';
+import {helpableContent} from './content-report.js?v=769a0cb3f2f6366b';
+import {ratingChoices} from './self-assessment.js?v=769a0cb3f2f6366b';
+import {pointAssessment} from './point-assessment.js?v=769a0cb3f2f6366b';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=769a0cb3f2f6366b';
+import {learningHint} from './beginner-hints.js?v=769a0cb3f2f6366b';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=be658212c777c70e';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=769a0cb3f2f6366b';
+import {setQuestionTools} from './question-tools.js?v=769a0cb3f2f6366b';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -121,6 +122,7 @@ export function createTrainingView(bridge) {
     visibilityHandler = null; group = current = selectedIntroduction = null; cache.clear();
     clearTimeout(validationTimer); attempts.clear(); histories.clear(); opening.clear();
     hyperskillAvailability = hyperskillProbe = hyperskillRecovery = null; hyperskillWarm.clear();
+    if (embedded) setQuestionTools(embedded.toolAnchor);
     reader?.destroy(); reader = null;
     reviewCard = false; reviewQuestion = null;
     mathStyle?.remove(); mathStyle = null; embedded = null;
@@ -337,13 +339,14 @@ export function createTrainingView(bridge) {
     flushClock(); clockKey = null; clearTimeout(timer); ++selection; current = null;
     selectedIntroduction = id; reader.closeOnMobile(); renderSidebar();
     const step = {...intro, kind: 'introduction'};
-    renderReaderStep(main, step, {titleId: 'trainingStepTitle', counter: t('阅读')});
+    renderReaderStep(main, step, {titleId: 'trainingStepTitle', counter: t('阅读'), toolAnchor: embedded?.toolAnchor ?? main});
     reader.refs.footerPosition.textContent = readerStepTitle(step); reader.refs.saveStatus.textContent = '';
     if (!embedded) history.replaceState(null, '', href(groupPath(group.bank_id, group.id) + (selectedRoot ? '&' : '?') + 'introduction=' + encode(id)));
     navigationFor(id);
   }
   async function select(questionId, fresh = false, attemptId = null) {
     flushClock(); clockKey = null; clearTimeout(timer);
+    setQuestionTools(embedded?.toolAnchor ?? main);
     reader.closeOnMobile();
     selectedIntroduction = null;
     const e = epoch, s = ++selection, q = group.questions.find(q => q.id === questionId);
@@ -385,7 +388,7 @@ export function createTrainingView(bridge) {
         state.due_at ? t('training.nextDue', {time: formatDate(state.due_at)}) : null]} : null;
     const {stem} = renderReaderStep(main, {...state.question, answer: state.answer, answer_display: state.answer_display,
       explanation_html: state.explanation_html, multi_step: state.multi_step}, {titleId: 'trainingStepTitle', title: t('training.exercise', {number: index + 1}),
-      counter: t('reader.modulePosition', {current: index + 1, total: group.questions.length}),
+      counter: t('reader.modulePosition', {current: index + 1, total: group.questions.length}), toolAnchor: embedded?.toolAnchor ?? main,
       showSubmittedInteraction: state.phase !== 'answer', submittedId: 'trainingSubmittedInteraction',
       showAnswer: Boolean(state.answer_display && state.phase === 'done'), feedback, feedbackClass: 'trainingVerdict',
       referenceSource: state, decorate: (body, kind) => {
@@ -817,7 +820,7 @@ export function createTrainingView(bridge) {
           if (selectedIntroduction && group.introductions?.some(i => i.id === selectedIntroduction)) selectIntroduction(selectedIntroduction);
           else if (group.questions.length) await select(group.questions.find(q => q.id === old?.question_id)?.id || group.questions[0].id);
           else if (group.introductions?.length) selectIntroduction(group.introductions[0].id);
-          else { current = null; main.replaceChildren(); renderSidebar(); }
+          else { current = null; setQuestionTools(embedded?.toolAnchor ?? main); main.replaceChildren(); renderSidebar(); }
         } else if (old) {
           const updated = old.preview ? next.reader_states[old.question_id] : attempts.get(old.attempt_id);
           if (updated && JSON.stringify(updated) !== JSON.stringify(old)) {
@@ -855,9 +858,9 @@ export function createTrainingView(bridge) {
     if (data.next_due_at) section.append(node('p', '', t('training.nextDue', {time: formatDate(data.next_due_at)})));
     return section;
   }
-  async function mount(reference, host, onChange = () => {}) {
+  async function mount(reference, host, onChange = () => {}, toolAnchor = host) {
     stop(); cacheAccess = getAccess();
-    embedded = {reference, onChange}; reviewCard = Boolean(reference.question_id); reviewQuestion = reference.question_id;
+    embedded = {reference, onChange, toolAnchor}; reviewCard = Boolean(reference.question_id); reviewQuestion = reference.question_id;
     const e = epoch;
     host.replaceChildren(node('p', '', t('training.loading')));
     try {
@@ -901,7 +904,7 @@ export function createTrainingView(bridge) {
         else if (group.introductions?.length) selectIntroduction(group.introductions[0].id);
       }
       if (e === epoch) scheduleValidation();
-    } catch (failure) { if (e === epoch) error(host, failure, () => mount(reference, host, onChange)); }
+    } catch (failure) { if (e === epoch) error(host, failure, () => mount(reference, host, onChange, toolAnchor)); }
   }
   function updatePractice(reference) {
     if (!embedded?.selector || JSON.stringify(embedded.reference) === JSON.stringify(reference)) return;
