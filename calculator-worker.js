@@ -1,4 +1,4 @@
-import {calculate, CalculationError} from './calculator-engine.js?v=3325cfcbaaa73678';
+import {calculate, CalculationError} from './calculator-engine.js?v=2af66fd14ba4821c';
 
 self.onmessage = async ({data}) => {
   try {
