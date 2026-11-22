@@ -1,15 +1,15 @@
-import {t, translateMessage} from './i18n.js?v=55a8c2a9b5fd9dbd';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=55a8c2a9b5fd9dbd';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=55a8c2a9b5fd9dbd';
-import {reportableContent} from './content-report.js?v=55a8c2a9b5fd9dbd';
-import {createLearningCache} from './learning-cache.js?v=55a8c2a9b5fd9dbd';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=55a8c2a9b5fd9dbd';
-import {enhanceSourceContent} from './topic-content.js?v=55a8c2a9b5fd9dbd';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=55a8c2a9b5fd9dbd';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=55a8c2a9b5fd9dbd';
-import {pointAssessment} from './point-assessment.js?v=55a8c2a9b5fd9dbd';
-import {trainingAudio} from './training-audio.js?v=55a8c2a9b5fd9dbd';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=55a8c2a9b5fd9dbd';
+import {t, translateMessage} from './i18n.js?v=bacb3c1fa9155d6c';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bacb3c1fa9155d6c';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=bacb3c1fa9155d6c';
+import {reportableContent} from './content-report.js?v=bacb3c1fa9155d6c';
+import {createLearningCache} from './learning-cache.js?v=bacb3c1fa9155d6c';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=bacb3c1fa9155d6c';
+import {enhanceSourceContent} from './topic-content.js?v=bacb3c1fa9155d6c';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=bacb3c1fa9155d6c';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=bacb3c1fa9155d6c';
+import {pointAssessment} from './point-assessment.js?v=bacb3c1fa9155d6c';
+import {trainingAudio} from './training-audio.js?v=bacb3c1fa9155d6c';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=bacb3c1fa9155d6c';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;

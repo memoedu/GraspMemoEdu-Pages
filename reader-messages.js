@@ -516,6 +516,7 @@ export const readerMessages = {
     "Introduction"
   ],
   "Practice": ["练习", "Practice"],
+  "reader.practiceNumber": ["练习{number}", "Practice {number}"],
   "Example": [
     "例题",
     "Example"
