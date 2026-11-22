@@ -1,4 +1,5 @@
-import {calculatorWorksheets} from './calculator-policy.js?v=0013e04b6e675b18';
+import {calculatorWorksheets} from './calculator-policy.js?v=c690e85f04a2d459';
+import {openCalculator} from './calculator-panel.js?v=c690e85f04a2d459';
 
 const icons = {
   expression: 'M5 3h14v18H5zM8 7h8M8 11h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1m-9 3h1m3 0h1m3 0h1',
@@ -33,9 +34,8 @@ export function calculatorToolGroups(config, english) {
   const session = {saved: new Map(), history: [], degrees: false};
   const available = new Map(calculatorWorksheets(config).map(worksheet => {
     const [id, zh, en] = worksheet;
-    return [id, {id, label: english ? en : zh, icon: icons[id], async open(launcher) {
-      const {openCalculator} = await import('./calculator-panel.js?v=0013e04b6e675b18');
-      if (launcher.isConnected) openCalculator(launcher, config, worksheet, english, session);
+    return [id, {id, label: english ? en : zh, icon: icons[id], open(launcher) {
+      openCalculator(launcher, config, worksheet, english, session);
     }}];
   }));
   return toolGroups.map(([zh, en, ids]) => ({

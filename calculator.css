@@ -1,10 +1,12 @@
-/* Calculator display and key treatments adapted from Calc (Matt, MIT). */
+/* Calculator display adapted from Calc (Matt, MIT). */
+:root {
+  --calculator-width: clamp(370px, 31vw, 450px);
+}
 .questionCalculator {
-  --calculator-width: clamp(370px, 35vw, 532px);
   --calculator-paper: #fff;
-  --calculator-workspace: #f3f6fa;
-  --calculator-text: #172941;
-  --calculator-edge: #ccd7e4;
+  --calculator-workspace: #f5f7fa;
+  --calculator-text: var(--ma-ink);
+  --calculator-edge: var(--control-border);
   --calculator-accent: #1264b1;
   --calculator-accent-deep: #0c4a82;
   --calculator-muted: #586d85;
@@ -13,93 +15,95 @@
   --calculator-screen-text: #f4f8ff;
   --calculator-screen-muted: #adc1d8;
   --calculator-screen-edge: #0c1b2e;
-  --calculator-function: #e5edf7;
-  --calculator-function-top: #f4f8fd;
-  --calculator-operator: #dceafa;
-  --calculator-operator-top: #edf6ff;
-  --calculator-key-shadow: #9fb1c6;
-  --calculator-backdrop: #182b4494;
-  --calculator-shadow: #101d3838;
+  --calculator-function: #eaf0f7;
+  --calculator-operator: #e4eefb;
+  --calculator-key-shadow: #14243a14;
+  --calculator-shadow: #101d3829;
   --calculator-font: system-ui, sans-serif;
   --calculator-number-font: ui-monospace, "Cascadia Mono", Consolas, monospace;
   box-sizing: border-box;
-  inline-size: min(570px, calc(100% - 22px));
-  max-block-size: calc(100dvh - 22px);
-  padding: 18px;
+  position: fixed;
+  inset: calc(var(--site-header-height, 50px) + 12px) auto auto 12px;
+  z-index: 30;
+  inline-size: var(--calculator-width);
+  max-block-size: calc(100dvh - var(--site-header-height, 50px) - 24px);
+  margin: 0;
+  padding: 16px;
   border: 1px solid var(--calculator-edge);
-  border-radius: 18px;
+  border-radius: 16px;
   color: var(--calculator-text);
   background: var(--calculator-workspace);
-  box-shadow: 0 18px 42px -15px var(--calculator-shadow);
+  box-shadow: 0 10px 32px -10px var(--calculator-shadow);
   font: normal 14px/1.4 var(--calculator-font);
   overflow: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-.questionCalculator[data-layout="center"] {
-  position: fixed;
-  inset: auto 0 10px;
-  margin: 0 auto;
-  max-block-size: min(69dvh, calc(100dvh - var(--calculator-toolbar-bottom, 150px) - 20px));
-  z-index: 30;
+@media (min-width: 1100px) {
+  body:has(.questionCalculator[open]) { padding-inline-start: calc(var(--calculator-width) + 24px); }
 }
-body:has(.questionCalculator[open][data-layout="center"]) {
-  padding-block-end: min(69dvh, calc(100dvh - 152px));
+@media (width < 1100px) {
+  .questionCalculator {
+    inset-inline-start: 8px;
+    inline-size: min(var(--calculator-width), calc(100% - 16px));
+  }
+  body:has(.questionCalculator[open]) { padding-block-end: min(72dvh, calc(100dvh - 150px)); }
+  .questionToolRow[data-calculator-open] {
+    position: fixed;
+    inset: calc(var(--site-header-height, 50px) + 4px) 8px auto auto;
+    inline-size: var(--question-tool-width);
+    z-index: 31;
+  }
+  .questionToolRow[data-calculator-open] .questionToolGroups { max-block-size: min(18dvh, 164px); }
 }
-.questionToolRow[data-calculator-layout="center"] {
-  position: fixed;
-  inset: var(--calculator-toolbar-top) 10px auto auto;
-  inline-size: var(--question-tool-width);
-  z-index: 31;
+@media (width < 520px) {
+  .questionCalculator {
+    inset-block: auto 8px;
+    max-block-size: min(72dvh, calc(100dvh - var(--calculator-toolbar-bottom, 150px) - 16px));
+  }
 }
-.questionToolRow[data-calculator-layout="center"] .questionToolGroups {
-  max-block-size: min(26dvh, 240px);
-}
-.questionCalculator[data-layout="side"] {
-  position: fixed;
-  inset: 66px 12px auto auto;
-  inline-size: var(--calculator-width);
-  max-block-size: calc(100dvh - 78px);
-  margin: 0;
-  z-index: 30;
-}
-body:has(.questionCalculator[open][data-layout="side"]) {
-  padding-inline-end: calc(clamp(370px, 35vw, 532px) + 19px);
-}
-.calculatorHeader, .calculatorLayout, .calculatorLayoutToggle, .calculatorOptions,
+.calculatorHeader, .calculatorOptions,
 .calculatorToolActions, .calculatorInputModes {
   display: flex;
   align-items: center;
   gap: 8px;
   min-inline-size: 0;
 }
-.calculatorHeader { justify-content: space-between; margin-block-end: 14px; gap: 10px; }
+.calculatorHeader { justify-content: space-between; margin-block-end: 12px; gap: 10px; }
 .calculatorHeader h2 {
   margin: 0;
   font: 720 clamp(1.06rem, 2.4vw, 1.35rem)/1.2 var(--calculator-font);
   letter-spacing: -.02em;
   overflow-wrap: anywhere;
 }
-.calculatorLayout { justify-content: end; flex: none; }
-.calculatorLayoutToggle {
-  gap: 2px;
-  border: 1px solid var(--calculator-edge);
-  border-radius: 10px;
-  padding: 2px;
-  background: var(--calculator-paper);
-}
-.calculatorLayoutToggle .calculatorControl { min-block-size: 38px; border: 0; }
-.calculatorLayout > .calculatorControl { color: var(--calculator-muted); min-inline-size: 38px; }
 .calculatorControl, .calculatorKey, .questionCalculator :is(input, select, textarea) {
   box-sizing: border-box;
   min-inline-size: 0;
   min-block-size: 44px;
   border: 1px solid var(--calculator-edge);
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--calculator-paper);
   color: var(--calculator-text);
   font: inherit;
 }
-.calculatorControl { padding-inline: 11px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+.calculatorControl, .calculatorKey {
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 1px var(--calculator-key-shadow);
+}
+.calculatorControl { padding-inline: 11px; }
+.calculatorClose {
+  flex: 0 0 44px;
+  padding: 0;
+  color: var(--calculator-muted);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  font-size: 1.5rem;
+  line-height: 1;
+}
 .questionCalculator :is(input, select, textarea) { inline-size: 100%; padding: 8px 10px; }
 .questionCalculator textarea { min-block-size: 85px; resize: vertical; font-family: var(--calculator-number-font); }
 .calculatorControl[aria-pressed="true"] { color: var(--calculator-accent-deep); background: var(--calculator-operator); }
@@ -115,8 +119,14 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 .questionCalculator button:disabled { cursor: not-allowed; opacity: .42; }
 .questionCalculator option:disabled { color: var(--calculator-muted); }
 @media (hover: hover) {
-  .questionCalculator .calculatorControl:not(:disabled):hover { border-color: var(--calculator-accent); }
-  .questionCalculator .calculatorKey:not(:disabled):hover { filter: brightness(.97); }
+  .questionCalculator :is(.calculatorControl, .calculatorKey):not(:disabled):hover {
+    border-color: var(--calculator-accent);
+    filter: brightness(.97);
+  }
+}
+.questionCalculator :is(.calculatorControl, .calculatorKey):not(:disabled):active {
+  box-shadow: inset 0 1px 2px var(--calculator-key-shadow);
+  filter: brightness(.94);
 }
 .calculatorField, .calculatorFields, .calculatorForm, .calculatorToolInputs, .calculatorToolFields {
   display: grid;
@@ -175,22 +185,21 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 .calculatorOptions select { flex: 1 1 145px; width: auto; }
 .calculatorKeys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
 .calculatorKey {
-  position: relative;
-  min-block-size: 44px;
   padding-inline: 0;
-  border-radius: 9px;
-  cursor: pointer;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  font-weight: 620;
-  background: linear-gradient(var(--calculator-function-top), var(--calculator-function));
-  box-shadow: 0 2px 0 var(--calculator-key-shadow), inset 0 1px 0 var(--calculator-paper);
-  transition: transform .06s, box-shadow .06s, filter .15s;
+  background: var(--calculator-function);
+  font-size: .94rem;
 }
-.calculatorKey[data-kind="number"] { font-size: 1.1rem; background: var(--calculator-paper); }
-.calculatorKey[data-kind="operator"] { font-size: 1.1rem; background: linear-gradient(var(--calculator-operator-top), var(--calculator-operator)); }
-.calculatorKey.calculatorPrimary { font-size: 1.25rem; box-shadow: 0 2px 0 var(--calculator-accent-deep); }
-.calculatorKey:not(:disabled):active { transform: translateY(2px); box-shadow: none; }
+.calculatorKey:is([data-calculator-key^="digit_"], [data-calculator-key="decimal"]) {
+  background: var(--calculator-paper);
+  font-size: 1.05rem;
+}
+.calculatorKey:is([data-calculator-key="add"], [data-calculator-key="subtract"], [data-calculator-key="multiply"],
+  [data-calculator-key="divide"], [data-calculator-key="power"]) {
+  background: var(--calculator-operator);
+  color: var(--calculator-accent-deep);
+  font-size: 1.05rem;
+}
+.calculatorKey.calculatorPrimary { font-size: 1.2rem; }
 .calculatorMore, .calculatorHistory, .calculatorToolKeyboard {
   font-size: .83rem;
   color: var(--calculator-accent-deep);
@@ -210,7 +219,7 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 }
 .calculatorCompound legend { padding-inline: 5px; font-weight: 670; }
 .calculatorInputModes { gap: 4px; margin-block-end: 9px; }
-.calculatorInputModes .calculatorControl { padding-inline: 8px; min-height: 34px; font-size: .81rem; }
+.calculatorInputModes .calculatorControl { padding-inline: 10px; font-size: .81rem; }
 .calculatorInputModes .calculatorControl[aria-pressed="true"] {
   border-color: var(--calculator-accent);
   box-shadow: inset 0 -2px var(--calculator-accent);
@@ -266,11 +275,11 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 .calculatorResultRows dd { margin: 0; font-family: var(--calculator-number-font); }
 .calculatorChart { display: block; max-inline-size: 100%; block-size: auto; }
 @media (max-width: 480px) {
-  .questionCalculator { padding: 12px; border-radius: 14px; }
-  .calculatorHeader { flex-wrap: wrap; }
-  .calculatorLayout { justify-content: start; }
+  .questionCalculator { padding: 10px; border-radius: 14px; }
+  .calculatorDisplay { padding-inline: 12px; }
+  .calculatorAssignments:not([hidden]) { column-gap: 6px; }
+  .calculatorDisplay .calculatorAssignmentValue { flex-basis: 3rem; inline-size: 3rem; padding-inline: 6px; }
+  .calculatorOptions select { flex-basis: 88px; }
   .calculatorKeys { gap: 6px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .calculatorKey { transition: none; }
+  .calculatorToolKeyboard [data-columns="6"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
