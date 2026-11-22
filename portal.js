@@ -1,26 +1,26 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=ca8a42ff138b8431";
-import { createReviewView } from "./review.js?v=ca8a42ff138b8431";
-import { renderCourseGraph } from "./course-graph.js?v=ca8a42ff138b8431";
-import {questionInput, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=ca8a42ff138b8431';
-import {enhanceTopicContent} from './topic-content.js?v=ca8a42ff138b8431';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=ca8a42ff138b8431';
-import {createCatalogPicker} from './catalog-picker.js?v=ca8a42ff138b8431';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=ca8a42ff138b8431';
-import {createAtomicView} from './atomic.js?v=ca8a42ff138b8431';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=ca8a42ff138b8431';
-import {sourceAttributions} from './memory-chunk.js?v=ca8a42ff138b8431';
-import {createTrainingView} from './training.js?v=ca8a42ff138b8431';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=ca8a42ff138b8431";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=4ef74d27767b2a3b";
+import { createReviewView } from "./review.js?v=4ef74d27767b2a3b";
+import { renderCourseGraph } from "./course-graph.js?v=4ef74d27767b2a3b";
+import {questionInput, choiceTypeField} from './question-input.js?v=4ef74d27767b2a3b';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=4ef74d27767b2a3b';
+import {enhanceTopicContent} from './topic-content.js?v=4ef74d27767b2a3b';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=4ef74d27767b2a3b';
+import {createCatalogPicker} from './catalog-picker.js?v=4ef74d27767b2a3b';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=4ef74d27767b2a3b';
+import {createAtomicView} from './atomic.js?v=4ef74d27767b2a3b';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=4ef74d27767b2a3b';
+import {sourceAttributions} from './memory-chunk.js?v=4ef74d27767b2a3b';
+import {createTrainingView} from './training.js?v=4ef74d27767b2a3b';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=4ef74d27767b2a3b";
 
-import {createPaperView} from './review-papers.js?v=ca8a42ff138b8431';
-import {createContextLibraryView} from './context-library.js?v=ca8a42ff138b8431';
+import {createPaperView} from './review-papers.js?v=4ef74d27767b2a3b';
+import {createContextLibraryView} from './context-library.js?v=4ef74d27767b2a3b';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=ca8a42ff138b8431';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca8a42ff138b8431';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=ca8a42ff138b8431';
-import {createStudentDashboard} from './student-dashboard.js?v=ca8a42ff138b8431';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=ca8a42ff138b8431';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=4ef74d27767b2a3b';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=4ef74d27767b2a3b';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=4ef74d27767b2a3b';
+import {createStudentDashboard} from './student-dashboard.js?v=4ef74d27767b2a3b';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=4ef74d27767b2a3b';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -40,7 +40,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=ca8a42ff138b8431').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=4ef74d27767b2a3b').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1189,6 +1189,13 @@ export function initPortal(bridge) {
       completionSetting.append(label);
     }
     form.insertBefore(completionSetting, status);
+    const commandInput = node('input'); commandInput.type = 'checkbox'; commandInput.id = 'answerCommandInputEnabled';
+    commandInput.checked = bridge.getAccess()?.answer_command_input_enabled ?? profile.answer_command_input_enabled ?? false;
+    commandInput.setAttribute('aria-describedby', 'answerCommandInputHint');
+    const commandLabel = node('label', 'courseHierarchySetting');
+    commandLabel.append(commandInput, document.createTextNode(t('portal.answerCommandInput')));
+    const commandHint = node('p', 'fieldHint', t('portal.answerCommandInputHint')); commandHint.id = 'answerCommandInputHint';
+    form.insertBefore(commandLabel, status); form.insertBefore(commandHint, status);
     const beginner = node('input'); beginner.type = 'checkbox'; beginner.id = 'beginnerModeEnabled';
     beginner.checked = bridge.getAccess()?.beginner_mode_enabled ?? profile.beginner_mode_enabled ?? true;
     beginner.setAttribute('aria-describedby', 'beginnerModeHint');
@@ -1238,11 +1245,13 @@ export function initPortal(bridge) {
         const updated = await call("profile", { method: "POST", body: {
           display_name: defaultGuestName && display.value.trim() === t("portal.guest.12") ? profile.display_name || "游客" : display.value.trim(),
           timezone: zone.value.trim(), beginner_mode_enabled: beginner.checked,
+          answer_command_input_enabled: commandInput.checked,
           ...(allowed("course_hierarchy") ? {course_hierarchy_enabled: hierarchy.checked} : {}),
         } });
         if (actor !== bridge.getAccess()?.learner_id) return;
         profile = updated;
-        bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled});
+        bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled,
+          answer_command_input_enabled: profile.answer_command_input_enabled});
         if (trainingPreferences?.eligible) await call('training/preferences', {method: 'POST', body: {self_rating_enabled: selfRating.checked}});
         if (paperPreferences.can_choose || paperPreferences.can_choose_timeout) await call('review-papers/preferences', {method: 'POST', body: {
           ...(paperPreferences.can_choose ? {mode: paperMode.value} : {}),

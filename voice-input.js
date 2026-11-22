@@ -1,6 +1,6 @@
-import {getLanguage} from './i18n.js?v=ca8a42ff138b8431';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=ca8a42ff138b8431';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {getLanguage} from './i18n.js?v=4ef74d27767b2a3b';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=4ef74d27767b2a3b';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=4ef74d27767b2a3b';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -102,7 +102,7 @@ async function fillAnswer(job) {
   } else if (!valid()) {
     current = null;
     update(strings('作答位置已变化。请在当前题目重新录音。', 'The answer location changed. Record again for the current question.'));
-  } else setPhase(job, 'conversion_failed', strings('未能填入答题控件。请检查转换框中的文字。', 'Could not update the controls. Check the text in the conversion box.'));
+  } else setPhase(job, 'conversion_failed', strings('未能填入答案。可重试填入，或取消后重新录音。', 'Could not fill in the answer. Retry, or cancel and record again.'));
 }
 
 async function start() {
