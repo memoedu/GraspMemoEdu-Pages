@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=c690e85f04a2d459';
-import {activeFormulaField} from './formula-input.js?v=c690e85f04a2d459';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=c690e85f04a2d459';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=c690e85f04a2d459';
+import {getLanguage} from './i18n.js?v=8fb8fe43a072b8d3';
+import {activeFormulaField} from './formula-input.js?v=8fb8fe43a072b8d3';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=8fb8fe43a072b8d3';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=8fb8fe43a072b8d3';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -33,7 +33,7 @@ function currentDestination() {
   const modal = currentModal();
   if (target && (!modal || modal.contains(target.field))) return target;
   const answer = !modal && answerTarget(document, {topic: true});
-  return answer ? {answer, unchanged: answer.pin(), profile: 'answer'} : null;
+  return answer ? {answer, unchanged: answer.pin(), profile: answer.voiceProfile} : null;
 }
 
 function insert(target, text) {
@@ -98,7 +98,7 @@ async function process(job) {
 async function fillAnswer(job) {
   setPhase(job, 'converting', strings('正在填写答题控件…', 'Updating answer controls…'));
   const valid = () => current === job && job.identity === identity() && job.page === location.hash && job.target.unchanged();
-  const applied = valid() && await job.target.answer.convert(job.text, valid);
+  const applied = valid() && await job.target.answer.convert(job.text, valid, {speech: true});
   if (current !== job || job.identity !== identity()) return;
   if (applied) {
     current = null;
