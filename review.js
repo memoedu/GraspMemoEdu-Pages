@@ -1,13 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=4ef74d27767b2a3b';
-import {setQuestionTools} from './question-tools.js?v=4ef74d27767b2a3b';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=4ef74d27767b2a3b';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=4ef74d27767b2a3b';
-import {mountAnswerConversion} from './answer-conversion.js?v=4ef74d27767b2a3b';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=4ef74d27767b2a3b';
-import {reportableContent} from './content-report.js?v=4ef74d27767b2a3b';
-import {createLearningCache} from './learning-cache.js?v=4ef74d27767b2a3b';
-import {enhanceTopicContent} from './topic-content.js?v=4ef74d27767b2a3b';
-import {practiceHint} from './beginner-hints.js?v=4ef74d27767b2a3b';
+import { t, translateMessage, learningTitle } from './i18n.js?v=0013e04b6e675b18';
+import {attachFormulaEditing} from './formula-input.js?v=0013e04b6e675b18';
+import {setQuestionTools} from './question-tools.js?v=0013e04b6e675b18';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=0013e04b6e675b18';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=0013e04b6e675b18';
+import {mountAnswerConversion} from './answer-conversion.js?v=0013e04b6e675b18';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=0013e04b6e675b18';
+import {reportableContent} from './content-report.js?v=0013e04b6e675b18';
+import {createLearningCache} from './learning-cache.js?v=0013e04b6e675b18';
+import {enhanceTopicContent} from './topic-content.js?v=0013e04b6e675b18';
+import {practiceHint} from './beginner-hints.js?v=0013e04b6e675b18';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -252,6 +253,7 @@ export function createReviewView(bridge) {
         }
       });
       form.append(label, control?.element || input);
+      if (!structured && question.interaction?.grading !== 'exact') attachFormulaEditing(input, {group: 'answer'});
       mountAnswerConversion(form, input, question.interaction, {topic: isCurrent});
       form.append(node('p', 'inputHint', t(question.interaction?.type === 'choice' ? 'question.choiceHint' : question.interaction?.grading === 'exact' ? 'question.exactHint'
         : question.interaction?.grading === 'semantic' ? 'question.semanticHint'

@@ -1,6 +1,7 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=4ef74d27767b2a3b';
-import {enhanceSourceContent} from './topic-content.js?v=4ef74d27767b2a3b';
-import {mountAnswerConversion} from './answer-conversion.js?v=4ef74d27767b2a3b';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=0013e04b6e675b18';
+import {attachFormulaEditing} from './formula-input.js?v=0013e04b6e675b18';
+import {enhanceSourceContent} from './topic-content.js?v=0013e04b6e675b18';
+import {mountAnswerConversion} from './answer-conversion.js?v=0013e04b6e675b18';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -217,6 +218,7 @@ export function hyperskillQuestion(box,{question,history,disabled,data,draft,onD
     const label=node('label','','你的答案');label.htmlFor='hyperskillAnswer';
     input=node('textarea','answerInput');input.id='hyperskillAnswer';input.rows=3;input.maxLength=8000;
     input.value=draft;input.disabled=disabled;form.append(label,input);
+    if (!disabled) attachFormulaEditing(input,{group:'answer'});
   }
   mountAnswerConversion(form,input,data.interaction,{topic});
   const send=node('button','primaryButton',data.local?'提交答案':'提交至 Hyperskill');

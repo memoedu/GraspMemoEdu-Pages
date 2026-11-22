@@ -1,4 +1,4 @@
-import {calculatorWorksheets} from './calculator-policy.js?v=4ef74d27767b2a3b';
+import {calculatorWorksheets} from './calculator-policy.js?v=0013e04b6e675b18';
 
 const icons = {
   expression: 'M5 3h14v18H5zM8 7h8M8 11h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1m-9 3h1m3 0h1m3 0h1',
@@ -34,7 +34,7 @@ export function calculatorToolGroups(config, english) {
   const available = new Map(calculatorWorksheets(config).map(worksheet => {
     const [id, zh, en] = worksheet;
     return [id, {id, label: english ? en : zh, icon: icons[id], async open(launcher) {
-      const {openCalculator} = await import('./calculator-panel.js?v=4ef74d27767b2a3b');
+      const {openCalculator} = await import('./calculator-panel.js?v=0013e04b6e675b18');
       if (launcher.isConnected) openCalculator(launcher, config, worksheet, english, session);
     }}];
   }));
