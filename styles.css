@@ -28,6 +28,7 @@
   --muted: #757575;
   --soft-blue: #f3f8fc;
   --green: #26764d;
+  --red: #a6323f;
   --amber: #86601b;
   font-synthesis: none;
 }
@@ -368,20 +369,38 @@ mjx-container[jax="SVG"] text { font-family: "Microsoft YaHei", sans-serif; }
 .noticeActions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 7px; }
 .noticeActions .textButton { padding: 2px 0; font-size: 12px; }
 .beginnerHint {
+  --hint-accent: var(--ma-blue);
   position: fixed;
   z-index: 90;
   inset-block-start: calc(env(safe-area-inset-top, 0px) + 64px);
   inset-inline-end: 16px;
   inline-size: max-content;
   max-inline-size: min(360px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   padding: 10px 14px;
-  border: 1px solid var(--control-border);
+  border: 1px solid color-mix(in srgb, var(--hint-accent) 23%, var(--control-border));
   border-radius: 6px;
-  background: var(--subtle-accent-background);
+  background: color-mix(in srgb, var(--hint-accent) 5%, var(--subtle-accent-background));
   color: var(--ma-ink);
   font-size: 14px;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--ma-ink) 14%, transparent);
   pointer-events: none;
+}
+.beginnerHint[data-tone="success"] { --hint-accent: var(--green); }
+.beginnerHint[data-tone="incorrect"] { --hint-accent: var(--red); }
+.beginnerHint[data-tone="warning"] { --hint-accent: var(--amber); }
+.beginnerHintIcon {
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  block-size: 20px;
+  margin-block-start: 1px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hint-accent) 11%, transparent);
+  color: var(--hint-accent);
+  font: 700 16px / 1 Arial, sans-serif;
 }
 .beginnerHint:empty { padding: 0; border: 0; box-shadow: none; }
 @media print { .beginnerHint { display: none; } }

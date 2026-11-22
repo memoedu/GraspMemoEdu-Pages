@@ -1,7 +1,7 @@
-import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=092aa6443a51662d';
-import {formulaSpans, formulaTemplates, formulaToken} from './formula-catalog.js?v=092aa6443a51662d';
-import {getLanguage} from './i18n.js?v=092aa6443a51662d';
-import previews from './vendor/formula/previews.mjs?v=092aa6443a51662d';
+import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=7f75039d97260881';
+import {formulaSpans, formulaTemplates, formulaToken} from './formula-catalog.js?v=7f75039d97260881';
+import {getLanguage} from './i18n.js?v=7f75039d97260881';
+import previews from './vendor/formula/previews.mjs?v=7f75039d97260881';
 
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
 const style = 'formulaSourceHidden';
@@ -25,7 +25,7 @@ export function activeFormulaField(element) {
 }
 
 function load() {
-  runtime ||= import('./vendor/formula/editor.mjs?v=092aa6443a51662d').catch(error => { runtime = null; throw error; });
+  runtime ||= import('./vendor/formula/editor.mjs?v=7f75039d97260881').catch(error => { runtime = null; throw error; });
   return runtime;
 }
 

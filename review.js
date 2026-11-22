@@ -1,14 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=092aa6443a51662d';
-import {attachFormulaEditing} from './formula-input.js?v=092aa6443a51662d';
-import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=092aa6443a51662d';
-import {mountAnswerConversion} from './answer-conversion.js?v=092aa6443a51662d';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=092aa6443a51662d';
-import {reportableContent} from './content-report.js?v=092aa6443a51662d';
-import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
-import {enhanceTopicContent} from './topic-content.js?v=092aa6443a51662d';
-import {practiceHint} from './beginner-hints.js?v=092aa6443a51662d';
+import { t, translateMessage, learningTitle } from './i18n.js?v=7f75039d97260881';
+import {attachFormulaEditing} from './formula-input.js?v=7f75039d97260881';
+import {setQuestionTools} from './question-tools.js?v=7f75039d97260881';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=7f75039d97260881';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=7f75039d97260881';
+import {mountAnswerConversion} from './answer-conversion.js?v=7f75039d97260881';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=7f75039d97260881';
+import {reportableContent} from './content-report.js?v=7f75039d97260881';
+import {createLearningCache} from './learning-cache.js?v=7f75039d97260881';
+import {enhanceTopicContent} from './topic-content.js?v=7f75039d97260881';
+import {practiceHint} from './beginner-hints.js?v=7f75039d97260881';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -76,6 +76,10 @@ export function createReviewView(bridge) {
     if (next.access) bridge.setAccess(next.access);
     if (oldQuestion && oldQuestion !== next.practice.id) selected = null;
     if (!can('review_history')) selected = null;
+    const feedback = state.feedback;
+    if (feedback?.submission_id && feedback.submission_id === json(submissionKey())?.request_id) {
+      practiceHint(bridge.getAccess(), feedback, state.status === 'completed' ? 'beginner.reviewCompleted' : null);
+    }
     if (state.phase === 'feedback' || state.status !== 'in_progress') write(submissionKey(), null);
     if (changed || force) render();
     schedule(); tick();
@@ -90,7 +94,6 @@ export function createReviewView(bridge) {
       if (!active(ticket)) return;
       failure = result.status === 'error' ? translateMessage(result.reason || t('review.judgeError')) : null;
       accept(pending ? result.state : result);
-      if (pending && result.status === 'judged') practiceHint(state.access, state.feedback, result.submission_id);
       notice(failure);
     } catch (error) {
       if (active(ticket)) {
@@ -136,7 +139,6 @@ export function createReviewView(bridge) {
       busy = false;
       failure = result.status === 'error' ? translateMessage(result.reason || t('review.judgeError')) : null;
       accept(action === 'submit' ? result.state : result, true);
-      if (action === 'submit' && result.status === 'judged') practiceHint(state.access, state.feedback, result.submission_id);
       bridge.progressChanged();
     } catch (error) {
       if (!active(ticket)) return;

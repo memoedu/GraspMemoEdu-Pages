@@ -1,20 +1,20 @@
-import {t, translateMessage} from './i18n.js?v=092aa6443a51662d';
-import {attachFormulaEditing} from './formula-input.js?v=092aa6443a51662d';
-import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=092aa6443a51662d';
-import {mountAnswerConversion} from './answer-conversion.js?v=092aa6443a51662d';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=092aa6443a51662d';
-import {reportableContent} from './content-report.js?v=092aa6443a51662d';
-import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=092aa6443a51662d';
-import {enhanceSourceContent} from './topic-content.js?v=092aa6443a51662d';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=092aa6443a51662d';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=092aa6443a51662d';
-import {pointAssessment} from './point-assessment.js?v=092aa6443a51662d';
-import {trainingAudio} from './training-audio.js?v=092aa6443a51662d';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=092aa6443a51662d';
-import {learningHint} from './beginner-hints.js?v=092aa6443a51662d';
+import {t, translateMessage} from './i18n.js?v=7f75039d97260881';
+import {attachFormulaEditing} from './formula-input.js?v=7f75039d97260881';
+import {setQuestionTools} from './question-tools.js?v=7f75039d97260881';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=7f75039d97260881';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=7f75039d97260881';
+import {mountAnswerConversion} from './answer-conversion.js?v=7f75039d97260881';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=7f75039d97260881';
+import {reportableContent} from './content-report.js?v=7f75039d97260881';
+import {createLearningCache} from './learning-cache.js?v=7f75039d97260881';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=7f75039d97260881';
+import {enhanceSourceContent} from './topic-content.js?v=7f75039d97260881';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=7f75039d97260881';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=7f75039d97260881';
+import {pointAssessment} from './point-assessment.js?v=7f75039d97260881';
+import {trainingAudio} from './training-audio.js?v=7f75039d97260881';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=7f75039d97260881';
+import {learningHint} from './beginner-hints.js?v=7f75039d97260881';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -62,27 +62,39 @@ export function createAtomicView(bridge) {
     if (state && next?.course_version === state.course_version && next.revision < state.revision) return;
     if (next?.unified_topic && next.training_mode !== 'atomic_retrieval'
         && next.topic_id === topic && next.learner_id === learner) {
+      if (state && next.status === 'completed' && !next.pause) {
+        learningHint(next.access || bridge.getAccess(), t('beginner.topicCompleted'), `topic:${topic}:${next.attempt_id}`, 'success');
+      }
       stop(); bridge.resumeTopic(next); return;
     }
     if (next?.training_mode !== 'atomic_retrieval' || next.topic_id !== topic || next.learner_id !== learner) throw new Error(t('review.invalidState'));
     if (state && next.revision < state.revision) return;
     const changed = !state || state.revision !== next.revision || JSON.stringify(state.access) !== JSON.stringify(next.access);
     const stepChanged = state?.active_step_id !== next.active_step_id;
-    const previousPhase = state?.phase;
+    const previous = state;
     if (stepChanged) { selected = null; academyLink = null; }
     state = next;
     if (state.access) bridge.setAccess(state.access);
-    if (previousPhase && previousPhase !== state.phase) {
-      const access = state.access || bridge.getAccess();
-      if (state.phase === 'waiting' && state.next_available_at && !state.pause) {
-        learningHint(access, t('beginner.atomicWaiting'), `atomic-wait:${topic}:${state.next_available_at}`);
-      }
-      const effect = state.current?.learning_effect;
-      if (state.phase === 'feedback' && effect && access?.learning_policy?.scheduled_delivery !== false) {
-        const key = effect.stopped ? 'beginner.atomicStopped' : effect.first_review ? 'beginner.atomicLearned' :
-          effect.rescheduled ? 'beginner.atomicReview' : null;
-        if (key) learningHint(access, t(key), `atomic:${topic}:${state.active_step_id}`);
-      }
+    const access = bridge.getAccess();
+    if (state.phase === 'waiting' && !state.pause
+        && (previous?.phase !== 'waiting' || previous.next_available_at !== state.next_available_at)) {
+      const key = state.next_available_at ? 'beginner.atomicWaiting' : 'beginner.atomicNoCards';
+      learningHint(access, t(key), `atomic-wait:${topic}:${state.next_available_at || state.attempt_id}`, 'schedule');
+    } else if (state.phase === 'feedback' && state.current
+        && (previous?.phase === 'answer' && !stepChanged || savedSubmission()?.step_id === state.active_step_id)) {
+      const {correct, learning_effect: effect, stop_requested: stopped} = state.current;
+      const scheduled = access?.learning_policy?.scheduled_delivery !== false;
+      const messages = [];
+      if (correct === false) messages.push(t('beginner.incorrect'));
+      if (effect?.stopped || stopped) messages.push(t('beginner.atomicStopped'));
+      else if (scheduled && effect?.first_review) messages.push(t('beginner.atomicLearned'));
+      else if (scheduled && effect?.rescheduled) messages.push(t('beginner.atomicReview'));
+      const tone = correct === false ? 'incorrect' : effect?.stopped || stopped ? 'warning' :
+        effect?.first_review ? 'success' : 'schedule';
+      if (messages.length) learningHint(access, messages.join(' '), `atomic:${topic}:${state.active_step_id}`, tone);
+    } else if (previous && previous.phase !== 'completed' && state.phase === 'completed' && !state.pause) {
+      const key = state.mode === 'review' ? 'beginner.reviewCompleted' : 'beginner.topicCompleted';
+      learningHint(access, t(key), `atomic-complete:${topic}:${state.attempt_id}`, 'success');
     }
     if (state.phase !== 'answer' || state.pause) write(submissionKey(), null);
     if (changed || force) render();
