@@ -106,7 +106,7 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
   scrollbar-gutter: stable;
 }
 .questionToolGroup { gap: 4px; }
-.questionTools > .voiceTool { align-self: flex-start; margin-inline-start: 4px; }
+.questionTools > .voiceTool { justify-content: flex-start; margin-inline-start: 4px; }
 .questionTools .voiceToolPanel,
 .questionToolStatus {
   inline-size: min(300px, calc(100vw - 34px));
