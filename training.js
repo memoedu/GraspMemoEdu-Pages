@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=bca9627f8ea46c76';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=bca9627f8ea46c76';
-import {answerReady, answerEmpty} from './question-input.js?v=bca9627f8ea46c76';
-import {createLearningCache} from './learning-cache.js?v=bca9627f8ea46c76';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=bca9627f8ea46c76';
-import {helpableContent} from './content-report.js?v=bca9627f8ea46c76';
-import {ratingChoices} from './self-assessment.js?v=bca9627f8ea46c76';
-import {pointAssessment} from './point-assessment.js?v=bca9627f8ea46c76';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=bca9627f8ea46c76';
-import {learningHint} from './beginner-hints.js?v=bca9627f8ea46c76';
+import {t, translateMessage} from './i18n.js?v=ca8a42ff138b8431';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ca8a42ff138b8431';
+import {answerReady, answerEmpty} from './question-input.js?v=ca8a42ff138b8431';
+import {createLearningCache} from './learning-cache.js?v=ca8a42ff138b8431';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=ca8a42ff138b8431';
+import {helpableContent} from './content-report.js?v=ca8a42ff138b8431';
+import {ratingChoices} from './self-assessment.js?v=ca8a42ff138b8431';
+import {pointAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ca8a42ff138b8431';
+import {learningHint} from './beginner-hints.js?v=ca8a42ff138b8431';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=bca9627f8ea46c76';
-import {setQuestionTools} from './question-tools.js?v=bca9627f8ea46c76';
-import {voiceAnswerPending} from './voice-input.js?v=bca9627f8ea46c76';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=ca8a42ff138b8431';
+import {setQuestionTools} from './question-tools.js?v=ca8a42ff138b8431';
+import {voiceAnswerPending} from './voice-input.js?v=ca8a42ff138b8431';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -442,7 +442,8 @@ export function createTrainingView(bridge) {
       try { savedPayload = JSON.parse(read('submission', draftKey)); } catch {}
       const draft = savedPayload?.answer ?? (state.answer || read('draft', draftKey) || '');
       const {form, input, submit, bottom} = answerEditor(state.question, stem, draft,
-        {formId: 'trainingAnswerForm', inputId: 'trainingAnswer', submitId: 'trainingSubmit', canSelfRate: state.can_self_rate && state.can_submit});
+        {formId: 'trainingAnswerForm', inputId: 'trainingAnswer', submitId: 'trainingSubmit',
+          canSelfRate: state.can_self_rate && state.can_submit, topic: Boolean(embedded)});
       form.classList.add('trainingAnswerForm');
       const disable = value => { if (input.questionControl) input.questionControl.setDisabled(value); else input.disabled = value; };
       const pending = ['pending', 'running'].includes(state.submission_status);
@@ -712,7 +713,7 @@ export function createTrainingView(bridge) {
       if (alive(e,s)) renderQuestion();
     };
     const box=node('div','hyperskillTraining');
-    hyperskillQuestion(box,{question:{...state.question,hyperskill:state.hyperskill},history:false,
+    hyperskillQuestion(box,{question:{...state.question,hyperskill:state.hyperskill},history:false,topic:Boolean(embedded),
       disabled:hyperskillBusy||!state.can_submit,data,draft:read('draft',state.attempt_id)||'',
       onDraft:value=>save('draft',state.attempt_id,value),action,finish:()=>action('finish')});
     main.append(box);

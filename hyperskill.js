@@ -1,5 +1,6 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=bca9627f8ea46c76';
-import {enhanceSourceContent} from './topic-content.js?v=bca9627f8ea46c76';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
+import {enhanceSourceContent} from './topic-content.js?v=ca8a42ff138b8431';
+import {mountAnswerConversion} from './answer-conversion.js?v=ca8a42ff138b8431';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -21,8 +22,11 @@ const rich=html=>{const e=node('div','courseContent');e.innerHTML=html||'';enhan
 export function hyperskillInput(spec,{value='',disabled=false}={}) {
   const element=node('div','questionInteraction hyperskillInteraction'),input=node('textarea','structuredAnswer');
   input.hidden=true;input.disabled=disabled;element.append(input);
-  let current=parsed(value),complete=()=>true;
-  const emit=()=>{input.value=JSON.stringify(current);input.dispatchEvent(new Event('input',{bubbles:true}));};
+  let current=parsed(value),complete=()=>true, sync=()=>{}, emitting=false;
+  const emit=()=>{
+    input.value=JSON.stringify(current);emitting=true;
+    input.dispatchEvent(new Event('input',{bubbles:true}));emitting=false;
+  };
   const button=(text,title,fn,off=false)=>{
     const b=node('button','matchingMove',text);b.type='button';b.title=title;b.setAttribute('aria-label',title);
     b.disabled=disabled||off;b.addEventListener('click',fn);return b;
@@ -32,6 +36,7 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
     const body=rich(spec.template),walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT),targets=[];
     while(walker.nextNode())if(walker.currentNode.textContent.includes('▭'))targets.push(walker.currentNode);
     let index=0;
+    const controls=[];
     for(const target of targets) {
       const parts=target.textContent.split('▭'),fragment=document.createDocumentFragment();
       parts.forEach((part,i)=>{
@@ -44,13 +49,14 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
             const o=node('option','',option);o.value=option;control.append(o);
           }
         } else {control.type='text';control.autocomplete='off';control.spellcheck=false;}
-        control.value=current[number]||'';
+        control.value=current[number]||'';controls.push(control);
         control.addEventListener('input',()=>{current[number]=control.value;emit();});
         fragment.append(control);
       });
       target.replaceWith(fragment);
     }
     complete=()=>index===spec.fields.length&&current.every(v=>typeof v==='string'&&v.trim());
+    sync=()=>controls.forEach((control,index)=>{control.value=current[index];});
     element.append(body);
   } else if(['hyperskill_sorting','hyperskill_parsons'].includes(spec.type)) {
     const parsons=spec.type==='hyperskill_parsons';
@@ -72,7 +78,7 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
             entry.level+delta<0||entry.level+delta>10));
         row.append(body,controls);list.append(row);
       });
-    };draw();
+    };draw();sync=draw;
   } else if(spec.type==='hyperskill_table') {
     if(!Array.isArray(current)||current.length!==spec.rows.length)current=spec.rows.map(()=>spec.columns.map(()=>false));
     if(spec.description)element.append(rich(spec.description));
@@ -80,20 +86,21 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
     const head=node('thead'),header=node('tr');header.append(node('th'));
     spec.columns.forEach(c=>{const th=node('th');th.scope='col';th.append(rich(c.html));header.append(th);});
     head.append(header);table.append(head);
-    const tbody=node('tbody');
+    const tbody=node('tbody'),controls=[];
     spec.rows.forEach((row,i)=>{
       const tr=node('tr'),th=node('th');th.scope='row';th.append(rich(row.html));tr.append(th);
-      spec.columns.forEach((column,j)=>{
+      controls.push(spec.columns.map((column,j)=>{
         const td=node('td'),c=node('input');c.type=spec.multiple?'checkbox':'radio';c.name=`hyperskill-row-${i}`;
         c.checked=!!current[i]?.[j];c.disabled=disabled;c.setAttribute('aria-label',`${row.text}：${column.text}`);
         c.addEventListener('change',()=>{
           if(spec.multiple)current[i][j]=c.checked;else current[i]=spec.columns.map((_,k)=>k===j);
           emit();
-        });td.append(c);tr.append(td);
-      });tbody.append(tr);
+        });td.append(c);tr.append(td);return c;
+      }));tbody.append(tr);
     });
     table.append(tbody);frame.append(table);element.append(frame);
     complete=()=>spec.multiple||current.every(row=>row.filter(Boolean).length===1);
+    sync=()=>controls.forEach((row,i)=>row.forEach((control,j)=>{control.checked=current[i][j];}));
   } else if(spec.type==='hyperskill_code') {
     const languages=Object.keys(spec.templates);
     if(!current||!languages.includes(current.language)||typeof current.code!=='string')
@@ -116,11 +123,15 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
     });
     showLimits();element.append(label,limits,editor);
     complete=()=>!!current.code.trim();
+    sync=()=>{select.value=current.language;editor.value=current.code;showLimits();};
   } else throw Error('练习控件尚未加载。');
   input.questionControl={complete,empty:()=>false};emit();
+  input.addEventListener('input',()=>{
+    if(!emitting){current=JSON.parse(input.value);sync();}
+  });
   return {element,input};
 }
-export function hyperskillQuestion(box,{question,history,disabled,data,draft,onDraft,action,finish,next}) {
+export function hyperskillQuestion(box,{question,history,disabled,data,draft,onDraft,action,finish,next,topic=false}) {
   const button=(text,fn,primary=false)=>{
     const b=node('button',primary?'primaryButton':'secondaryButton',text);b.type='button';
     b.disabled=disabled;b.addEventListener('click',fn);return b;
@@ -207,6 +218,7 @@ export function hyperskillQuestion(box,{question,history,disabled,data,draft,onD
     input=node('textarea','answerInput');input.id='hyperskillAnswer';input.rows=3;input.maxLength=8000;
     input.value=draft;input.disabled=disabled;form.append(label,input);
   }
+  mountAnswerConversion(form,input,data.interaction,{topic});
   const send=node('button','primaryButton',data.local?'提交答案':'提交至 Hyperskill');
   send.dataset.hyperskillSubmit='';send.type='submit';send.disabled=disabled||!answerReady(input);
   input.addEventListener('input',()=>{onDraft(input.value);send.disabled=disabled||!answerReady(input);});

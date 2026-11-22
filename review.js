@@ -1,12 +1,13 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=bca9627f8ea46c76';
-import {setQuestionTools} from './question-tools.js?v=bca9627f8ea46c76';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=bca9627f8ea46c76';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bca9627f8ea46c76';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=bca9627f8ea46c76';
-import {reportableContent} from './content-report.js?v=bca9627f8ea46c76';
-import {createLearningCache} from './learning-cache.js?v=bca9627f8ea46c76';
-import {enhanceTopicContent} from './topic-content.js?v=bca9627f8ea46c76';
-import {practiceHint} from './beginner-hints.js?v=bca9627f8ea46c76';
+import { t, translateMessage, learningTitle } from './i18n.js?v=ca8a42ff138b8431';
+import {setQuestionTools} from './question-tools.js?v=ca8a42ff138b8431';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=ca8a42ff138b8431';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
+import {mountAnswerConversion} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca8a42ff138b8431';
+import {reportableContent} from './content-report.js?v=ca8a42ff138b8431';
+import {createLearningCache} from './learning-cache.js?v=ca8a42ff138b8431';
+import {enhanceTopicContent} from './topic-content.js?v=ca8a42ff138b8431';
+import {practiceHint} from './beginner-hints.js?v=ca8a42ff138b8431';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -238,7 +239,7 @@ export function createReviewView(bridge) {
         value: read(draftKey()) || '', formId: 'reviewAnswerForm', disabled: busy || !can('submit_answer')}) : null;
       const label = node(structured ? 'p' : 'label', '', t('你的答案')); label.htmlFor = 'reviewAnswerInput';
       const input = control?.input || node('textarea', 'answerInput'); input.id = 'reviewAnswerInput'; input.rows = 3; input.maxLength = 2000; input.spellcheck = false;
-      input.value = read(draftKey()) || ''; input.disabled = busy;
+      input.value = read(draftKey()) || ''; input.disabled = busy || !can('submit_answer');
       const refreshSubmit = () => {
         const send = card.querySelector('#reviewSubmitButton');
         if (send) send.disabled = busy || (!answerReady(input) && !voiceAnswerPending(form)) || !can('submit_answer');
@@ -251,6 +252,7 @@ export function createReviewView(bridge) {
         }
       });
       form.append(label, control?.element || input);
+      mountAnswerConversion(form, input, question.interaction, {topic: isCurrent});
       form.append(node('p', 'inputHint', t(question.interaction?.type === 'choice' ? 'question.choiceHint' : question.interaction?.grading === 'exact' ? 'question.exactHint'
         : question.interaction?.grading === 'semantic' ? 'question.semanticHint'
         : structured ? 'question.completeHint' : '只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。')));

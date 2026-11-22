@@ -1,18 +1,19 @@
-import {t, translateMessage} from './i18n.js?v=bca9627f8ea46c76';
-import {setQuestionTools} from './question-tools.js?v=bca9627f8ea46c76';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=bca9627f8ea46c76';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bca9627f8ea46c76';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=bca9627f8ea46c76';
-import {reportableContent} from './content-report.js?v=bca9627f8ea46c76';
-import {createLearningCache} from './learning-cache.js?v=bca9627f8ea46c76';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=bca9627f8ea46c76';
-import {enhanceSourceContent} from './topic-content.js?v=bca9627f8ea46c76';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=bca9627f8ea46c76';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=bca9627f8ea46c76';
-import {pointAssessment} from './point-assessment.js?v=bca9627f8ea46c76';
-import {trainingAudio} from './training-audio.js?v=bca9627f8ea46c76';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=bca9627f8ea46c76';
-import {learningHint} from './beginner-hints.js?v=bca9627f8ea46c76';
+import {t, translateMessage} from './i18n.js?v=ca8a42ff138b8431';
+import {setQuestionTools} from './question-tools.js?v=ca8a42ff138b8431';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=ca8a42ff138b8431';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca8a42ff138b8431';
+import {mountAnswerConversion} from './answer-conversion.js?v=ca8a42ff138b8431';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ca8a42ff138b8431';
+import {reportableContent} from './content-report.js?v=ca8a42ff138b8431';
+import {createLearningCache} from './learning-cache.js?v=ca8a42ff138b8431';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ca8a42ff138b8431';
+import {enhanceSourceContent} from './topic-content.js?v=ca8a42ff138b8431';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ca8a42ff138b8431';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ca8a42ff138b8431';
+import {pointAssessment} from './point-assessment.js?v=ca8a42ff138b8431';
+import {trainingAudio} from './training-audio.js?v=ca8a42ff138b8431';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ca8a42ff138b8431';
+import {learningHint} from './beginner-hints.js?v=ca8a42ff138b8431';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -234,7 +235,7 @@ export function createAtomicView(bridge) {
     const stem = marked(question.html, `question:${question.card_id}`, question.card_id);
     const typeField = choiceTypeField(question.interaction); if (typeField) box.append(typeField);
     box.append(stem);
-    if(question.hyperskill)return hyperskillQuestion(box,{question,history,
+    if(question.hyperskill)return hyperskillQuestion(box,{question,history,topic:true,
       disabled:history||busy||Boolean(state.pause)||!state.can_submit,
       data:history?null:hyperskillData(),draft:history?'':read(draftKey())||'',
       onDraft:value=>write(draftKey(),value),action:hyperskillAction,
@@ -263,7 +264,10 @@ export function createAtomicView(bridge) {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) { event.preventDefault(); form.requestSubmit(); }
     });
     form.addEventListener('submit', event => { event.preventDefault(); if (!disabled) void submit(input); });
-    if (!history && question.phase === 'answer') form.append(send);
+    if (!history && question.phase === 'answer') {
+      mountAnswerConversion(form, input, question.interaction, {topic: true});
+      form.append(send);
+    }
     box.append(form);
     audioControl = trainingAudio(question, {request: bridge.request, contentVersion: state.course_version, disabled,
       ...(!disabled && (!question.interaction || question.interaction.type === 'text') ? {

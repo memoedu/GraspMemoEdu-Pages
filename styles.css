@@ -303,6 +303,10 @@ mjx-container[jax="SVG"] text { font-family: "Microsoft YaHei", sans-serif; }
 .answerInput { display: block; width: 100%; min-height: 91px; resize: vertical; padding: 11px 13px; border: 1px solid #bdc7cf; border-radius: 3px; background: #fff; color: var(--ma-ink); line-height: 1.6; }
 .answerInput:focus { border-color: var(--ma-blue); outline: 2px solid var(--intro-background); outline-offset: 0; }
 .answerInput:disabled { background: #fafafa; color: #757575; }
+.answerConversion { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-block: 12px; }
+.answerConversion > label { flex-basis: 100%; min-inline-size: 0; }
+.answerConversion .answerInput { box-sizing: border-box; min-height: 0; margin-block-start: 4px; }
+.answerConversion > [role="status"] { min-inline-size: 0; overflow-wrap: anywhere; }
 .answerBottom { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 13px; }
 .inputHint { color: #7c7c7c; font-size: 11px; margin: 0 !important; max-width: 410px; }
 .inputError { font-size: 12px; color: #a44735; margin: 8px 0 0 !important; }
