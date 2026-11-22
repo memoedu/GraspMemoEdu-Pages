@@ -1,10 +1,11 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=ad5665f8f97afbd9';
-import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
-import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
-import {enhanceTopicContent} from './topic-content.js?v=ad5665f8f97afbd9';
+import { t, translateMessage, learningTitle } from './i18n.js?v=be658212c777c70e';
+import {calculatorButton} from './calculator.js?v=be658212c777c70e';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=be658212c777c70e';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=be658212c777c70e';
+import {reportableContent} from './content-report.js?v=be658212c777c70e';
+import {createLearningCache} from './learning-cache.js?v=be658212c777c70e';
+import {enhanceTopicContent} from './topic-content.js?v=be658212c777c70e';
+import {practiceHint} from './beginner-hints.js?v=be658212c777c70e';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -86,6 +87,7 @@ export function createReviewView(bridge) {
       if (!active(ticket)) return;
       failure = result.status === 'error' ? translateMessage(result.reason || t('review.judgeError')) : null;
       accept(pending ? result.state : result);
+      if (pending && result.status === 'judged') practiceHint(state.access, state.feedback, result.submission_id);
       notice(failure);
     } catch (error) {
       if (active(ticket)) {
@@ -131,6 +133,7 @@ export function createReviewView(bridge) {
       busy = false;
       failure = result.status === 'error' ? translateMessage(result.reason || t('review.judgeError')) : null;
       accept(action === 'submit' ? result.state : result, true);
+      if (action === 'submit' && result.status === 'judged') practiceHint(state.access, state.feedback, result.submission_id);
       bridge.progressChanged();
     } catch (error) {
       if (!active(ticket)) return;

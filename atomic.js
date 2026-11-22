@@ -1,16 +1,17 @@
-import {t, translateMessage} from './i18n.js?v=ad5665f8f97afbd9';
-import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
-import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ad5665f8f97afbd9';
-import {enhanceSourceContent} from './topic-content.js?v=ad5665f8f97afbd9';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ad5665f8f97afbd9';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ad5665f8f97afbd9';
-import {pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
-import {trainingAudio} from './training-audio.js?v=ad5665f8f97afbd9';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ad5665f8f97afbd9';
+import {t, translateMessage} from './i18n.js?v=be658212c777c70e';
+import {calculatorButton} from './calculator.js?v=be658212c777c70e';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=be658212c777c70e';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=be658212c777c70e';
+import {reportableContent} from './content-report.js?v=be658212c777c70e';
+import {createLearningCache} from './learning-cache.js?v=be658212c777c70e';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=be658212c777c70e';
+import {enhanceSourceContent} from './topic-content.js?v=be658212c777c70e';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=be658212c777c70e';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=be658212c777c70e';
+import {pointAssessment} from './point-assessment.js?v=be658212c777c70e';
+import {trainingAudio} from './training-audio.js?v=be658212c777c70e';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=be658212c777c70e';
+import {learningHint} from './beginner-hints.js?v=be658212c777c70e';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -64,9 +65,22 @@ export function createAtomicView(bridge) {
     if (state && next.revision < state.revision) return;
     const changed = !state || state.revision !== next.revision || JSON.stringify(state.access) !== JSON.stringify(next.access);
     const stepChanged = state?.active_step_id !== next.active_step_id;
+    const previousPhase = state?.phase;
     if (stepChanged) { selected = null; academyLink = null; }
     state = next;
     if (state.access) bridge.setAccess(state.access);
+    if (previousPhase && previousPhase !== state.phase) {
+      const access = state.access || bridge.getAccess();
+      if (state.phase === 'waiting' && state.next_available_at && !state.pause) {
+        learningHint(access, t('beginner.atomicWaiting'), `atomic-wait:${topic}:${state.next_available_at}`);
+      }
+      const effect = state.current?.learning_effect;
+      if (state.phase === 'feedback' && effect && access?.learning_policy?.scheduled_delivery !== false) {
+        const key = effect.stopped ? 'beginner.atomicStopped' : effect.first_review ? 'beginner.atomicLearned' :
+          effect.rescheduled ? 'beginner.atomicReview' : null;
+        if (key) learningHint(access, t(key), `atomic:${topic}:${state.active_step_id}`);
+      }
+    }
     if (state.phase !== 'answer' || state.pause) write(submissionKey(), null);
     if (changed || force) render();
     if (stepChanged) window.scrollTo(0, 0);

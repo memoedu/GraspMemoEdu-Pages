@@ -1,22 +1,32 @@
-import {t, translateMessage} from './i18n.js?v=ad5665f8f97afbd9';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ad5665f8f97afbd9';
-import {answerReady, answerEmpty} from './question-input.js?v=ad5665f8f97afbd9';
-import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=ad5665f8f97afbd9';
-import {helpableContent} from './content-report.js?v=ad5665f8f97afbd9';
-import {ratingChoices} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ad5665f8f97afbd9';
+import {t, translateMessage} from './i18n.js?v=be658212c777c70e';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=be658212c777c70e';
+import {answerReady, answerEmpty} from './question-input.js?v=be658212c777c70e';
+import {createLearningCache} from './learning-cache.js?v=be658212c777c70e';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=be658212c777c70e';
+import {helpableContent} from './content-report.js?v=be658212c777c70e';
+import {ratingChoices} from './self-assessment.js?v=be658212c777c70e';
+import {pointAssessment} from './point-assessment.js?v=be658212c777c70e';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=be658212c777c70e';
+import {learningHint} from './beginner-hints.js?v=be658212c777c70e';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=ad5665f8f97afbd9';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=be658212c777c70e';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
+  function settled(previous, next) {
+    const access = getAccess();
+    if (previous.phase === 'done' || next.phase !== 'done' || access?.learning_policy?.scheduled_delivery === false) return;
+    const result = next.result;
+    const key = result?.stopped && result.stop_requested ? 'beginner.trainingStopped' :
+      next.in_error_notebook && !previous.in_error_notebook ? 'beginner.notebook' :
+      result?.scheduled ? 'beginner.trainingScheduled' : null;
+    if (key) learningHint(access, t(key), `training:${next.attempt_id}`);
+  }
   const readerTemplate = document.getElementById('appLayout').cloneNode(true);
   let cacheAccess = getAccess();
   const cache = createLearningCache(() => cacheAccess);
@@ -390,6 +400,7 @@ export function createTrainingView(bridge) {
               if (!alive(e, s)) return;
               // Keep the current input, submission and elapsed-time clock intact.
               for (const key of ['in_error_notebook', 'awaiting_first_learning', 'can_review_early', 'due_at']) current[key] = next[key];
+              if (next.in_error_notebook) learningHint(getAccess(), t('beginner.notebook'), `notebook:${state.attempt_id}`);
               refreshNotebook();
             } catch (failure) { if (alive(e, s)) {
               refreshNotebook();
@@ -457,7 +468,7 @@ export function createTrainingView(bridge) {
             next = await post('submit', payload);
           }
           if (!alive(e, s)) return;
-          current = next; renderQuestion();
+          settled(state, next); current = next; renderQuestion();
         } catch (failure) { if (alive(e, s)) {
           error(main, failure);
           if (!savedPayload) disable(!state.can_submit);
@@ -491,7 +502,7 @@ export function createTrainingView(bridge) {
               : await post('rate', {attempt_id: state.attempt_id, rating, elapsed_ms: flushClock(),
                 ...(state.multi_step ? {step_id: state.multi_step.current_step_id} : {})});
             if (!alive(e, s)) return;
-            current = next; await refreshGroup(e, s); if (alive(e, s)) renderQuestion();
+            settled(state, next); current = next; await refreshGroup(e, s); if (alive(e, s)) renderQuestion();
           } catch (failure) { if (alive(e, s)) error(main, failure); }
         }});
       (state.phase === 'shown' && state.multi_step ? main.querySelector('.multiStepCurrent') : main).append(ratings);
@@ -766,7 +777,7 @@ export function createTrainingView(bridge) {
     try {
       const next = await request('training/submission?' + query({submission_id: state.submission_id}));
       if (!alive(e, s)) return;
-      current = next;
+      settled(state, next); current = next;
       if (next.phase === 'done') await refreshGroup(e, s);
       if (alive(e, s)) renderQuestion();
     } catch (failure) { if (alive(e, s)) error(main, failure, () => poll(e, s, state)); }

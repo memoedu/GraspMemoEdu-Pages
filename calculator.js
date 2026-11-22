@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=ad5665f8f97afbd9';
+import {getLanguage} from './i18n.js?v=be658212c777c70e';
 
 export function calculatorButton(config) {
   if (!['basic', 'scientific', 'advanced', 'cas'].includes(config?.level)) return null;
@@ -11,7 +11,7 @@ export function calculatorButton(config) {
   launch.addEventListener('click', async () => {
     launch.disabled = true;
     try {
-      const {openCalculator} = await import('./calculator-panel.js?v=ad5665f8f97afbd9');
+      const {openCalculator} = await import('./calculator-panel.js?v=be658212c777c70e');
       if (launch.isConnected) openCalculator(launch, config, english);
     } catch {
       launch.textContent = english ? 'Retry calculator' : '重试计算器';
