@@ -77,13 +77,43 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .progressSegment.completed { background: var(--ma-blue); }
 .progressSegment.in_progress, .progressSegment.paused { background: var(--lesson-progress); }
 .lessonToolbar { display: flex; justify-content: flex-end; align-items: center; margin: 0 0 17px; }
-.questionToolRow { display: flex; flex-direction: column; align-items: flex-end; margin-block-end: 10px; min-inline-size: 0; }
-.questionTools {
-  display: flex;
-  max-inline-size: 100%;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
+/* Hallmark · question tools · existing learning palette.
+ * Pre-emit critique: P4 H5 E4 S5 R5 V4. */
+.pageShell:has(.questionToolRail) { max-width: 948px; }
+.questionWorkspace:has(> .questionToolRail) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  container: question-workspace / inline-size;
+}
+.questionWorkspace > :first-child { min-inline-size: 0; }
+.questionToolRail {
+  --question-tool-width: 64px;
+  inline-size: var(--question-tool-width);
+}
+.questionToolRow {
+  position: sticky;
+  inset-block-start: calc(var(--site-header-height, 0px) + 12px);
+  z-index: 2;
+}
+.questionTools, .questionToolGroups, .questionToolGroup { display: flex; flex-direction: column; }
+.questionTools, .questionToolGroups { gap: 8px; }
+.questionToolGroups {
+  padding: 4px;
+  max-block-size: min(50dvh, 480px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.questionToolGroup { gap: 4px; }
+.questionTools > .voiceTool { align-self: flex-start; margin-inline-start: 4px; }
+.questionTools .voiceToolPanel,
+.questionToolStatus {
+  inline-size: min(300px, calc(100vw - 34px));
+}
+@container question-workspace (min-width: 860px) {
+  .questionToolRail { --question-tool-width: 208px; }
+  .questionToolGroup { flex-direction: row; }
 }
 .questionToolButton {
   box-sizing: border-box;
@@ -116,7 +146,16 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 }
 .questionToolButton:disabled, .questionToolButton[aria-busy="true"] { opacity: .55; }
 .questionToolButton[aria-busy="true"] { cursor: progress; }
-.questionToolStatus:not(:empty) { margin-block-start: 5px; color: var(--ma-ink); font-size: 13px; }
+.questionToolStatus:not(:empty) {
+  position: absolute;
+  inset: calc(100% + 5px) 4px auto auto;
+  padding: 6px 9px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: white;
+  color: var(--ma-ink);
+  font-size: 13px;
+}
 .siteTools { flex-shrink: 0; }
 .voiceTool { position: relative; display: flex; justify-content: flex-end; }
 .voiceTool .questionToolButton[aria-pressed="true"] {
@@ -149,7 +188,8 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
   .questionToolButton:hover { border-color: var(--muted-accent-border); }
 }
 @media print {
-  .questionToolRow { display: none; }
+  .questionToolRail { display: none; }
+  .questionWorkspace:has(> .questionToolRail) { display: block; container-type: normal; }
 }
 .historyButton { color: #626262; }
 .chevron { width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: -3px 2px 0 6px; }

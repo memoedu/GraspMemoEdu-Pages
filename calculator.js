@@ -1,4 +1,4 @@
-import {calculatorWorksheets} from './calculator-policy.js?v=fba711eba541e925';
+import {calculatorWorksheets} from './calculator-policy.js?v=32ec15b952d98758';
 
 const icons = {
   expression: 'M5 3h14v18H5zM8 7h8M8 11h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1m-9 3h1m3 0h1m3 0h1',
@@ -21,13 +21,25 @@ const icons = {
   ecology: 'M19 4c1 9-1 14-7 14-4 0-6-3-6-6 0-6 6-7 13-8ZM4 21l10-10',
 };
 
-export function calculatorTools(config, english) {
+const toolGroups = [
+  ['常用计算', 'General calculation', ['expression', 'graph', 'integral', 'symbolic']],
+  ['数据与统计', 'Data and statistics', ['matrix', 'probability', 'statistics', 'machine_learning']],
+  ['离散计算与信号', 'Discrete computation and signals', ['modular', 'programmer', 'signal']],
+  ['自然科学', 'Natural sciences', ['physics', 'chemistry', 'astronomy', 'ecology']],
+  ['应用建模', 'Applied modeling', ['geography', 'finance', 'optimization']],
+];
+
+export function calculatorToolGroups(config, english) {
   const session = {saved: new Map(), history: [], degrees: false};
-  return calculatorWorksheets(config).map(worksheet => {
+  const available = new Map(calculatorWorksheets(config).map(worksheet => {
     const [id, zh, en] = worksheet;
-    return {id, label: english ? en : zh, icon: icons[id] || icons.expression, async open(launcher) {
-      const {openCalculator} = await import('./calculator-panel.js?v=fba711eba541e925');
+    return [id, {id, label: english ? en : zh, icon: icons[id], async open(launcher) {
+      const {openCalculator} = await import('./calculator-panel.js?v=32ec15b952d98758');
       if (launcher.isConnected) openCalculator(launcher, config, worksheet, english, session);
-    }};
-  });
+    }}];
+  }));
+  return toolGroups.map(([zh, en, ids]) => ({
+    label: english ? en : zh,
+    tools: ids.map(id => available.get(id)).filter(Boolean),
+  })).filter(group => group.tools.length);
 }
