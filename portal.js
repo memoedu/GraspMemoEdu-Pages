@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=769a0cb3f2f6366b";
-import { createReviewView } from "./review.js?v=769a0cb3f2f6366b";
-import { renderCourseGraph } from "./course-graph.js?v=769a0cb3f2f6366b";
-import {questionInput, choiceTypeField} from './question-input.js?v=769a0cb3f2f6366b';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=769a0cb3f2f6366b';
-import {enhanceTopicContent} from './topic-content.js?v=769a0cb3f2f6366b';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=769a0cb3f2f6366b';
-import {createCatalogPicker} from './catalog-picker.js?v=769a0cb3f2f6366b';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=769a0cb3f2f6366b';
-import {createAtomicView} from './atomic.js?v=769a0cb3f2f6366b';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=769a0cb3f2f6366b';
-import {sourceAttributions} from './memory-chunk.js?v=769a0cb3f2f6366b';
-import {createTrainingView} from './training.js?v=769a0cb3f2f6366b';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=769a0cb3f2f6366b";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=7bace6d21408de36";
+import { createReviewView } from "./review.js?v=7bace6d21408de36";
+import { renderCourseGraph } from "./course-graph.js?v=7bace6d21408de36";
+import {questionInput, choiceTypeField} from './question-input.js?v=7bace6d21408de36';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=7bace6d21408de36';
+import {enhanceTopicContent} from './topic-content.js?v=7bace6d21408de36';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=7bace6d21408de36';
+import {createCatalogPicker} from './catalog-picker.js?v=7bace6d21408de36';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=7bace6d21408de36';
+import {createAtomicView} from './atomic.js?v=7bace6d21408de36';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=7bace6d21408de36';
+import {sourceAttributions} from './memory-chunk.js?v=7bace6d21408de36';
+import {createTrainingView} from './training.js?v=7bace6d21408de36';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=7bace6d21408de36";
 
-import {createPaperView} from './review-papers.js?v=769a0cb3f2f6366b';
-import {createContextLibraryView} from './context-library.js?v=769a0cb3f2f6366b';
+import {createPaperView} from './review-papers.js?v=7bace6d21408de36';
+import {createContextLibraryView} from './context-library.js?v=7bace6d21408de36';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=769a0cb3f2f6366b';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=769a0cb3f2f6366b';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=769a0cb3f2f6366b';
-import {createStudentDashboard} from './student-dashboard.js?v=769a0cb3f2f6366b';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=7bace6d21408de36';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=7bace6d21408de36';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=7bace6d21408de36';
+import {createStudentDashboard} from './student-dashboard.js?v=7bace6d21408de36';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=769a0cb3f2f6366b').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=7bace6d21408de36').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -240,7 +240,7 @@ export function initPortal(bridge) {
     void refreshHelpSummary();
     $('pauseInboxLink').hidden = !current?.is_admin;
     $('studentsLink').hidden = !current?.is_admin;
-    $('personalProgressLink').hidden = current?.role !== 'account' || !current?.is_student || current?.is_admin;
+    $('personalProgressLink').hidden = !canViewPersonalReport(current);
     helpReporting?.refresh();
     $('adminLearningNotice').hidden = expired || !current?.is_admin;
     $("menuAccountPurpose").hidden = current?.role !== "account" || current?.purpose !== "test";
@@ -1613,12 +1613,17 @@ export function initPortal(bridge) {
     }
     await load(true);
   }
+  function canViewPersonalReport(access) {
+    return access?.role === 'account' && !access.is_admin;
+  }
+
   async function renderStudents(ticket, learnerId, own = false) {
     const page = node('section', 'studentOverview');
     page.append(node('h1', 'portalPageTitle', t(own ? 'students.personalTitle' : 'students.title')), node('p', 'inputHint', t(own ? 'students.personalHint' : 'students.hint')));
     root.replaceChildren(page);
-    if (own ? bridge.getAccess()?.role !== 'account' || !bridge.getAccess()?.is_student || bridge.getAccess()?.is_admin : !bridge.getAccess()?.is_admin) {
-      page.append(emptyBox(t(own ? 'students.studentOnly' : 'students.adminOnly'))); return;
+    const access = bridge.getAccess();
+    if (own ? !canViewPersonalReport(access) : !access?.is_admin) {
+      page.append(emptyBox(t(own ? 'students.accountOnly' : 'students.adminOnly'))); return;
     }
     const statusNames = {completed: t('students.completed'), in_progress: t('students.inProgress'),
       paused: t('students.paused'), not_started: t('students.notStarted')};
