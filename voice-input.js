@@ -1,6 +1,6 @@
-import {getLanguage} from './i18n.js?v=a84a3c1c58c18aee';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=a84a3c1c58c18aee';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=a84a3c1c58c18aee';
+import {getLanguage} from './i18n.js?v=ca8a42ff138b8431';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=ca8a42ff138b8431';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca8a42ff138b8431';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -98,7 +98,7 @@ async function fillAnswer(job) {
   if (current !== job || job.identity !== identity()) return;
   if (applied) {
     current = null;
-    update(strings('已填入答题控件。', 'Answer controls updated.'));
+    update();
   } else if (!valid()) {
     current = null;
     update(strings('作答位置已变化。请在当前题目重新录音。', 'The answer location changed. Record again for the current question.'));
