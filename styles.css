@@ -77,6 +77,52 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .progressSegment.completed { background: var(--ma-blue); }
 .progressSegment.in_progress, .progressSegment.paused { background: var(--lesson-progress); }
 .lessonToolbar { display: flex; justify-content: flex-end; align-items: center; margin: 0 0 17px; }
+.questionToolRow { display: flex; flex-direction: column; align-items: flex-end; margin-block-end: 10px; min-inline-size: 0; }
+.questionTools {
+  display: flex;
+  max-inline-size: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.questionToolButton {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  color: var(--ma-blue);
+  background: var(--soft-blue);
+  cursor: pointer;
+}
+.questionToolButton svg {
+  inline-size: 22px;
+  block-size: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.questionToolButton:focus-visible { outline: 2px solid var(--ma-blue); outline-offset: 2px; }
+.questionToolButton:active, .questionToolButton[aria-expanded="true"] {
+  color: var(--button-active);
+  background: var(--intro-background);
+  border-color: var(--muted-accent-border);
+}
+.questionToolButton:disabled, .questionToolButton[aria-busy="true"] { opacity: .55; }
+.questionToolButton[aria-busy="true"] { cursor: progress; }
+.questionToolStatus:not(:empty) { margin-block-start: 5px; color: var(--ma-ink); font-size: 13px; }
+@media (hover: hover) {
+  .questionToolButton:hover { border-color: var(--muted-accent-border); }
+}
+@media print {
+  .questionToolRow { display: none; }
+}
 .historyButton { color: #626262; }
 .chevron { width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: -3px 2px 0 6px; }
 [aria-expanded="true"] .chevron { transform: rotate(225deg); margin-top: 3px; }

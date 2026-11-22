@@ -1,5 +1,5 @@
-import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule, tools} from './calculator-policy.js?v=ad5665f8f97afbd9';
-import {toolInputs} from './calculator-inputs.js?v=ad5665f8f97afbd9';
+import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3a6f3c011309215f';
+import {toolInputs} from './calculator-inputs.js?v=3a6f3c011309215f';
 
 let active = null;
 let preferredLayout = 'side';
@@ -98,18 +98,15 @@ const renderValue = value => Array.isArray(value) ? '[' + value.map(renderValue)
   : value == null || typeof value === 'number' && !Number.isFinite(value) ? '—'
   : typeof value === 'number' ? Number(value.toPrecision(13)).toString() : String(value);
 
-export function openCalculator(launch, config, english) {
+export function openCalculator(launch, config, [module, zh, en, operations], english, session) {
   if (active?.launch === launch) return;
   active?.close(false);
   const local = (zh, en) => english ? en : zh;
   const dialog = create('dialog', 'questionCalculator');
+  dialog.dataset.module = module;
   dialog.setAttribute('aria-labelledby', 'questionCalculatorTitle');
   const headline = create('header', 'calculatorHeader');
-  const tiers = {
-    basic: local('基础计算器', 'Basic calculator'), scientific: local('科学计算器', 'Scientific calculator'),
-    advanced: local('高级计算器', 'Advanced calculator'), cas: local('CAS 计算器', 'CAS calculator'),
-  };
-  const title = create('h2', '', tiers[config.level]); title.id = 'questionCalculatorTitle';
+  const title = create('h2', '', local(zh, en)); title.id = 'questionCalculatorTitle';
   const layout = create('div', 'calculatorLayout');
   const layoutToggle = create('div', 'calculatorLayoutToggle');
   const center = button(local('居中', 'Center'), () => setLayout('center'));
@@ -119,42 +116,14 @@ export function openCalculator(launch, config, english) {
   layoutToggle.append(center, side);
   layout.append(layoutToggle, closeButton); headline.append(title, layout); dialog.append(headline);
 
-  const available = tools.filter(([id, , , operations]) => permitsModule(config, id)
-    && operations.some(([key]) => permitsKey(config, key)));
-  if (permitsModule(config, 'expression')) available.unshift(['expression', '计算', 'Calculate']);
-  let activeModule = available[0]?.[0];
-  const selector = create('select');
-  selector.setAttribute('aria-label', local('其他计算工具', 'Other calculator tools'));
   const content = create('div', 'calculatorContent');
   const output = create('div', 'calculatorResult');
   output.setAttribute('role', 'status');
   output.setAttribute('aria-live', 'polite');
-  const navigation = create('div', 'calculatorNavigation');
-  const tabs = create('div', 'calculatorTabs');
-  const direct = available.slice(0, available.length <= 3 ? 3 : 2);
-  for (const [id, zh, en] of direct) {
-    const tab = button(local(zh, en), () => openModule(id), 'button', 'calculatorTab');
-    tab.dataset.module = id; tabs.append(tab);
-  }
-  if (available.length > 1) {
-    navigation.append(tabs);
-    if (available.length > direct.length) {
-      const chooser = create('div', 'calculatorToolChooser');
-      const placeholder = create('option', '', local('其他工具', 'Other tools'));
-      placeholder.value = ''; placeholder.disabled = true;
-      selector.append(placeholder);
-      for (const [id, zh, en] of available.slice(direct.length)) {
-        const option = create('option', '', local(zh, en)); option.value = id; selector.append(option);
-      }
-      chooser.append(selector);
-      navigation.append(chooser);
-    }
-    dialog.append(navigation);
-  }
   dialog.append(content, output);
 
-  let worker, timer, previousAnswer, degrees = false, working = false, closed = false;
-  const saved = new Map(), history = [];
+  let worker, timer, working = false, closed = false;
+  const {saved, history} = session;
   let renderHistory = () => {};
   const wide = matchMedia('(min-width: 1100px)');
   const observe = new MutationObserver(() => {
@@ -186,6 +155,7 @@ export function openCalculator(launch, config, english) {
     observe.disconnect(); wide.removeEventListener('change', onResize);
     stop();
     dialog.close(); dialog.remove();
+    launch.setAttribute('aria-expanded', 'false');
     if (returnFocus && launch.isConnected) launch.focus({preventScroll: true});
     if (active?.launch === launch) active = null;
   }
@@ -212,13 +182,13 @@ export function openCalculator(launch, config, english) {
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=ad5665f8f97afbd9', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=3a6f3c011309215f', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
         if (data.error) { showError(data.error); return; }
         if (module === 'expression') {
-          previousAnswer = data.result.numeric;
+          session.previousAnswer = data.result.numeric;
           history.push({expression: input.expression, result: data.result.text});
           if (history.length > 12) history.shift();
           renderHistory();
@@ -227,28 +197,12 @@ export function openCalculator(launch, config, english) {
       };
       worker.onerror = event => { event.preventDefault(); stop(); finish(); showError('invalid'); };
       timer = setTimeout(() => { stop(); finish(); showError('timeout'); }, 8000);
-      worker.postMessage({config, module, operation, input, degrees, answer: previousAnswer});
+      worker.postMessage({config, module, operation, input, degrees: session.degrees, answer: session.previousAnswer});
     } catch { stop(); finish(); showError('invalid'); }
   }
 
-  function openModule(module) {
-    if (activeModule === module) return;
-    activeModule = module;
-    worksheet();
-  }
-
   function worksheet() {
-    stop(); output.replaceChildren(); delete output.dataset.state;
-    selector.value = direct.some(([id]) => id === activeModule) ? '' : activeModule;
-    for (const tab of tabs.children) tab.setAttribute('aria-pressed', String(tab.dataset.module === activeModule));
-    dialog.append(output);
-    content.replaceChildren();
-    if (!activeModule) {
-      content.append(create('p', '', local('本题没有可用的计算工具。', 'No calculator tools are available for this question.')));
-      return;
-    }
     const form = create('form', 'calculatorForm');
-    const module = activeModule;
     if (module === 'expression') {
       const input = create('input', 'calculatorExpression');
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
@@ -267,8 +221,8 @@ export function openCalculator(launch, config, english) {
       };
       const options = create('div', 'calculatorOptions');
       if (permitsKey(config, 'angle', 2)) {
-        options.append(button(degrees ? 'DEG' : 'RAD', event => {
-          degrees = !degrees; event.currentTarget.textContent = degrees ? 'DEG' : 'RAD';
+        options.append(button(session.degrees ? 'DEG' : 'RAD', event => {
+          session.degrees = !session.degrees; event.currentTarget.textContent = session.degrees ? 'DEG' : 'RAD';
         }));
         options.firstElementChild.setAttribute('aria-label', local('切换角度单位', 'Switch angle units'));
       }
@@ -357,7 +311,6 @@ export function openCalculator(launch, config, english) {
         run(module, 'evaluate', {expression: input.value}, equals);
       });
     } else {
-      const operations = available.find(([id]) => id === module)[3];
       const method = create('select');
       for (const [id, zh, en] of operations) {
         const option = create('option', '', local(zh, en));
@@ -394,9 +347,9 @@ export function openCalculator(launch, config, english) {
   dialog.addEventListener('keydown', event => {
     if (event.key === 'Escape' && dialog.dataset.layout === 'side') { event.preventDefault(); close(true); }
   });
-  selector.addEventListener('change', () => openModule(selector.value));
   wide.addEventListener('change', onResize);
   document.body.append(dialog); worksheet(); setLayout(preferredLayout);
+  launch.setAttribute('aria-expanded', 'true');
   observe.observe(document.body, {childList: true, subtree: true});
   active = {launch, close};
 }

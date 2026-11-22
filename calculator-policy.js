@@ -149,3 +149,13 @@ tools.push(
 export function toolOperation(module, operation) {
   return tools.find(spec => spec[0] === module)?.[3].find(item => item[0] === operation);
 }
+
+export function calculatorWorksheets(config) {
+  const available = tools.filter(([id, , , operations]) => permitsModule(config, id)
+    && operations.some(([key]) => permitsKey(config, key)));
+  if (permitsModule(config, 'expression') && permitsKey(config, 'evaluate')) {
+    const title = config.level === 'basic' ? ['基础计算器', 'Basic calculator'] : ['科学计算器', 'Scientific calculator'];
+    available.unshift(['expression', ...title]);
+  }
+  return available;
+}

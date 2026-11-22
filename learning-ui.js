@@ -1,12 +1,12 @@
-import {t, learningTitle} from './i18n.js?v=ad5665f8f97afbd9';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {enhanceTopicContent} from './topic-content.js?v=ad5665f8f97afbd9';
-import {sourceAttributions} from './memory-chunk.js?v=ad5665f8f97afbd9';
-import {mountPassageBlanks} from './composite-input.js?v=ad5665f8f97afbd9';
-import {placeContentActions} from './content-report.js?v=ad5665f8f97afbd9';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
-import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
+import {t, learningTitle} from './i18n.js?v=3a6f3c011309215f';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3a6f3c011309215f';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3a6f3c011309215f';
+import {enhanceTopicContent} from './topic-content.js?v=3a6f3c011309215f';
+import {sourceAttributions} from './memory-chunk.js?v=3a6f3c011309215f';
+import {mountPassageBlanks} from './composite-input.js?v=3a6f3c011309215f';
+import {placeContentActions} from './content-report.js?v=3a6f3c011309215f';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=3a6f3c011309215f';
+import {setQuestionTools} from './question-tools.js?v=3a6f3c011309215f';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -134,7 +134,7 @@ export function renderSourceReader(target, state, index = 0, onNavigate = () => 
   if (block) {
     const article = node('section', 'sourceReadingBlock');
     renderReaderStep(article, block, {titleId: 'sourceReadingTitle', submittedId: 'sourceInput', showAnswer: false,
-      editInteraction: block.preview_answer ? draft : null});
+      editInteraction: block.preview_answer ? draft : null, toolAnchor: target});
     target.append(article);
     const nav = node('nav', 'stepNavigation'); nav.setAttribute('aria-label', '阅读内容');
     nav.append(action('上一页', 'secondaryButton', () => onNavigate(index - 1), index === 0),
@@ -142,7 +142,10 @@ export function renderSourceReader(target, state, index = 0, onNavigate = () => 
       action('下一页', 'primaryButton', () => onNavigate(index + 1), index === blocks.length - 1));
     for (const control of nav.querySelectorAll('button')) control.dataset.navAvailable = String(!control.disabled);
     target.append(nav);
-  } else target.append(node('p', '', '原材料尚无正文。'));
+  } else {
+    setQuestionTools(target);
+    target.append(node('p', '', '原材料尚无正文。'));
+  }
   if (state.references?.length) {
     const refs = node('details', 'sourceReferences'); refs.append(node('summary', '', '参考资料'));
     for (const ref of state.references) {
@@ -159,14 +162,14 @@ export function renderReaderStep(target, step, {titleId = 'stepTitle', title = r
   showSubmittedInteraction = !step.actions?.includes('submit'), submittedValue = step.answer || '',
   showAnswer = step.answer !== null && step.answer !== undefined && step.answer !== '',
   feedback = step.feedback, feedbackClass = '', referenceSource = step,
-  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice, editInteraction = null} = {}) {
+  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice, editInteraction = null, toolAnchor = target} = {}) {
+  setQuestionTools(toolAnchor, step);
   const heading = node('div', 'stepHeader'), titleNode = node('h2', 'stepTitle', title);
   titleNode.id = titleId; titleNode.tabIndex = -1; heading.append(titleNode);
   if (counter) heading.append(node('span', 'stepCounter', counter));
   let stem = decorate(readerContent(step.html, references), 'question');
   const actions = node('div', 'questionActions');
   placeContentActions(stem, actions);
-  const calculator = calculatorButton(step.calculate); if (calculator) actions.prepend(calculator);
   heading.append(actions);
   target.setAttribute('aria-labelledby', titleId); target.replaceChildren(heading, stem);
   const sectionHeading = readingSectionHeading(step.section); if (sectionHeading) target.prepend(sectionHeading);

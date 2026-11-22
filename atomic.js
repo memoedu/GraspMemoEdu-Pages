@@ -1,16 +1,16 @@
-import {t, translateMessage} from './i18n.js?v=ad5665f8f97afbd9';
-import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
-import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ad5665f8f97afbd9';
-import {enhanceSourceContent} from './topic-content.js?v=ad5665f8f97afbd9';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ad5665f8f97afbd9';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ad5665f8f97afbd9';
-import {pointAssessment} from './point-assessment.js?v=ad5665f8f97afbd9';
-import {trainingAudio} from './training-audio.js?v=ad5665f8f97afbd9';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ad5665f8f97afbd9';
+import {t, translateMessage} from './i18n.js?v=3a6f3c011309215f';
+import {setQuestionTools} from './question-tools.js?v=3a6f3c011309215f';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3a6f3c011309215f';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=3a6f3c011309215f';
+import {reportableContent} from './content-report.js?v=3a6f3c011309215f';
+import {createLearningCache} from './learning-cache.js?v=3a6f3c011309215f';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=3a6f3c011309215f';
+import {enhanceSourceContent} from './topic-content.js?v=3a6f3c011309215f';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=3a6f3c011309215f';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=3a6f3c011309215f';
+import {pointAssessment} from './point-assessment.js?v=3a6f3c011309215f';
+import {trainingAudio} from './training-audio.js?v=3a6f3c011309215f';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=3a6f3c011309215f';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -216,7 +216,6 @@ export function createAtomicView(bridge) {
   function renderQuestion(question, history = false) {
     const box = node('section', 'atomicQuestion'); box.dataset.cardId = question.card_id;
     box.append(node('h2', '', question.title));
-    const calculator = calculatorButton(question.calculate); if (calculator) box.append(calculator);
     const stem = marked(question.html, `question:${question.card_id}`, question.card_id);
     const typeField = choiceTypeField(question.interaction); if (typeField) box.append(typeField);
     box.append(stem);
@@ -329,11 +328,16 @@ export function createAtomicView(bridge) {
     if (!answering) main.append(node('p', 'eyebrow', trainingTitle));
     main.append(node('h1', 'lessonTitle', answering ? trainingTitle : state.title), topicProgress(state.topic_progress));
     const status = node('p', 'fieldError', failure || ''); status.id = 'atomicNotice'; status.hidden = !failure; status.setAttribute('role', 'status'); main.append(status);
+    const appendQuestion = (question, history) => {
+      const card = renderQuestion(question, history);
+      main.append(card);
+      setQuestionTools(card, question);
+    };
     if (selected) {
       const previous = selected === 'introduction' ? null : state.history.find(r => r.id === selected && r.viewable);
       const section = state.unified_history?.find(item => item.id === selected);
       if (selected === 'introduction' && state.introduction) main.append(...introductionContent(state.introduction));
-      else if (previous) main.append(renderQuestion(previous, true));
+      else if (previous) appendQuestion(previous, true);
       else if (section) main.append(node('h2', '', section.title), ...introductionContent(section, false));
       else selected = null;
       if (selected) {
@@ -346,7 +350,7 @@ export function createAtomicView(bridge) {
         main.append(...introductionContent(state.introduction), node('p', 'atomicIntroPrompt', t('atomic.introPrompt')),
           button(t('atomic.understood'), () => mutate('choose', {choice: 'learn'}), 'primaryButton'));
       } else if (state.chunk) main.append(renderChunk(state.chunk));
-      else if (state.current) main.append(renderQuestion(state.current));
+      else if (state.current) appendQuestion(state.current);
       else if (state.phase === 'completed') {
         main.append(node('p', 'atomicComplete', t(state.mode === 'review' ? 'atomic.reviewCompleted' : 'atomic.completed')));
         const review = node('a', 'primaryButton', t('atomic.reviewTitle')); review.href = bridge.reviewHref(); main.append(review);

@@ -1,10 +1,10 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=ad5665f8f97afbd9';
-import {calculatorButton} from './calculator.js?v=ad5665f8f97afbd9';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ad5665f8f97afbd9';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ad5665f8f97afbd9';
-import {reportableContent} from './content-report.js?v=ad5665f8f97afbd9';
-import {createLearningCache} from './learning-cache.js?v=ad5665f8f97afbd9';
-import {enhanceTopicContent} from './topic-content.js?v=ad5665f8f97afbd9';
+import { t, translateMessage, learningTitle } from './i18n.js?v=3a6f3c011309215f';
+import {setQuestionTools} from './question-tools.js?v=3a6f3c011309215f';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3a6f3c011309215f';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3a6f3c011309215f';
+import {reportableContent} from './content-report.js?v=3a6f3c011309215f';
+import {createLearningCache} from './learning-cache.js?v=3a6f3c011309215f';
+import {enhanceTopicContent} from './topic-content.js?v=3a6f3c011309215f';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -210,7 +210,6 @@ export function createReviewView(bridge) {
     const structured = question.interaction && question.interaction.type !== 'text';
     const heading = node('div', 'stepHeader');
     heading.append(node('h2', 'stepTitle', t('review.questionNumber', {number: index + 1})));
-    const calculator = calculatorButton(question.calculate); if (calculator) heading.append(calculator);
     card.append(heading, stem);
     const typeField = choiceTypeField(question.interaction); if (typeField) stem.before(typeField);
     if (structured && !editable) card.append(questionInput(question.interaction, {id: 'reviewSubmittedInteraction',
@@ -263,6 +262,7 @@ export function createReviewView(bridge) {
     } else if (state.status !== 'in_progress') nav.append(home());
     for (const item of nav.querySelectorAll('button')) if (busy) item.disabled = true;
     card.append(nav); main.append(card);
+    setQuestionTools(card, question);
     layout.append(renderHistory(), main); root.replaceChildren(layout);
     const input = root.querySelector('#reviewAnswerInput'), send = root.querySelector('#reviewSubmitButton');
     if (send) send.disabled = busy || !answerReady(input) || !can('submit_answer');
