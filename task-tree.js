@@ -65,10 +65,55 @@ export function enhanceMarkdownOutline(root, {expanded = new Map(), keyPrefix = 
   return root;
 }
 
+// Refill only Topic slots, using the incoming order to break topological ties.
+export function orderTopicSiblings(entries, topicOf, parentOf = () => null) {
+  const result = [...entries], siblings = new Map();
+  entries.forEach((entry, index) => {
+    const topic = topicOf(entry);
+    if (!topic) return;
+    const parent = parentOf(topic);
+    if (!siblings.has(parent)) siblings.set(parent, []);
+    const key = topic.dependency_node_id || topic.topic_id || topic.id;
+    const parents = (topic.prerequisite_details?.length ? topic.prerequisite_details : topic.prerequisites || [])
+      .map(parent => typeof parent === 'string' ? parent : parent.id);
+    const ready = topic.dependency_ready !== false && !topic.locked && topic.status !== 'paused' && !topic.maintenance;
+    siblings.get(parent).push({entry, index, key, parents, ready});
+  });
+  for (const slots of siblings.values()) {
+    if (slots.length < 2) continue;
+    let position = 0;
+    for (const ready of [true, false]) {
+      const remaining = new Map(slots.filter(item => item.ready === ready).map(item => [item.key, item]));
+      while (remaining.size) {
+        let next;
+        for (const item of remaining.values()) {
+          if (!item.parents.some(parent => remaining.has(parent))) {
+            next = item;
+            break;
+          }
+        }
+        // Validated graphs are acyclic. Preserve remaining order for stale or inconsistent data.
+        if (!next) {
+          for (const item of remaining.values()) result[slots[position++].index] = item.entry;
+          break;
+        }
+        result[slots[position++].index] = next.entry;
+        remaining.delete(next.key);
+      }
+    }
+  }
+  return result;
+}
+
 // The same tree renderer serves courses, banks and review source directories.
-export function renderTaskTree(pending, data, {renderTask, expanded, keyPrefix = '', sourceOrder = [], defaultOpen = false}) {
+export function renderTaskTree(pending, data, {renderTask, expanded, keyPrefix = '', sourceOrder = [], defaultOpen = false, sortTopics = false}) {
   const tasks = new Map(data.tasks.map(task => [task.topic_id || task.id, task]));
-  const containers = new Map(), rendered = new Set();
+  const containers = new Map(), rendered = new Set(), cards = new Map();
+  const renderCard = task => {
+    const card = renderTask(task);
+    cards.set(card, task);
+    return card;
+  };
   const units = new Map((data.pending_hierarchy || []).map(unit => [unit.id, unit])), needed = new Set();
   // All task sources share the same pruning: keep only ancestors of tasks
   // still present in this tree (completed tasks are rendered in history).
@@ -82,7 +127,7 @@ export function renderTaskTree(pending, data, {renderTask, expanded, keyPrefix =
     // temporarily reduced by a progress/filter view. Identity stays on the card.
     if (!parents.has(unit.id) && unit.topic_ids?.length === 1 && tasks.has(unit.topic_ids[0])) {
       const id = unit.topic_ids[0], task = tasks.get(id);
-      const card = renderTask({...task, outline_title: unit.title});
+      const card = renderCard({...task, outline_title: unit.title});
       card.dataset.unitId = unit.id;
       containers.set(unit.id, {group: card, body: null}); rendered.add(id);
       continue;
@@ -92,19 +137,21 @@ export function renderTaskTree(pending, data, {renderTask, expanded, keyPrefix =
     group.dataset.unitId = unit.id;
     containers.set(unit.id, {group, body});
     for (const id of unit.topic_ids || []) if (tasks.has(id)) {
-      body.append(renderTask(tasks.get(id))); rendered.add(id);
+      body.append(renderCard(tasks.get(id))); rendered.add(id);
     }
   }
   for (const unit of data.pending_hierarchy || []) {
     if (!containers.has(unit.id)) continue;
     (containers.get(unit.parent_id)?.body || pending).append(containers.get(unit.id).group);
   }
-  for (const [id, task] of tasks) if (!rendered.has(id)) pending.append(renderTask(task));
+  for (const [id, task] of tasks) if (!rendered.has(id)) pending.append(renderCard(task));
   const order = new Map(sourceOrder.map((id, index) => [id, index]));
-  if (order.size) {
+  if (order.size || sortTopics) {
     const position = element => order.get(element.dataset.unitId || element.dataset.taskId) ?? Number.MAX_SAFE_INTEGER;
     for (const body of [pending, ...[...containers.values()].map(item => item.body).filter(Boolean)]) {
-      body.append(...[...body.children].sort((a, b) => position(a) - position(b)));
+      const entries = [...body.children];
+      if (order.size) entries.sort((a, b) => position(a) - position(b));
+      body.append(...(sortTopics ? orderTopicSiblings(entries, card => cards.get(card)) : entries));
     }
   }
 }

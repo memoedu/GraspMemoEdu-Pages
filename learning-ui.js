@@ -1,16 +1,16 @@
-import {t, learningTitle} from './i18n.js?v=5590602bb2f05484';
-import {attachFormulaEditing} from './formula-input.js?v=5590602bb2f05484';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=5590602bb2f05484';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=5590602bb2f05484';
-import {enhanceTopicContent} from './topic-content.js?v=5590602bb2f05484';
-import {prepareMathContent} from './math-presentation.js?v=5590602bb2f05484';
-import {sourceAttributions} from './memory-chunk.js?v=5590602bb2f05484';
-import {mountPassageBlanks} from './composite-input.js?v=5590602bb2f05484';
-import {placeContentActions} from './content-report.js?v=5590602bb2f05484';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=5590602bb2f05484';
-import {setQuestionTools} from './question-tools.js?v=5590602bb2f05484';
-import {enableVoiceAnswer} from './voice-input.js?v=5590602bb2f05484';
-import {mountAnswerConversion} from './answer-conversion.js?v=5590602bb2f05484';
+import {t, learningTitle} from './i18n.js?v=092aa6443a51662d';
+import {attachFormulaEditing} from './formula-input.js?v=092aa6443a51662d';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=092aa6443a51662d';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=092aa6443a51662d';
+import {enhanceTopicContent} from './topic-content.js?v=092aa6443a51662d';
+import {prepareMathContent} from './math-presentation.js?v=092aa6443a51662d';
+import {sourceAttributions} from './memory-chunk.js?v=092aa6443a51662d';
+import {mountPassageBlanks} from './composite-input.js?v=092aa6443a51662d';
+import {placeContentActions} from './content-report.js?v=092aa6443a51662d';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=092aa6443a51662d';
+import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
+import {enableVoiceAnswer} from './voice-input.js?v=092aa6443a51662d';
+import {mountAnswerConversion} from './answer-conversion.js?v=092aa6443a51662d';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;

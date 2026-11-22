@@ -1,4 +1,4 @@
-import {appendCatalogOutline} from './catalog-outline.js?v=5590602bb2f05484';
+import {appendCatalogOutline} from './catalog-outline.js?v=092aa6443a51662d';
 
 const node = (tag, className) => {
   const element = document.createElement(tag); element.className = className; return element;
@@ -65,6 +65,7 @@ export function workspaceLayout(sidebar) {
 export function courseDisplayEntries(data, outline = []) {
   const drafts = (data.topics || []).filter(topic => topic.status === 'read_only').map(topic => ({
     id: `draft:${topic.id}`, topic_id: topic.id, title: topic.title, presentation: 'draft',
+    prerequisites: topic.prerequisites, prerequisite_details: topic.prerequisite_details,
   }));
   if (!drafts.length) return {entries: data.tasks, drafts, hierarchy: data.pending_hierarchy, sourceOrder: []};
   const units = outline.length ? outline : data.units || [];

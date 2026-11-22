@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=5590602bb2f05484';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=5590602bb2f05484';
-import {answerReady, answerEmpty} from './question-input.js?v=5590602bb2f05484';
-import {createLearningCache} from './learning-cache.js?v=5590602bb2f05484';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=5590602bb2f05484';
-import {helpableContent} from './content-report.js?v=5590602bb2f05484';
-import {ratingChoices} from './self-assessment.js?v=5590602bb2f05484';
-import {pointAssessment} from './point-assessment.js?v=5590602bb2f05484';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=5590602bb2f05484';
-import {learningHint} from './beginner-hints.js?v=5590602bb2f05484';
+import {t, translateMessage} from './i18n.js?v=092aa6443a51662d';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=092aa6443a51662d';
+import {answerReady, answerEmpty} from './question-input.js?v=092aa6443a51662d';
+import {createLearningCache} from './learning-cache.js?v=092aa6443a51662d';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=092aa6443a51662d';
+import {helpableContent} from './content-report.js?v=092aa6443a51662d';
+import {ratingChoices} from './self-assessment.js?v=092aa6443a51662d';
+import {pointAssessment} from './point-assessment.js?v=092aa6443a51662d';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=092aa6443a51662d';
+import {learningHint} from './beginner-hints.js?v=092aa6443a51662d';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=5590602bb2f05484';
-import {setQuestionTools} from './question-tools.js?v=5590602bb2f05484';
-import {voiceAnswerPending} from './voice-input.js?v=5590602bb2f05484';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=092aa6443a51662d';
+import {setQuestionTools} from './question-tools.js?v=092aa6443a51662d';
+import {voiceAnswerPending} from './voice-input.js?v=092aa6443a51662d';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -165,6 +165,7 @@ export function createTrainingView(bridge) {
       const containers = bank.groups.filter(g => g.id !== selectedRoot && !(g.id === bank.id && !g.parent_id)
         && bank.groups.some(child => child.parent_id === g.id));
       const groupTasks = bank.groups.filter(g => g.question_count || g.introduction_count).map(g => ({id: g.id, topic_id: g.id, type: 'Lesson',
+          dependency_node_id: `group:${bank.id}:${g.id}`,
           title: g.title, topic_kind: g.question_count ? 'lesson' : 'introduction',
           status: g.completed ? 'completed' : g.completed_count || g.oj_status?.submitted_count ? 'in_progress' : 'not_started', completed_at: g.completed_at,
           result: g.completed ? 'completed' : null,
@@ -193,7 +194,7 @@ export function createTrainingView(bridge) {
       };
       renderBank(bank);
       const signature = value => JSON.stringify(value.groups.map(g => [g.id, g.completed_count, g.completed_at,
-        g.dependency_ready, g.point_prerequisites?.map(p => [p.id, p.ready, p.reason])]));
+        g.dependency_ready, g.prerequisites, g.point_prerequisites?.map(p => [p.id, p.ready, p.reason])]));
       let lastSignature = signature(bank);
       const validateBank = async () => {
         try {
