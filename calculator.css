@@ -35,7 +35,28 @@
   overflow: auto;
   overscroll-behavior: contain;
 }
-.questionCalculator::backdrop { background: var(--calculator-backdrop); }
+.questionCalculator[data-layout="center"] {
+  position: fixed;
+  inset: auto 0 10px;
+  margin: 0 auto;
+  max-block-size: min(69dvh, calc(100dvh - var(--calculator-toolbar-bottom, 150px) - 20px));
+  z-index: 30;
+}
+body:has(.questionCalculator[open][data-layout="center"]) {
+  padding-block-end: min(69dvh, calc(100dvh - 152px));
+}
+.questionToolRow[data-calculator-layout="center"] {
+  position: fixed;
+  inset: var(--calculator-toolbar-top) 10px auto;
+  z-index: 31;
+}
+.questionToolRow[data-calculator-layout="center"] .questionTools {
+  padding: 4px;
+}
+.questionToolRow[data-calculator-layout="center"] .voiceToolPanel {
+  position: absolute;
+  inset-inline-end: 0;
+}
 .questionCalculator[data-layout="side"] {
   position: fixed;
   inset: 66px 12px auto auto;

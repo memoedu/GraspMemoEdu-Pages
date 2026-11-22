@@ -117,6 +117,34 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .questionToolButton:disabled, .questionToolButton[aria-busy="true"] { opacity: .55; }
 .questionToolButton[aria-busy="true"] { cursor: progress; }
 .questionToolStatus:not(:empty) { margin-block-start: 5px; color: var(--ma-ink); font-size: 13px; }
+.siteTools { flex-shrink: 0; }
+.voiceTool { position: relative; display: flex; justify-content: flex-end; }
+.voiceTool .questionToolButton[aria-pressed="true"] {
+  background: var(--intro-background);
+  border-color: var(--muted-accent-border);
+}
+.voiceToolPanel {
+  position: absolute;
+  z-index: 1;
+  inset: calc(100% + 5px) 0 auto auto;
+  inline-size: min(300px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 14px #0001;
+  font-size: 13px;
+}
+.voiceToolPanel > [role="status"] { flex-basis: 100%; }
+.voiceToolPanel button { min-block-size: 36px; }
+@media (max-width: 760px) {
+  .topBarContainer .siteTools { grid-area: 1 / 2; justify-self: end; }
+  .siteTools .voiceToolPanel { position: fixed; inset: calc(var(--site-header-height, 96px) + 6px) 12px auto auto; }
+}
 @media (hover: hover) {
   .questionToolButton:hover { border-color: var(--muted-accent-border); }
 }
