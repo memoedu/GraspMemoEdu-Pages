@@ -1,6 +1,42 @@
 .formulaSourceHidden {
   display: none !important;
 }
+.answerFormulaEntry {
+  display: inline-grid;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  vertical-align: middle;
+}
+.answerFormulaEntry:has(> textarea.answerInput) {
+  display: grid;
+  inline-size: 100%;
+}
+.answerFormulaEntry > textarea.answerInput {
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+.answerFormulaEntry:has(.answerFormulaPreview:not([hidden])) {
+  border: 1px solid var(--border-color, #aaa);
+  border-radius: .4em;
+  overflow: hidden;
+}
+.answerFormulaEntry:focus-within:has(.answerFormulaPreview:not([hidden])) {
+  outline: 2px solid var(--link-color);
+}
+.answerFormulaEntry:has(.answerFormulaPreview:not([hidden])) > :is(input, textarea) {
+  border-color: transparent;
+  outline: none;
+}
+.answerFormulaPreview:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .25em .75em;
+  padding: .3em .6em;
+  border-block-start: 1px solid var(--border-color, #aaa);
+  overflow-x: auto;
+}
+.answerFormulaEntry:has(> :is(input, textarea)[hidden]) { display: none; }
 .formulaInputButton {
   justify-self: start;
   font-size: .85em;
@@ -66,5 +102,4 @@
 }
 .inputCompletions .completionFormula {
   display: inline-block;
-  margin-inline-start: .6em;
 }

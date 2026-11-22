@@ -1,4 +1,6 @@
-import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=7f75039d97260881';
+import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=494edfbe780e6c86';
+import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=494edfbe780e6c86';
+import previews from './vendor/formula/previews.mjs?v=494edfbe780e6c86';
 
 export const autocompleteGroups = ['calculator', 'answer', 'other'];
 const preferenceKey = 'graspmemoedu:autocomplete';
@@ -6,7 +8,7 @@ const sources = new WeakMap();
 const surfaces = new WeakMap();
 const token = /([a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
 const wholeValue = /^(.+)$/s;
-const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 function readPreferences() {
   try { return JSON.parse(localStorage.getItem(preferenceKey)) || {}; }
@@ -92,16 +94,16 @@ export function installAutocomplete(defaultCandidates) {
     search(term, receive) {
       if (snapshot) { receive(snapshot.candidates); return; }
       const candidates = source ? source.provider() : defaultCandidates;
-      const prefix = term.toLocaleLowerCase();
       receive(candidates.map(candidate => typeof candidate === 'string' ? {label: candidate, value: candidate} : candidate)
-        .filter(({label, value, keys}) => (value !== term || field.selectionEnd !== field.value.length)
-          && (keys || [value, label]).some(key => key.toLocaleLowerCase().startsWith(prefix))));
+        .filter(item => (item.preview || term === '!' || item.value !== term || field.selectionEnd !== field.value.length)
+          && matchesCompletion(item, term)));
     },
     replace: () => '', // Textcomplete locates the replacement range; insert the literal candidate in the native field.
-    template: candidate => candidate.preview
-      ? '<span class="completionFormula" aria-hidden="true">' + candidate.preview + '</span>'
-        + '<span class="completionFormulaLabel">' + escape(candidate.label) + '</span>'
-      : escape(candidate.label),
+    template(candidate) {
+      const preview = candidate.preview || (!source?.whole && candidate.value && previews[nativeFormulaSample(candidate.value)]);
+      return preview ? '<span class="completionFormula" role="img" aria-label="' + escape(candidate.label) + '">'
+        + preview + '</span>' : escape(candidate.label);
+    },
   }], {dropdown: {parent, className: 'inputCompletions', maxCount: 8, rotate: true, style: {position: 'fixed'}}});
 
   const menu = parent.firstElementChild;
@@ -166,6 +168,7 @@ export function installAutocomplete(defaultCandidates) {
   document.addEventListener('autocompletequery', event => {
     if (applying) return;
     const target = event.target, surface = surfaces.get(target);
+    if (!surface && sources.has(target)) { input(event); return; }
     if (!surface || !autocompleteEnabled(surface.group) || document.activeElement !== target) return;
     const data = surface.read();
     if (!data?.candidates.length) { if (target === field) dismiss(); return; }
@@ -179,7 +182,9 @@ export function installAutocomplete(defaultCandidates) {
     if (applying) return;
     const target = event.target;
     if (surfaces.has(target) || target.closest?.('[data-formula-surface]')) return;
-    if (event.isComposing || document.activeElement !== target ||
+    // Structured blanks also emit input on their hidden serialized form value.
+    if (document.activeElement !== target) return;
+    if (event.isComposing ||
         !target.matches('textarea, input:is([type="text"], [type="search"], [type="url"], [type="tel"], :not([type]))') ||
         target.matches(':disabled, [readonly]') || target.closest('[hidden], [inert], [data-autocomplete="off"]') ||
         target.selectionStart !== target.selectionEnd || target.selectionEnd === null) return dismiss();
@@ -200,7 +205,24 @@ export function installAutocomplete(defaultCandidates) {
   document.addEventListener('compositionstart', dismiss, true);
   document.addEventListener('focusout', event => { if (!applying && event.target === field) dismiss(); }, true);
   document.addEventListener('pointerdown', event => { if (!menu.contains(event.target)) dismiss(); }, true);
-  document.addEventListener('scroll', event => { if (event.target !== menu && event.target !== field) dismiss(); }, true);
+  let scrollFrame;
+  document.addEventListener('scroll', event => {
+    if (!completion.isShown() || menu.contains(event.target) || scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      if (!field || !completion.isShown()) return;
+      const box = field.getBoundingClientRect();
+      if (box.bottom <= 0 || box.top >= innerHeight || !field.isConnected) return dismiss();
+      if (snapshot) {
+        if (!snapshot.current()) return dismiss();
+        snapshot = surfaces.get(field)?.read();
+        if (!snapshot?.candidates.length) return dismiss();
+      }
+      const caret = editor.getCursorOffset();
+      Object.assign(menu.style, {left: caret.left + 'px', top: caret.top + 'px', bottom: 'auto'});
+      fitMenu();
+    });
+  }, true);
   window.addEventListener('hashchange', dismiss);
   window.addEventListener('resize', fitMenu);
   window.visualViewport?.addEventListener('resize', fitMenu);
