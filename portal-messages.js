@@ -598,12 +598,8 @@ export const portalMessages = {
     "Unable to load answers"
   ],
   "portal.question.help.78": [
-    "题目帮助",
-    "Question help"
-  ],
-  "portal.report.a.content.error.79": [
-    "报告内容错误",
-    "Report a content error"
+    "内容帮助",
+    "Content help"
   ],
   "portal.correct.80": [
     "正确",
@@ -710,8 +706,8 @@ export const portalMessages = {
     "What if I find a problem or need help?"
   ],
   "portal.see.guide.for.learning.instructions.to.report.a.question.or.expla.106": [
-    "操作流程可以查看“指南”。发现题目或解析有误，可在学习页点击“内容反馈”，或在作答记录中点击问号选择“报告内容错误”；其他问题可通过头像菜单中的“反馈”提出。",
-    "See Guide for learning instructions. To report a question or explanation error, click Content feedback on the learning page, or use the question mark in an answer record and choose Report a content error. For other issues, choose Feedback in the avatar menu."
+    "操作流程可以查看“指南”。在学习任务或作答记录中打开右上角的问号，可选择“内容质量反馈”或“请求答疑”。其他问题可通过头像菜单中的“反馈”提出。",
+    "See Guide for learning instructions. Open the question mark in the upper right of a learning task or answer record to choose Content quality feedback or Request help. For other issues, choose Feedback in the avatar menu."
   ],
   "portal.view.guide.107": [
     "查看指南 →",

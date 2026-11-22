@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=8249a057afad057f";
-import { createReviewView } from "./review.js?v=8249a057afad057f";
-import { renderCourseGraph } from "./course-graph.js?v=8249a057afad057f";
-import {questionInput, choiceTypeField} from './question-input.js?v=8249a057afad057f';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=8249a057afad057f';
-import {enhanceTopicContent} from './topic-content.js?v=8249a057afad057f';
-import {reportableContent, installContentReporting, installHelpRequests} from './content-report.js?v=8249a057afad057f';
-import {createCatalogPicker} from './catalog-picker.js?v=8249a057afad057f';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=8249a057afad057f';
-import {createAtomicView} from './atomic.js?v=8249a057afad057f';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=8249a057afad057f';
-import {sourceAttributions} from './memory-chunk.js?v=8249a057afad057f';
-import {createTrainingView} from './training.js?v=8249a057afad057f';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=8249a057afad057f";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=b17c5804797fc6e3";
+import { createReviewView } from "./review.js?v=b17c5804797fc6e3";
+import { renderCourseGraph } from "./course-graph.js?v=b17c5804797fc6e3";
+import {questionInput, choiceTypeField} from './question-input.js?v=b17c5804797fc6e3';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=b17c5804797fc6e3';
+import {enhanceTopicContent} from './topic-content.js?v=b17c5804797fc6e3';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=b17c5804797fc6e3';
+import {createCatalogPicker} from './catalog-picker.js?v=b17c5804797fc6e3';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=b17c5804797fc6e3';
+import {createAtomicView} from './atomic.js?v=b17c5804797fc6e3';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=b17c5804797fc6e3';
+import {sourceAttributions} from './memory-chunk.js?v=b17c5804797fc6e3';
+import {createTrainingView} from './training.js?v=b17c5804797fc6e3';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=b17c5804797fc6e3";
 
-import {createPaperView} from './review-papers.js?v=8249a057afad057f';
-import {createContextLibraryView} from './context-library.js?v=8249a057afad057f';
+import {createPaperView} from './review-papers.js?v=b17c5804797fc6e3';
+import {createContextLibraryView} from './context-library.js?v=b17c5804797fc6e3';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=8249a057afad057f';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=8249a057afad057f';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=8249a057afad057f';
-import {createStudentDashboard} from './student-dashboard.js?v=8249a057afad057f';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=b17c5804797fc6e3';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b17c5804797fc6e3';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=b17c5804797fc6e3';
+import {createStudentDashboard} from './student-dashboard.js?v=b17c5804797fc6e3';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=8249a057afad057f').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=b17c5804797fc6e3').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -980,16 +980,10 @@ export function initPortal(bridge) {
   function answerCard(answer, index, task, references) {
     const wrapper = node("article", "answerRecord"), head = node("div", "answerRecordHeader"), question = node("div", "answerQuestion");
     head.append(node("span", "", t("portal.questionIndex", { index: (index + 1).toLocaleString(locale()) })));
-    const helpHost = node("div", "answerHelpHost"), helpMenu = node("div", "answerHelpMenu"); helpMenu.hidden = true;
-    const help = control("?", "answerHelp", () => { helpMenu.hidden = !helpMenu.hidden; });
-    help.title = t("portal.question.help.78"); help.setAttribute("aria-label", t("portal.question.help.78")); help.setAttribute("aria-haspopup", "true");
-    helpMenu.append(control(t("portal.report.a.content.error.79"), "", () => { helpMenu.hidden = true; showFeedback({ course_id: task.course_id, topic_id: task.topic_id, task_id: task.id, question_id: answer.question_id }); }));
-    helpHost.addEventListener("mouseenter", () => { helpMenu.hidden = false; });
-    helpHost.addEventListener("mouseleave", () => { helpMenu.hidden = true; });
-    helpHost.append(help, helpMenu); head.append(helpHost);
     const stem = trustedContent(answer.html, references);
     const reportContext = {course_id: task.course_id, topic_id: task.topic_id, task_id: task.id, question_id: answer.question_id};
     reportableContent(stem, reportContext, `question:${answer.question_id}`, answer.content_version);
+    placeContentActions(stem, head);
     question.append(stem);
     if (answer.interaction && answer.interaction.type !== 'text') question.append(questionInput(answer.interaction,
       {id: `historyInteraction-${index}`, stem, value: answer.answer || '', disabled: true}).element);
