@@ -568,5 +568,20 @@ export const readerMessages = {
   "reader.practiceResult": [
     "已完成 {completed} 道练习，其中 {errors} 道有误。",
     "Completed {completed} practice questions, with {errors} incorrect."
-  ]
+  ],
+  'beginner.queueOne': ['本题答错，队列中已添加一道题。', 'This answer was incorrect. One question was added to the queue.'],
+  'beginner.queueTwo': ['本题答错，队列中已添加两道题。', 'This answer was incorrect. Two questions were added to the queue.'],
+  'beginner.queue': ['本题答错，队列中已添加 {count} 道题。', 'This answer was incorrect. {count} questions were added to the queue.'],
+  'beginner.target': ['本轮练习增加 {count} 道题。', 'This round now requires {count} more.'],
+  'beginner.paused': ['本轮错误次数已达上限，学习已暂停。', 'This round reached its error limit. Learning has been paused.'],
+  'beginner.examplePassed': ['例题答对，本模块已完成。', 'You answered the example correctly and completed this module.'],
+  'beginner.skipped': ['这个模块已跳过，管理员解锁后可以回来补学。', 'This module is skipped. You can return once an administrator unlocks it.'],
+  'beginner.atomicWaiting': ['暂时没有可推送的卡片，页面会在有卡片可练时自动继续。', 'There are no cards available right now. This page will continue when one is ready.'],
+  'beginner.atomicLearned': ['已掌握新的记忆点，系统已安排首次复习。', 'You mastered a new memory point. Its first review has been scheduled.'],
+  'beginner.atomicReview': ['系统已根据本次表现更新记忆点的复习时间。', 'The next review time was updated based on this answer.'],
+  'beginner.atomicStopped': ['这些记忆点已停止自动复习。', 'Automatic review has stopped for these memory points.'],
+  'beginner.notebook': ['本题已加入错题本，可以从错题本查看复习安排。', 'This question was added to your error notebook. You can see its review schedule there.'],
+  'beginner.trainingScheduled': ['系统已根据本次表现安排这道题的下次复习。', 'The next review for this question was scheduled based on this answer.'],
+  'beginner.trainingStopped': ['本题已停止自动复习。', 'Automatic review has stopped for this question.'],
+  'beginner.paperGrading': ['交卷后系统会逐题判定，结果汇总在这份复习中。', 'After submission, each question is graded and the results appear in this review.'],
 };

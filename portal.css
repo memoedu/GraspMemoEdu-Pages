@@ -530,6 +530,9 @@ body.portalModalOpen { overflow: hidden; }
 .taskIcon.reviewMastery { width: 29px; flex: 0 0 29px; margin-left: 0; align-items: flex-end; justify-content: flex-start; }
 .courseHierarchySetting { display: flex; align-items: center; gap: 10px; }
 .profileForm .courseHierarchySetting input { width: auto; }
+.studentQualifications { margin-block: 16px; }
+.studentQualifications h3 { margin-top: 0; }
+.profileForm.studentQualifications .courseHierarchySetting { display: flex; min-height: 32px; }
 @media (max-width: 600px) { .courseUnitBody { padding-right: 4px; padding-left: 4px; } .courseUnitHeading { padding: 12px 8px; } }
 
 /* Hallmark · component: memory chunk reader · genre: modern-minimal
