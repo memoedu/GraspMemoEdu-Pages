@@ -1,25 +1,25 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=3325cfcbaaa73678";
-import { createReviewView } from "./review.js?v=3325cfcbaaa73678";
-import { renderCourseGraph } from "./course-graph.js?v=3325cfcbaaa73678";
-import {questionInput, choiceTypeField} from './question-input.js?v=3325cfcbaaa73678';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=3325cfcbaaa73678';
-import {enhanceTopicContent} from './topic-content.js?v=3325cfcbaaa73678';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=3325cfcbaaa73678';
-import {createCatalogPicker} from './catalog-picker.js?v=3325cfcbaaa73678';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=3325cfcbaaa73678';
-import {createAtomicView} from './atomic.js?v=3325cfcbaaa73678';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=3325cfcbaaa73678';
-import {sourceAttributions} from './memory-chunk.js?v=3325cfcbaaa73678';
-import {createTrainingView} from './training.js?v=3325cfcbaaa73678';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=3325cfcbaaa73678";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=2af66fd14ba4821c";
+import { createReviewView } from "./review.js?v=2af66fd14ba4821c";
+import { renderCourseGraph } from "./course-graph.js?v=2af66fd14ba4821c";
+import {questionInput, choiceTypeField} from './question-input.js?v=2af66fd14ba4821c';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=2af66fd14ba4821c';
+import {enhanceTopicContent} from './topic-content.js?v=2af66fd14ba4821c';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=2af66fd14ba4821c';
+import {createCatalogPicker} from './catalog-picker.js?v=2af66fd14ba4821c';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=2af66fd14ba4821c';
+import {createAtomicView} from './atomic.js?v=2af66fd14ba4821c';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=2af66fd14ba4821c';
+import {sourceAttributions} from './memory-chunk.js?v=2af66fd14ba4821c';
+import {createTrainingView} from './training.js?v=2af66fd14ba4821c';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=2af66fd14ba4821c";
 
-import {createPaperView} from './review-papers.js?v=3325cfcbaaa73678';
-import {createContextLibraryView} from './context-library.js?v=3325cfcbaaa73678';
+import {createPaperView} from './review-papers.js?v=2af66fd14ba4821c';
+import {createContextLibraryView} from './context-library.js?v=2af66fd14ba4821c';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=3325cfcbaaa73678';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3325cfcbaaa73678';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=3325cfcbaaa73678';
-import {createStudentDashboard} from './student-dashboard.js?v=3325cfcbaaa73678';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=2af66fd14ba4821c';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=2af66fd14ba4821c';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=2af66fd14ba4821c';
+import {createStudentDashboard} from './student-dashboard.js?v=2af66fd14ba4821c';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=3325cfcbaaa73678').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=2af66fd14ba4821c').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1633,6 +1633,7 @@ export function initPortal(bridge) {
       another_review_active: t('students.otherActive'), stopped: t('students.stopped')};
     const current = () => ticket === sequence && currentRoute?.path === (own ? '/progress' : '/admin/students');
     const reportEndpoint = own ? 'student-report' : 'admin/students/' + encode(learnerId);
+    const reportOptions = {timeout: 45000};
     const date = value => value ? apiDate(value, true) : t('students.unscheduled');
     const stateLabel = value => statusNames[value] || t('students.notStarted');
     if (!learnerId) {
@@ -1649,7 +1650,7 @@ export function initPortal(bridge) {
         if (busy) return; busy = true; submit.disabled = more.disabled = true;
         if (reset) offset = 0;
         try {
-          const result = await bridge.request(`admin/students?offset=${offset}&q=${encode(query)}`);
+          const result = await bridge.request(`admin/students?offset=${offset}&q=${encode(query)}`, reportOptions);
           if (!current()) return;
           if (reset) list.replaceChildren();
           count.textContent = t('students.count', {count: result.total});
@@ -1671,7 +1672,7 @@ export function initPortal(bridge) {
       return;
     }
     if (!own) page.append(link(t('students.back'), '/admin/students', 'subjectBack'));
-    const detail = node('div'); page.append(detail);
+    const detail = node('div'); detail.append(loading()); page.append(detail);
     const refresh = control(t('pause.refresh'), 'secondaryButton', loadDetail); page.append(refresh);
     let busy = false, reportDays = 30;
     function qualifications(student) {
@@ -1713,14 +1714,14 @@ export function initPortal(bridge) {
     async function loadDetail() {
       if (busy) return; busy = true; refresh.disabled = true;
       try {
-        const data = await bridge.request(reportEndpoint + `?days=${reportDays}&timezone=${encode(timezone())}`);
+        const data = await bridge.request(reportEndpoint + `?days=${reportDays}&timezone=${encode(timezone())}`, reportOptions);
         if (!current()) return;
         detail.replaceChildren(node('h2', '', data.student.display_name),
           node('p', 'inputHint', t('students.updated', {time: date(data.generated_at)})));
         if (!data.student.enabled) detail.append(node('p', 'fieldError', t('students.accountDisabled')));
         if (!own) detail.append(qualifications(data.student));
         const report = createStudentDashboard(data, {
-          request: path => bridge.request(reportEndpoint + '/' + path),
+          request: path => bridge.request(reportEndpoint + '/' + path, reportOptions),
           formatDate: date, timezone: timezone(), days: reportDays,
           onDaysChange: days => { reportDays = days; void loadDetail(); },
           subjectName: id => subjectLabel(subjects?.find(subject => subject.id === id) || {id, title: id, title_en: id}),
