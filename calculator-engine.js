@@ -1,5 +1,5 @@
 import {constants, functions, operators, permitsConstant, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=3b98cafe4a000f31';
+  from './calculator-policy.js?v=fba711eba541e925';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -12,9 +12,9 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=3b98cafe4a000f31');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=3b98cafe4a000f31');
-const applied = () => import('./vendor/calculator/applied.mjs?v=3b98cafe4a000f31');
+const core = () => import('./vendor/calculator/core.mjs?v=fba711eba541e925');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=fba711eba541e925');
+const applied = () => import('./vendor/calculator/applied.mjs?v=fba711eba541e925');
 
 function inputText(value, limit = 4096) {
   ensure(typeof value === 'string' && value.trim() && value.length <= limit);
@@ -37,13 +37,22 @@ function checkNotation(source, config) {
 const commonNotation = value => inputText(value, 1024).replaceAll('π', 'pi').replaceAll('×', '*')
   .replaceAll('÷', '/').replaceAll('−', '-');
 
-const reservedSymbols = new Set(['ans', 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined']);
+const reservedSymbols = new Set(['ans', 'answer', 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined']);
 const assignable = name => /^[A-Za-z][A-Za-z0-9_]{0,23}$/.test(name) && !reservedSymbols.has(name)
   && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
 
 function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, names, bindings} = {}) {
-  const source = commonNotation(value);
-  checkNotation(source, config);
+  const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
+  const original = commonNotation(value);
+  checkNotation(original, config);
+  const source = original.replace(
+    /(?<![A-Za-z_])log(?:_(?:\{([^{}]+)\}|([A-Za-z][A-Za-z0-9_]*|\d+(?:\.\d+)?))|([₀-₉]+))\s*\(/g,
+    (_, expression, simple, digits) => {
+      const base = expression || simple || [...digits].map(digit => subscriptDigits.indexOf(digit)).join('');
+      checkNotation(base, config);
+      return 'logBase((' + base + '),';
+    },
+  );
   let remaining = 180;
   function compile(node, depth) {
     ensure(--remaining >= 0 && depth <= 32, 'limit');
@@ -54,7 +63,7 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
     }
     if (node.isSymbolNode) {
       if (node.name === variable) return x => x;
-      if (node.name === 'ans' && !symbolic) {
+      if ((node.name === 'ans' || node.name === 'answer') && !symbolic) {
         checkKey(config, 'ans');
         ensure(Number.isFinite(answer));
         return () => answer;
@@ -88,14 +97,20 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
     }
     if (node.isFunctionNode && node.fn.isSymbolNode) {
       const name = node.fn.name;
-      ensure(Object.hasOwn(functions, name), 'restricted');
-      const [key, tier, minimum, maximum = minimum] = functions[name];
+      const basedLog = name === 'logBase' || name === 'log' && node.args.length === 2;
+      ensure(basedLog || Object.hasOwn(functions, name), 'restricted');
+      const [key, tier, minimum, maximum = minimum] = basedLog ? ['log_base', 1, 2] : functions[name];
       checkKey(config, key, tier);
       ensure(node.args.length >= minimum && node.args.length <= maximum);
       const args = node.args.map(child => compile(child, depth + 1));
       const implementation = {ln: 'log', nCr: 'combinations', nPr: 'permutations'}[name] || name;
       return x => {
         const values = args.map(read => read(x));
+        if (basedLog) {
+          const [argument, base] = name === 'logBase' ? values.reverse() : values;
+          ensure(Number.isFinite(base) && base > 0 && base !== 1, 'domain');
+          return math.log(argument, base);
+        }
         if (['factorial', 'combinations', 'permutations'].includes(implementation)) {
           ensure(values.every(a => Number.isInteger(a) && a >= 0 && a <= 170)
             && (values.length < 2 || values[0] >= values[1]), 'domain');
@@ -107,7 +122,17 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
     }
     throw new CalculationError('restricted');
   }
-  const evaluate = compile(math.parse(source), 0);
+  const tree = math.parse(source);
+  const evaluate = compile(tree, 0);
+  if (symbolic && /\blogBase\s*\(/.test(source)) {
+    tree.traverse(node => {
+      if (node.isFunctionNode && node.fn.name === 'logBase') {
+        node.fn.name = 'log';
+        node.args.reverse();
+      }
+    });
+    return {source: tree.toString(), evaluate};
+  }
   return {source, evaluate};
 }
 
@@ -332,11 +357,11 @@ export async function calculate({config, module, operation, input = {}, degrees 
     case 'simplify': {
       const variable = input.variable === undefined ? 'x' : inputText(input.variable, 12);
       ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && !Object.hasOwn(constants, variable)
-        && variable !== 'i' && variable !== 'ans');
+        && !['i', 'ans', 'answer'].includes(variable));
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
       const text = pieces.map(piece => expressionPlan(math, piece, config, {variable, symbolic: true}).source).join('=');
-      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=3b98cafe4a000f31');
+      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=fba711eba541e925');
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
         : operation === 'differentiate' ? nerdamer.diff(text, variable)
         : operation === 'solve' ? nerdamer.solve(text, variable) : nerdamer.simplify(text);

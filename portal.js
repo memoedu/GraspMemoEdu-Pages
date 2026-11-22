@@ -1,25 +1,26 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=3b98cafe4a000f31";
-import { createReviewView } from "./review.js?v=3b98cafe4a000f31";
-import { renderCourseGraph } from "./course-graph.js?v=3b98cafe4a000f31";
-import {questionInput, choiceTypeField} from './question-input.js?v=3b98cafe4a000f31';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=3b98cafe4a000f31';
-import {enhanceTopicContent} from './topic-content.js?v=3b98cafe4a000f31';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=3b98cafe4a000f31';
-import {createCatalogPicker} from './catalog-picker.js?v=3b98cafe4a000f31';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=3b98cafe4a000f31';
-import {createAtomicView} from './atomic.js?v=3b98cafe4a000f31';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=3b98cafe4a000f31';
-import {sourceAttributions} from './memory-chunk.js?v=3b98cafe4a000f31';
-import {createTrainingView} from './training.js?v=3b98cafe4a000f31';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=3b98cafe4a000f31";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=fba711eba541e925";
+import { createReviewView } from "./review.js?v=fba711eba541e925";
+import { renderCourseGraph } from "./course-graph.js?v=fba711eba541e925";
+import {questionInput, choiceTypeField} from './question-input.js?v=fba711eba541e925';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=fba711eba541e925';
+import {enhanceTopicContent} from './topic-content.js?v=fba711eba541e925';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=fba711eba541e925';
+import {createCatalogPicker} from './catalog-picker.js?v=fba711eba541e925';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=fba711eba541e925';
+import {createAtomicView} from './atomic.js?v=fba711eba541e925';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=fba711eba541e925';
+import {sourceAttributions} from './memory-chunk.js?v=fba711eba541e925';
+import {createTrainingView} from './training.js?v=fba711eba541e925';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=fba711eba541e925";
 
-import {createPaperView} from './review-papers.js?v=3b98cafe4a000f31';
-import {createContextLibraryView} from './context-library.js?v=3b98cafe4a000f31';
+import {createPaperView} from './review-papers.js?v=fba711eba541e925';
+import {createContextLibraryView} from './context-library.js?v=fba711eba541e925';
 
-import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=3b98cafe4a000f31';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3b98cafe4a000f31';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=3b98cafe4a000f31';
-import {createStudentDashboard} from './student-dashboard.js?v=3b98cafe4a000f31';
+import {renderTaskTree, enhanceMarkdownOutline} from './task-tree.js?v=fba711eba541e925';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=fba711eba541e925';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=fba711eba541e925';
+import {createStudentDashboard} from './student-dashboard.js?v=fba711eba541e925';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=fba711eba541e925';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +40,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=3b98cafe4a000f31').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=fba711eba541e925').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -1164,9 +1165,9 @@ export function initPortal(bridge) {
     const page = node("section", "settingsPage"), form = node("form", "profileForm");
     page.append(node("h1", "portalPageTitle", t("portal.settings.115")));
     const displayLabel = node("label", "", t("portal.display.name.116")), display = node("input"); display.id = "profileDisplayName"; displayLabel.htmlFor = display.id; const defaultGuestName = bridge.getAccess()?.role === "guest" && (!profile.display_name || profile.display_name === "游客"); display.value = defaultGuestName ? t("portal.guest.12") : profile.display_name || ""; display.maxLength = 100; display.required = true;
-    const zoneLabel = node("label", "", t("portal.time.zone.117")), zone = node("input"); zone.id = "profileTimezone"; zoneLabel.htmlFor = zone.id; zone.value = timezone(); zone.required = true; zone.setAttribute("list", "timezoneOptions");
-    const zones = node("datalist"); zones.id = "timezoneOptions";
-    for (const value of Intl.supportedValuesOf?.("timeZone") || [timezone(), "UTC"]) { const option = node("option"); option.value = value; zones.append(option); }
+    const zoneLabel = node("label", "", t("portal.time.zone.117")), zone = node("input"); zone.id = "profileTimezone"; zoneLabel.htmlFor = zone.id; zone.value = timezone(); zone.required = true;
+    const zones = [...new Set([timezone(), 'UTC', ...(Intl.supportedValuesOf?.('timeZone') || [])])];
+    setInputCompletions(zone, () => zones, {whole: true});
     const hint = node("p", "fieldHint", t("portal.history.dates.completion.times.and.answer.times.use.this.time.zon.118")), status = node("p", "profileStatus"); status.setAttribute("role", "status");
     const submit = node("button", "primaryButton", t("portal.save.119")); submit.type = "submit";
     const languageLabel = node("label", "", t("portal.language")), language = node("select");
@@ -1177,7 +1178,17 @@ export function initPortal(bridge) {
     language.value = getLanguage();
     language.addEventListener("change", () => { setLanguage(language.value); location.reload(); });
     const languageHint = node("p", "fieldHint", t("portal.languageHint"));
-    form.append(languageLabel, language, languageHint, displayLabel, display, zoneLabel, zone, zones, hint, status, submit);
+    form.append(languageLabel, language, languageHint, displayLabel, display, zoneLabel, zone, hint, status, submit);
+    const completionSetting = node('fieldset', 'autocompleteSetting');
+    completionSetting.append(node('legend', '', t('autocomplete.title')));
+    for (const group of autocompleteGroups) {
+      const checkbox = node('input'); checkbox.type = 'checkbox'; checkbox.checked = autocompleteEnabled(group);
+      const label = node('label', 'courseHierarchySetting');
+      label.append(checkbox, document.createTextNode(t('autocomplete.' + group)));
+      checkbox.addEventListener('change', () => setAutocompleteEnabled(group, checkbox.checked));
+      completionSetting.append(label);
+    }
+    form.insertBefore(completionSetting, status);
     const beginner = node('input'); beginner.type = 'checkbox'; beginner.id = 'beginnerModeEnabled';
     beginner.checked = bridge.getAccess()?.beginner_mode_enabled ?? profile.beginner_mode_enabled ?? true;
     beginner.setAttribute('aria-describedby', 'beginnerModeHint');

@@ -1,0 +1,41 @@
+.inputCompletions {
+  --completion-paper: #fff;
+  --completion-shadow: #152b4529;
+  inset: auto;
+  margin: 0;
+  padding: 3px;
+  min-inline-size: 9rem;
+  max-inline-size: calc(100vw - 16px);
+  max-block-size: min(15rem, 44dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--completion-paper);
+  color: var(--ma-ink);
+  box-shadow: 0 4px 16px var(--completion-shadow);
+  font: inherit;
+  font-size: .875rem;
+}
+.inputCompletions :is(.textcomplete-header, .textcomplete-footer):empty { display: none; }
+.inputCompletions .textcomplete-item {
+  padding: 5px 9px;
+  line-height: 1.4;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  border-radius: 3px;
+}
+.inputCompletions .textcomplete-item:is([aria-selected="true"], :hover, :focus-within) {
+  background: var(--selection-border);
+  color: var(--ma-navy);
+}
+.inputCompletions .textcomplete-item:active { background: var(--progress-ready); }
+.autocompleteSetting {
+  margin: 18px 0 0;
+  padding: 8px 12px;
+  border: 1px solid var(--control-border);
+  color: var(--ma-navy);
+}
+.profileForm .autocompleteSetting label { margin: 4px 0; }
+.autocompleteSetting input { margin-inline: 0 8px; }
