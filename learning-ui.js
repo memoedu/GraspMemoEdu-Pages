@@ -1,15 +1,15 @@
-import {t, learningTitle} from './i18n.js?v=c690e85f04a2d459';
-import {attachFormulaEditing} from './formula-input.js?v=c690e85f04a2d459';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=c690e85f04a2d459';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=c690e85f04a2d459';
-import {enhanceTopicContent} from './topic-content.js?v=c690e85f04a2d459';
-import {sourceAttributions} from './memory-chunk.js?v=c690e85f04a2d459';
-import {mountPassageBlanks} from './composite-input.js?v=c690e85f04a2d459';
-import {placeContentActions} from './content-report.js?v=c690e85f04a2d459';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=c690e85f04a2d459';
-import {setQuestionTools} from './question-tools.js?v=c690e85f04a2d459';
-import {enableVoiceAnswer} from './voice-input.js?v=c690e85f04a2d459';
-import {mountAnswerConversion} from './answer-conversion.js?v=c690e85f04a2d459';
+import {t, learningTitle} from './i18n.js?v=8fb8fe43a072b8d3';
+import {attachFormulaEditing} from './formula-input.js?v=8fb8fe43a072b8d3';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=8fb8fe43a072b8d3';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=8fb8fe43a072b8d3';
+import {enhanceTopicContent} from './topic-content.js?v=8fb8fe43a072b8d3';
+import {sourceAttributions} from './memory-chunk.js?v=8fb8fe43a072b8d3';
+import {mountPassageBlanks} from './composite-input.js?v=8fb8fe43a072b8d3';
+import {placeContentActions} from './content-report.js?v=8fb8fe43a072b8d3';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=8fb8fe43a072b8d3';
+import {setQuestionTools} from './question-tools.js?v=8fb8fe43a072b8d3';
+import {enableVoiceAnswer} from './voice-input.js?v=8fb8fe43a072b8d3';
+import {mountAnswerConversion} from './answer-conversion.js?v=8fb8fe43a072b8d3';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;

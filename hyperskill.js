@@ -1,7 +1,7 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=c690e85f04a2d459';
-import {attachFormulaEditing} from './formula-input.js?v=c690e85f04a2d459';
-import {enhanceSourceContent} from './topic-content.js?v=c690e85f04a2d459';
-import {mountAnswerConversion} from './answer-conversion.js?v=c690e85f04a2d459';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=8fb8fe43a072b8d3';
+import {attachFormulaEditing} from './formula-input.js?v=8fb8fe43a072b8d3';
+import {enhanceSourceContent} from './topic-content.js?v=8fb8fe43a072b8d3';
+import {mountAnswerConversion} from './answer-conversion.js?v=8fb8fe43a072b8d3';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -44,6 +44,7 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
         fragment.append(document.createTextNode(part));if(i===parts.length-1)return;
         const number=index++,field=spec.fields[number],control=node(field.type==='select'?'select':'input','inlineBlank');
         control.setAttribute('aria-label',`第 ${number+1} 空`);control.disabled=disabled;
+        control.dataset.calculatorField=String(number);
         if(field.type==='select') {
           const empty=node('option','',`第 ${number+1} 空`);empty.value='';control.append(empty);
           for(const option of field.options) {

@@ -1,7 +1,7 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=c690e85f04a2d459';
-import {toolInputs} from './calculator-inputs.js?v=c690e85f04a2d459';
-import {setInputCompletions} from './autocomplete.js?v=c690e85f04a2d459';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=c690e85f04a2d459';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=8fb8fe43a072b8d3';
+import {toolInputs} from './calculator-inputs.js?v=8fb8fe43a072b8d3';
+import {setInputCompletions} from './autocomplete.js?v=8fb8fe43a072b8d3';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=8fb8fe43a072b8d3';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -122,31 +122,61 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
 
   let worker, timer, working = false, closed = false;
   const {saved, history} = session;
-  let answer = module === 'expression' ? history.at(-1)?.result : null, transferring = false;
+  let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   const workspace = launch.closest('.questionWorkspace');
   const target = () => workspace && answerTarget(workspace);
   const transferStatus = create('span', 'calculatorTransferStatus');
   transferStatus.setAttribute('role', 'status');
+  const destination = create('span', 'calculatorDestination');
+  const recorded = create('span', 'calculatorRecorded');
+  recorded.setAttribute('role', 'status');
+  const record = button(local('记录', 'Record'), () => {
+    const state = target()?.calculatorState();
+    if (!state || !answer || working || transferring) return;
+    state.records.push(...answer.split('\n'));
+    transferStatus.textContent = ''; refreshTransfer();
+  });
+  const undo = button(local('撤回末值', 'Undo last'), () => {
+    target()?.calculatorState().records.pop();
+    transferStatus.textContent = ''; refreshTransfer();
+  }, 'button', 'calculatorUndo');
   const transfer = button(local('转换', 'Convert'), async () => {
     const editor = target();
     if (!editor || !answer || transferring) return;
+    const {start, count, records} = editor.calculatorState(), size = records.length + answer.split('\n').length, version = edit;
     transferring = true; transferStatus.textContent = ''; refreshTransfer();
-    const unchanged = editor.pin();
-    const applied = await editor.convert(answer, () => !closed && unchanged());
+    const applied = await editor.convertCalculator(answer, () => !closed && target() === editor && version === edit);
     if (closed) return;
-    transferring = false; refreshTransfer();
-    if (applied) close(true);
-    else transferStatus.textContent = local('未能填入答案。请检查计算结果后重试。', 'Could not fill in the answer. Check the result and try again.');
+    transferring = false;
+    transferStatus.dataset.state = applied ? 'success' : 'error';
+    const range = size === 1 ? String(start + 1) : (start + 1) + '–' + (start + size);
+    transferStatus.textContent = applied ? (count ? local('已填入第 ' + range + ' 空。', 'Filled blank ' + range + '.')
+      : local('已填入答题控件。', 'Answer controls updated.'))
+      : local('未能填入，请核对结果与目标后重试。', 'Check the values and destination, then try again.');
+    refreshTransfer();
   });
   const footer = create('div', 'calculatorTransfer');
-  footer.append(transferStatus, transfer); dialog.append(footer);
+  const details = create('div', 'calculatorTransferDetails'), actions = create('div', 'calculatorTransferActions');
+  details.append(destination, recorded, undo, transferStatus);
+  actions.append(record, transfer); footer.append(details, actions); dialog.append(footer);
   function refreshTransfer() {
-    footer.hidden = !target();
-    transfer.disabled = !answer || working || transferring;
+    const state = target()?.calculatorState();
+    footer.hidden = !state;
+    if (!state) return;
+    const {records, start, selected, count} = state, size = answer?.split('\n').length || 1;
+    const remaining = count - start;
+    destination.textContent = !count ? '' : remaining === 0 ? local('已到最后一空，点选题中空位可改填。', 'Select a blank to fill it again.')
+      : (selected === null ? local('下一空', 'Next blank') : local('已选空位', 'Selected blank')) + ' · ' + (start + 1) + ' / ' + count;
+    recorded.textContent = records.length ? local('已记录', 'Recorded') + ' · ' + records.join('，') : '';
+    undo.hidden = !records.length; undo.disabled = transferring;
+    const unavailable = !answer || working || transferring;
+    record.disabled = unavailable || (count && records.length + size >= remaining);
+    transfer.disabled = unavailable || (count && records.length + size > remaining);
     transfer.textContent = transferring ? local('转换中…', 'Converting…') : local('转换', 'Convert');
   }
   function setAnswer(value) {
     answer = value;
+    if (module === 'expression') session.expressionAnswer = value;
     transferStatus.textContent = '';
     refreshTransfer();
   }
@@ -200,15 +230,17 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   }
   function run(module, operation, input, control, receive) {
     if (working || control.disabled) return;
+    const version = edit;
     working = true; control.disabled = true;
-    refreshTransfer();
+    setAnswer(null);
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=c690e85f04a2d459', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=8fb8fe43a072b8d3', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
+        if (version !== edit) { output.textContent = ''; refreshTransfer(); return; }
         if (data.error) { showError(data.error); return; }
         if (receive) { receive(data.result); return; }
         if (module === 'expression') {
@@ -227,6 +259,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
 
   function worksheet() {
     const form = create('form', 'calculatorForm');
+    const invalidate = () => { edit++; setAnswer(null); };
+    form.addEventListener('input', invalidate, true);
     if (module === 'expression') {
       const input = create('input', 'calculatorExpression');
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
@@ -281,7 +315,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       options.append(logBase);
       if (permitsKey(config, 'angle', 2)) {
         const angle = button(session.degrees ? 'DEG' : 'RAD', event => {
-          session.degrees = !session.degrees; event.currentTarget.textContent = session.degrees ? 'DEG' : 'RAD';
+          session.degrees = !session.degrees; event.currentTarget.textContent = session.degrees ? 'DEG' : 'RAD'; invalidate();
         });
         angle.setAttribute('aria-label', local('切换角度单位', 'Switch angle units'));
         options.append(angle);
@@ -312,7 +346,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           run(module, 'assign_variables', {expression}, assign, ({variables}) => {
             output.textContent = history.at(-1)?.result || '0';
             delete output.dataset.state;
-            setAnswer(history.at(-1)?.result);
+            setAnswer(null);
             if (expression !== input.value) return;
             const previous = session.assignmentDraft?.values;
             session.assignmentDraft = {expression, values: new Map(variables.map(name => [name, previous?.get(name) || '']))};
@@ -411,7 +445,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       form.append(fields);
       function renderFields() {
         stop(); output.replaceChildren(); delete output.dataset.state;
-        setAnswer(null);
+        invalidate();
         saved.set(module, method.value);
         fields.replaceChildren();
         const spec = operations.find(([id]) => id === method.value)[3];
@@ -419,7 +453,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         const {outer, fillExample} = toolInputs(spec, {module, operation: method.value, local, config,
           get: id => saved.get(prefix + id) || '', set: (id, value) => saved.set(prefix + id, value)});
         const actions = create('div', 'calculatorToolActions');
-        actions.append(button(local('填入示例', 'Fill example'), fillExample),
+        actions.append(button(local('填入示例', 'Fill example'), () => { invalidate(); fillExample(); }),
           button(local('计算结果', 'Calculate'), null, 'submit', 'calculatorControl calculatorPrimary'));
         fields.append(outer, actions);
       }

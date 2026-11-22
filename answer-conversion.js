@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=c690e85f04a2d459';
+import {getLanguage} from './i18n.js?v=8fb8fe43a072b8d3';
 
 const targets = new WeakMap();
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
@@ -8,6 +8,17 @@ let commandInputEnabled = false;
 
 export function installAnswerConversion(request) {
   requestConversion = body => request('answer-conversion', {method: 'POST', body, timeout: 35000});
+  document.addEventListener('click', selectCalculatorField, true);
+}
+
+const blankSelector = '[data-passage-id], [data-answer-control], [data-calculator-field]';
+const blankKey = element => element.dataset.passageId ?? element.dataset.answerControl ?? element.dataset.calculatorField;
+function selectCalculatorField(event) {
+  const blank = event.target.closest?.(blankSelector);
+  const workspace = blank?.closest('.questionWorkspace');
+  if (workspace?.querySelector('[data-question-tool][aria-haspopup="dialog"]')) {
+    answerTarget(workspace)?.selectField(blankKey(blank));
+  }
 }
 
 export function setAnswerCommandInputEnabled(enabled) {
@@ -115,20 +126,29 @@ function structuredFields(spec, input) {
     return {section, fields: controls.map(control => ({key: control.id, label: control.label, options: control.options}))};
   }
   const fields = spec.blanks || spec.statements || spec.fields;
-  return {fields: fields.map((field, index) => ({key: field.id ?? index, label: field.label || field.text,
+  return {fields: fields.map((field, index) => ({key: spec.type === 'hyperskill_fill' ? index : field.id ?? index, label: field.label || field.text,
     options: field.options, boolean: spec.type === 'true_false'}))};
 }
 
-function fieldCommands(text, fields) {
+function fieldCommands(text, fields, speech) {
+  // Numbered speech must be interpreted before a comma list can be treated as positional.
+  if (/第\s*[0-9０-９零一二三四五六七八九十百两]+|(?:空格?|blank|field)\s*#?\s*[0-9０-９]+/i.test(text)) {
+    const source = normalized(text).replace(/([负正])\s*(?=[\d.])/g, (_, sign) => sign === '负' ? '-' : '+');
+    const pattern = /第\s*([0-9零一二三四五六七八九十两]+)\s*(?:个\s*)?空(?:格)?\s*(?:填写|填入|填上|填|写入|写|等于|是|为|[:=])\s*([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)/gi;
+    const matches = [...source.matchAll(pattern)];
+    if (!matches.length || !/^(?:[\s,、;。.!]|然后|再|和)*$/.test(source.replace(pattern, ''))) return null;
+    const entries = matches.map(([, index, value]) => [ordinal(index), value]);
+    return entries.every(([n]) => known(n, fields.length) && !fields[n - 1].options && !fields[n - 1].boolean) ? entries : null;
+  }
   const source = fields.length === 1 ? [text] : list(text);
-  const indexed = source.map(item => String(item).match(/^(?:第\s*([0-9一二三四五六七八九十两]+)\s*(?:空|项|题|个)|blank\s+(\d+))\s*(?:填|是|为|[:=])\s*(.+)$/is));
-  if (indexed.every(Boolean) && !unique(indexed.map(match => ordinal(match[1] || match[2])))) return null;
-  const entries = indexed.every(Boolean) ? indexed.map(([, index, english, value]) => [ordinal(index || english), value])
-    : source.length === fields.length ? source.map((value, index) => [index + 1, value]) : [];
-  return entries.map(([index, value]) => {
-    const field = fields[index - 1];
-    const raw = typeof value === 'string' ? value : String(value);
-    return [index, field?.options ? pick(raw, field.options) : field?.boolean ? boolean(value) : raw];
+  if (speech && !source.every(value => /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(String(value).trim()))) return null;
+  return source.length === fields.length ? fieldEntries(source, fields, 0) : null;
+}
+
+function fieldEntries(values, fields, start) {
+  return values.map((value, offset) => {
+    const index = start + offset, field = fields[index], raw = String(value);
+    return [index + 1, field.options ? pick(raw, field.options) : field.boolean ? boolean(value) : raw];
   });
 }
 
@@ -211,9 +231,10 @@ function plan(spec, input) {
   }
   const {fields, section} = structuredFields(spec, input);
   return {
+    fields, section,
     schema: {type: 'fields', fields: fields.map(field => field.options ? choices(field.options)
       : field.boolean ? true : (field.label || '').slice(0, 100))},
-    read: text => fieldCommands(text, fields),
+    read: (text, speech) => fieldCommands(text, fields, speech),
     apply: updates => {
       if (!Array.isArray(updates) || !updates.length || !updates.every(entry => Array.isArray(entry) &&
           entry.length === 2 && known(entry[0], fields.length)) || !unique(updates.map(([index]) => index))) return null;
@@ -267,7 +288,7 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
   field.addEventListener('input', () => { revision++; status.textContent = ''; refresh(); });
   new MutationObserver(() => { revision++; refresh(); document.dispatchEvent(new Event(answerConversionChange)); })
     .observe(input, {attributes: true, attributeFilter: ['disabled', 'readonly']});
-  const convert = async (text, guard = () => true) => {
+  const convert = async (text, guard = () => true, {speech = false, values, start} = {}) => {
     if (!available() || busy || !guard() || !text.trim()) return false;
     if (text.length > field.maxLength) {
       status.textContent = local('转换文字过长，请缩短后重试。', 'The text is too long. Shorten it and try again.');
@@ -282,7 +303,9 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
     };
     try {
       const mapping = plan(spec, input);
-      let answer = mapping.apply(mapping.read(spec?.type === 'hyperskill_code' ? text : text.trim()));
+      const commands = values && mapping.fields ? fieldEntries(values, mapping.fields, start)
+        : mapping.read(spec?.type === 'hyperskill_code' ? text : text.trim(), speech);
+      let answer = mapping.apply(commands);
       if (answer === null && requestConversion && mapping.schema && text.length <= 4000) {
         const result = await requestConversion({text: text.trim(), controls: mapping.schema});
         if (!available() || !guard()) return false;
@@ -317,5 +340,51 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
     return () => available() && revision === version && input.value === value;
   };
   input.dataset.answerConversion = '';
-  targets.set(input, {available, convert, pin, topic, showCommandInput});
+  const hasBlanks = ['fill_blank', 'hyperskill_fill', 'composite'].includes(spec?.type);
+  let scope, keys = [], selected = null, next = 0;
+  const records = [];
+  function calculatorState() {
+    if (hasBlanks) {
+      const {section = 0, fields} = structuredFields(spec, input);
+      if (section !== scope) {
+        scope = section; keys = fields.map(field => String(field.key)); selected = null; next = 0; records.length = 0;
+      }
+    }
+    return {records, start: selected ?? next, selected, count: keys.length};
+  }
+  function markSelection() {
+    const workspace = form.closest('.questionWorkspace');
+    if (workspace && hasBlanks) for (const element of workspace.querySelectorAll(blankSelector)) {
+      element.classList.toggle('calculatorSelectedBlank', selected !== null && blankKey(element) === keys[selected]);
+    }
+  }
+  function selectField(key) {
+    if (!hasBlanks) return;
+    calculatorState();
+    const index = keys.indexOf(key);
+    if (index === -1 || selected === index) return;
+    selected = index; markSelection();
+    document.dispatchEvent(new Event(answerConversionChange));
+  }
+  if (spec?.type === 'composite') input.addEventListener('input', () => queueMicrotask(() => {
+    if (!available()) return;
+    const previousSection = scope;
+    calculatorState(); markSelection();
+    if (scope !== previousSection) document.dispatchEvent(new Event(answerConversionChange));
+  }));
+  async function convertCalculator(answer, guard) {
+    const {start, count} = calculatorState(), section = scope;
+    const values = [...records, ...answer.split('\n')];
+    if (count && start + values.length > count) return false;
+    const text = count ? values.map((value, i) => '第' + (start + i + 1) + '空填 ' + value).join('\n') : values.join('\n');
+    const unchanged = pin();
+    const valid = () => guard() && unchanged() && calculatorState().start === start && scope === section;
+    if (!await convert(text, valid, count ? {values, start} : {})) return false;
+    records.length = 0;
+    if (count && selected === null) next = start + values.length;
+    markSelection();
+    return true;
+  }
+  const voiceProfile = spec?.type && !['text', 'hyperskill_code'].includes(spec.type) ? 'answer_commands' : 'answer';
+  targets.set(input, {available, convert, pin, topic, showCommandInput, selectField, calculatorState, convertCalculator, voiceProfile});
 }

@@ -1,4 +1,4 @@
-import {ct, contextError} from './context-library-messages.js?v=c690e85f04a2d459';
+import {ct, contextError} from './context-library-messages.js?v=8fb8fe43a072b8d3';
 /* Audio is an input/content capability; text still uses the shared answer path. */
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
