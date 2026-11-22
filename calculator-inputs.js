@@ -1,4 +1,5 @@
-import {constants, keypad, permitsConstant, permitsKey} from './calculator-policy.js?v=3b98cafe4a000f31';
+import {basedLogKey, constants, expressionCompletions, keypad, keyCompletions, permitsBasedLog, permitsConstant, permitsKey} from './calculator-policy.js?v=fba711eba541e925';
+import {setInputCompletions} from './autocomplete.js?v=fba711eba541e925';
 
 const element = (tag, cls = '', text) => {
   const node = document.createElement(tag);
@@ -24,6 +25,9 @@ const numericKeys = ['digit_7', 'digit_8', 'digit_9', 'backspace', 'digit_4', 'd
 const modularKeys = ['open', 'close', 'power', 'backspace', 'digit_7', 'digit_8', 'digit_9', 'multiply',
   'digit_4', 'digit_5', 'digit_6', 'add', 'digit_1', 'digit_2', 'digit_3', 'subtract', 'digit_0'];
 const byKey = new Map(keypad.map(key => [key[0], key]));
+const bases = Array.from({length: 35}, (_, i) => String(i + 2));
+const variables = ['x', 'y', 't', 'n', 'a', 'b', 'z'];
+const unitToken = /(?<!\S)([A-Za-z][A-Za-z0-9/^\-]*)$/;
 const units = ['m', 'cm', 'mm', 'km', 'in', 'ft', 'mi', 's', 'ms', 'min', 'h', 'kg', 'g', 'lb', 'm/s',
   'km/h', 'm/s^2', 'cm/s^2', 'L', 'mL', 'm^3', 'Pa', 'kPa', 'bar', 'atm', 'J', 'kJ', 'W', 'kW', 'V', 'A', 'ohm',
   'K', 'degC', 'degF', 'rad', 'deg', 'N', 'Hz'];
@@ -99,18 +103,25 @@ export function toolInputs(descriptors, {module, operation, local, config, get, 
     field.setRangeText(text ?? '', start, end, 'end');
     field.dispatchEvent(new Event('input', {bubbles: true})); field.focus();
   }
+  function padTokens(kind) {
+    if (['radix', 'labels', 'variable'].includes(kind)) {
+      const alphabet = kind === 'variable' ? 'abcdefghijklmnopqrstuvwxyz_' : '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      return [...[...alphabet].map(char => [/\d/.test(char) ? 'digit_' + char : char.toLowerCase(), char, char]),
+        ['subtract', '−', '-'], ['backspace', '⌫', '']];
+    }
+    if (kind === 'formula') return keypad.filter(([id]) => !['evaluate', 'clear', 'ans'].includes(id));
+    return (kind === 'modular' ? modularKeys : numericKeys).map(id => byKey.get(id));
+  }
+  const formulaVariable = () => {
+    const variable = variableInput?.value.trim();
+    return /^[A-Za-z][A-Za-z_]{0,11}$/.test(variable || '') ? variable : 'x';
+  };
   function showPad(kind) {
     if (currentKind === kind && padKeys.childElementCount) return;
     currentKind = kind;
     const alpha = ['radix', 'labels', 'variable'].includes(kind);
-    const alphabet = kind === 'variable' ? 'abcdefghijklmnopqrstuvwxyz_' : '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     padKeys.dataset.columns = kind === 'formula' ? '5' : alpha ? '6' : '4';
-    const tokens = alpha
-      ? [...[...alphabet].map(char => [/\d/.test(char) ? 'digit_' + char : char.toLowerCase(), char, char]),
-        ['subtract', '−', '-'], ['backspace', '⌫', '']]
-      : kind === 'formula' ? keypad.filter(([id]) => !['evaluate', 'clear', 'ans'].includes(id))
-        : (kind === 'modular' ? modularKeys : numericKeys).map(id => byKey.get(id));
-    padKeys.replaceChildren(...tokens.map(([id, label, value, tier]) => {
+    padKeys.replaceChildren(...padTokens(kind).map(([id, label, value, tier]) => {
       const key = button(label, () => insert(id === 'backspace' ? null : value));
       key.className = 'calculatorKey'; key.dataset.calculatorKey = id;
       key.disabled = !permitsKey(config, id, tier);
@@ -121,8 +132,13 @@ export function toolInputs(descriptors, {module, operation, local, config, get, 
       const names = Object.keys(constants).filter(key => permitsConstant(config, key));
       if (names.length) addSymbols(names.map(key => [key, constants[key][0] + ' · ' + local(constants[key][1], constants[key][2])]),
         local('选择常数', 'Choose constant'));
-      const variable = variableInput?.value.trim();
-      const terms = [/^[A-Za-z][A-Za-z_]{0,11}$/.test(variable || '') ? variable : 'x'];
+      const [logId, logLabel, logInsertion] = basedLogKey;
+      const logBase = button(logLabel, () => insert(logInsertion));
+      logBase.dataset.calculatorKey = logId; logBase.title = 'log_2(8)';
+      logBase.disabled = !permitsBasedLog(config);
+      logBase.setAttribute('aria-label', local('指定底数的对数', 'Logarithm with a base'));
+      padOptions.append(logBase);
+      const terms = [formulaVariable()];
       if (operation === 'solve') terms.push('=');
       for (const term of terms) {
         const key = button(term, () => insert(term));
@@ -156,6 +172,14 @@ export function toolInputs(descriptors, {module, operation, local, config, get, 
       target = input;
       showPad(kind);
     });
+    if (kind === 'formula') {
+      setInputCompletions(input, () => expressionCompletions(config, {previousAnswer: false,
+        variable: formulaVariable(), equation: operation === 'solve'}));
+    } else {
+      const values = {base: bases, variable: variables, unit: units, quantity: units, chemistry: periodic}[kind];
+      setInputCompletions(input, () => values || keyCompletions(padTokens(kind), config),
+        {whole: ['base', 'variable', 'unit'].includes(kind), ...(kind === 'quantity' ? {match: unitToken} : {})});
+    }
     return input;
   }
 
@@ -185,6 +209,7 @@ export function toolInputs(descriptors, {module, operation, local, config, get, 
         textarea.name = id; textarea.value = get(id); textarea.placeholder = example;
         textarea.required = true; textarea.autocomplete = 'off'; textarea.spellcheck = false; textarea.maxLength = 12000;
         textarea.setAttribute('aria-label', title);
+        setInputCompletions(textarea, () => keyCompletions(padTokens(kind), config));
         textarea.addEventListener('input', () => update(textarea.value));
         body.append(textarea);
         return;
@@ -350,24 +375,14 @@ export function toolInputs(descriptors, {module, operation, local, config, get, 
     if (kind === 'date') input.type = 'date';
     if (kind === 'variable') variableInput = input;
     const row = caption(title, input);
-    const choices = kind === 'base' ? Array.from({length: 35}, (_, i) => String(i + 2))
-      : kind === 'variable' ? ['x', 'y', 't', 'n', 'a', 'b', 'z']
-      : ['unit', 'quantity'].includes(kind) ? units : null;
-    if (choices) {
-      const name = id + '-calculator-options';
-      input.setAttribute('list', name);
-      const list = element('datalist'); list.id = name;
-      for (const value of choices) { const option = element('option'); option.value = value; list.append(option); }
-      row.append(list);
-      if (kind === 'quantity') {
-        const chooser = select([['', local('附加单位', 'Add unit')], ...units.map(value => [value, value])], '');
-        chooser.addEventListener('change', () => {
-          const leading = input.value.match(/^\s*[-+\d.eE]+/)?.[0].trim() || '';
-          input.value = (leading ? leading + ' ' : '') + chooser.value;
-          set(id, input.value); chooser.value = '';
-        });
-        row.append(chooser);
-      }
+    if (kind === 'quantity') {
+      const chooser = select([['', local('附加单位', 'Add unit')], ...units.map(value => [value, value])], '');
+      chooser.addEventListener('change', () => {
+        const leading = input.value.match(/^\s*[-+\d.eE]+/)?.[0].trim() || '';
+        input.value = (leading ? leading + ' ' : '') + chooser.value;
+        set(id, input.value); chooser.value = '';
+      });
+      row.append(chooser);
     }
     form.append(row);
     refresh.push(() => { input.value = get(id); });

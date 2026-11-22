@@ -46,7 +46,7 @@ export const operators = {
 };
 
 export const functions = {
-  log: ['ln', 1, 1], log10: ['log10', 1, 1], ln: ['ln', 1, 1], sqrt: ['sqrt', 1, 1],
+  log: ['ln', 1, 1, 2], log10: ['log10', 1, 1], ln: ['ln', 1, 1], sqrt: ['sqrt', 1, 1],
   abs: ['abs', 1, 1], exp: ['exp', 2, 1], cbrt: ['cbrt', 2, 1],
   sin: ['sin', 2, 1], cos: ['cos', 2, 1], tan: ['tan', 2, 1],
   asin: ['asin', 2, 1], acos: ['acos', 2, 1], atan: ['atan', 2, 1],
@@ -66,6 +66,39 @@ export const keypad = [
   ['digit_1', '1', '1'], ['digit_2', '2', '2'], ['digit_3', '3', '3'], ['subtract', '−', '-'], ['comma', ',', ','],
   ['digit_0', '0', '0'], ['decimal', '.', '.'], ['exponent_notation', 'EXP', 'E', 2], ['add', '+', '+'], ['evaluate', '=', ''],
 ];
+
+export const basedLogKey = ['log_base', 'logₐ', 'log_'];
+
+export const permitsBasedLog = config => permitsKey(config, basedLogKey[0]) &&
+  permitsKey(config, 'open') && permitsKey(config, 'close');
+
+export function keyCompletions(keys, config) {
+  return keys.flatMap(([id, label, value, tier]) => permitsKey(config, id, tier) && value
+    ? [{label, value, keys: [value, label, id]}] : []);
+}
+
+export function expressionCompletions(config = {level: 'scientific'}, {previousAnswer = true, variable, equation} = {}) {
+  const entries = Object.entries(functions).flatMap(([name, [id, tier]]) =>
+    permitsKey(config, id, tier) && permitsKey(config, 'open') ? [{label: name, value: name + '('}] : []);
+  const allowedKeys = keypad.filter(([id, , insertion]) => !id.startsWith('constant_')
+    && (id !== 'ans' || previousAnswer) && (!insertion.endsWith('(') || permitsKey(config, 'open')));
+  if (permitsBasedLog(config)) allowedKeys.push(basedLogKey);
+  entries.push(...keyCompletions(allowedKeys, config));
+  for (const [name, [label]] of Object.entries(constants)) {
+    if (permitsConstant(config, name)) entries.push({label: name === label ? label : name + ' · ' + label, value: name, keys: [name, label]});
+  }
+  if (previousAnswer && permitsKey(config, 'ans')) entries.push({label: 'answer', value: 'answer'});
+  if (permitsKey(config, 'complex', 2) && !variable) entries.push({label: 'i', value: 'i'});
+  if (variable) entries.push({label: variable, value: variable});
+  if (equation) entries.push({label: '=', value: '='});
+  const unique = new Map();
+  for (const entry of entries) {
+    const first = unique.get(entry.value);
+    if (!first) unique.set(entry.value, entry);
+    else first.keys = [...(first.keys || [first.label, first.value]), ...(entry.keys || [entry.label, entry.value])];
+  }
+  return [...unique.values()];
+}
 
 // The same catalog drives navigation, input forms, and worker authorization.
 export const tools = [

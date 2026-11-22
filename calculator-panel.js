@@ -1,5 +1,6 @@
-import {constants, keypad, levels, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3b98cafe4a000f31';
-import {toolInputs} from './calculator-inputs.js?v=3b98cafe4a000f31';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=fba711eba541e925';
+import {toolInputs} from './calculator-inputs.js?v=fba711eba541e925';
+import {setInputCompletions} from './autocomplete.js?v=fba711eba541e925';
 
 let active = null;
 let preferredLayout = 'side';
@@ -196,7 +197,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=3b98cafe4a000f31', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=fba711eba541e925', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -223,6 +224,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
+      const candidates = () => expressionCompletions(config, {previousAnswer: Number.isFinite(session.previousAnswer)});
+      setInputCompletions(input, candidates);
       let focused = input, assign;
       const display = create('div', 'calculatorDisplay');
       label(display, local('表达式', 'Expression'), input);
@@ -243,6 +246,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           field.type = 'text'; field.maxLength = 1024; field.spellcheck = false; field.autocomplete = 'off';
           field.value = value;
           field.setAttribute('aria-label', local('变量 ', 'Variable ') + name);
+          setInputCompletions(field, candidates);
           field.addEventListener('focus', () => { focused = field; });
           field.addEventListener('input', () => values.set(name, field.value));
           const row = create('label', 'calculatorAssignment');
@@ -260,11 +264,19 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         field.focus();
       };
       const options = create('div', 'calculatorOptions');
+      const [logId, logLabel, logInsertion] = basedLogKey;
+      const logBase = button(logLabel, () => insert(logInsertion), 'button', 'calculatorKey');
+      logBase.dataset.calculatorKey = logId;
+      logBase.disabled = !permitsBasedLog(config);
+      logBase.setAttribute('aria-label', local('指定底数的对数', 'Logarithm with a base'));
+      logBase.title = 'log_2(8)';
+      options.append(logBase);
       if (permitsKey(config, 'angle', 2)) {
-        options.append(button(session.degrees ? 'DEG' : 'RAD', event => {
+        const angle = button(session.degrees ? 'DEG' : 'RAD', event => {
           session.degrees = !session.degrees; event.currentTarget.textContent = session.degrees ? 'DEG' : 'RAD';
-        }));
-        options.firstElementChild.setAttribute('aria-label', local('切换角度单位', 'Switch angle units'));
+        });
+        angle.setAttribute('aria-label', local('切换角度单位', 'Switch angle units'));
+        options.append(angle);
       }
       if (permitsModule(config, 'constants')) {
         const entries = Object.keys(constants).filter(key => permitsConstant(config, key));

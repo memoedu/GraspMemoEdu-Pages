@@ -1,5 +1,5 @@
-import {getLanguage} from './i18n.js?v=3b98cafe4a000f31';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=3b98cafe4a000f31';
+import {getLanguage} from './i18n.js?v=fba711eba541e925';
+import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=fba711eba541e925';
 
 const widgets = new Set();
 const answerForms = new WeakSet();

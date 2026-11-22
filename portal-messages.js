@@ -1,4 +1,8 @@
 export const portalMessages = {
+  'autocomplete.title': ['自动补全', 'Autocomplete'],
+  'autocomplete.calculator': ['计算器', 'Calculator'],
+  'autocomplete.answer': ['回答', 'Answers'],
+  'autocomplete.other': ['其他', 'Other'],
   'portal.reselectTopic': ['重新选择主题', 'Choose another topic'],
   'portal.hideLocked': ['隐藏暂未解锁的内容', 'Hide content with unmet prerequisites'],
   'portal.expandAll': ['一键展开', 'Expand all'],
