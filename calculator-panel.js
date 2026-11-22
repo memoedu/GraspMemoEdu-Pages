@@ -1,6 +1,7 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=bca9627f8ea46c76';
-import {toolInputs} from './calculator-inputs.js?v=bca9627f8ea46c76';
-import {setInputCompletions} from './autocomplete.js?v=bca9627f8ea46c76';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=a84a3c1c58c18aee';
+import {toolInputs} from './calculator-inputs.js?v=a84a3c1c58c18aee';
+import {setInputCompletions} from './autocomplete.js?v=a84a3c1c58c18aee';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=a84a3c1c58c18aee';
 
 let active = null;
 let preferredLayout = 'side';
@@ -127,6 +128,34 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
 
   let worker, timer, working = false, closed = false;
   const {saved, history} = session;
+  let answer = module === 'expression' ? history.at(-1)?.result : null, transferring = false;
+  const workspace = launch.closest('.questionWorkspace');
+  const target = () => workspace && answerTarget(workspace);
+  const transferStatus = create('span', 'calculatorTransferStatus');
+  transferStatus.setAttribute('role', 'status');
+  const transfer = button(local('转换', 'Convert'), async () => {
+    const editor = target();
+    if (!editor || !answer || transferring) return;
+    transferring = true; transferStatus.textContent = ''; refreshTransfer();
+    const unchanged = editor.pin();
+    const applied = await editor.convert(answer, () => !closed && unchanged());
+    if (closed) return;
+    transferring = false; refreshTransfer();
+    if (applied) close(true);
+    else transferStatus.textContent = local('无法填入答题控件，请检查转换框。', 'Could not fill the controls. Check the conversion box.');
+  });
+  const footer = create('div', 'calculatorTransfer');
+  footer.append(transferStatus, transfer); dialog.append(footer);
+  function refreshTransfer() {
+    footer.hidden = !target();
+    transfer.disabled = !answer || working || transferring;
+    transfer.textContent = transferring ? local('转换中…', 'Converting…') : local('转换', 'Convert');
+  }
+  function setAnswer(value) {
+    answer = value;
+    transferStatus.textContent = '';
+    refreshTransfer();
+  }
   let renderHistory = () => {};
   const wide = matchMedia('(min-width: 1100px)');
   const observe = new MutationObserver(() => {
@@ -164,6 +193,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     if (closed) return;
     closed = true;
     observe.disconnect(); resizeTools.disconnect(); window.removeEventListener('resize', onResize);
+    document.removeEventListener(answerConversionChange, refreshTransfer);
     stop();
     dialog.close(); dialog.remove();
     if (toolRow) {
@@ -175,6 +205,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     if (active?.launch === launch) active = null;
   }
   const showError = code => {
+    setAnswer(null);
     const error = errors[code] || errors.invalid;
     output.dataset.state = 'error';
     output.textContent = local(...error);
@@ -190,14 +221,17 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       }
       output.replaceChildren(data);
     } else output.textContent = result.text;
+    const values = result.entries?.map(([, value]) => renderValue(value));
+    setAnswer(result.text || (values?.length === 1 ? values[0] : values?.join('\n')) || null);
   }
   function run(module, operation, input, control, receive) {
     if (working || control.disabled) return;
     working = true; control.disabled = true;
+    refreshTransfer();
     output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=bca9627f8ea46c76', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=a84a3c1c58c18aee', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -304,6 +338,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           run(module, 'assign_variables', {expression}, assign, ({variables}) => {
             output.textContent = history.at(-1)?.result || '0';
             delete output.dataset.state;
+            setAnswer(history.at(-1)?.result);
             if (expression !== input.value) return;
             const previous = session.assignmentDraft?.values;
             session.assignmentDraft = {expression, values: new Map(variables.map(name => [name, previous?.get(name) || '']))};
@@ -326,6 +361,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           if (key === 'clear') {
             stop(); equals.disabled = !permitsKey(config, 'evaluate');
             if (assign) assign.disabled = false;
+            setAnswer(null);
             const field = focused.isConnected ? focused : input;
             if (field === input) session.assignmentDraft = null;
             field.value = ''; field.dispatchEvent(new Event('input'));
@@ -403,6 +439,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       form.append(fields);
       function renderFields() {
         stop(); output.replaceChildren(); delete output.dataset.state;
+        setAnswer(null);
         saved.set(module, method.value);
         fields.replaceChildren();
         const spec = operations.find(([id]) => id === method.value)[3];
@@ -428,7 +465,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     if (event.key === 'Escape') { event.preventDefault(); close(true); }
   });
   window.addEventListener('resize', onResize);
-  document.body.append(dialog); worksheet(); setLayout(preferredLayout);
+  document.addEventListener(answerConversionChange, refreshTransfer);
+  document.body.append(dialog); worksheet(); setLayout(preferredLayout); refreshTransfer();
   launch.setAttribute('aria-expanded', 'true');
   observe.observe(document.body, {childList: true, subtree: true});
   active = {launch, close};

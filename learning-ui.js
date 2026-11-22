@@ -1,13 +1,14 @@
-import {t, learningTitle} from './i18n.js?v=bca9627f8ea46c76';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=bca9627f8ea46c76';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=bca9627f8ea46c76';
-import {enhanceTopicContent} from './topic-content.js?v=bca9627f8ea46c76';
-import {sourceAttributions} from './memory-chunk.js?v=bca9627f8ea46c76';
-import {mountPassageBlanks} from './composite-input.js?v=bca9627f8ea46c76';
-import {placeContentActions} from './content-report.js?v=bca9627f8ea46c76';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=bca9627f8ea46c76';
-import {setQuestionTools} from './question-tools.js?v=bca9627f8ea46c76';
-import {enableVoiceAnswer} from './voice-input.js?v=bca9627f8ea46c76';
+import {t, learningTitle} from './i18n.js?v=a84a3c1c58c18aee';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a84a3c1c58c18aee';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a84a3c1c58c18aee';
+import {enhanceTopicContent} from './topic-content.js?v=a84a3c1c58c18aee';
+import {sourceAttributions} from './memory-chunk.js?v=a84a3c1c58c18aee';
+import {mountPassageBlanks} from './composite-input.js?v=a84a3c1c58c18aee';
+import {placeContentActions} from './content-report.js?v=a84a3c1c58c18aee';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=a84a3c1c58c18aee';
+import {setQuestionTools} from './question-tools.js?v=a84a3c1c58c18aee';
+import {enableVoiceAnswer} from './voice-input.js?v=a84a3c1c58c18aee';
+import {mountAnswerConversion} from './answer-conversion.js?v=a84a3c1c58c18aee';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -324,7 +325,7 @@ export function readerDrawerState(frame, refs, opened, {narrow = matchMedia('(ma
 
 // Stateless presentation shared by Lesson and single-question training.
 // Callers retain their own submission, permissions and scheduling logic.
-export function answerEditor(step, stem, value, {formId = 'answerForm', inputId = 'answerInput', submitId = 'submitButton', canSelfRate = false} = {}) {
+export function answerEditor(step, stem, value, {formId = 'answerForm', inputId = 'answerInput', submitId = 'submitButton', canSelfRate = false, topic = false} = {}) {
   const form = node('form', 'learningActions answerForm'); form.id = formId;
   const structured = step.interaction && step.interaction.type !== 'text';
   enableVoiceAnswer(form, {defer: !structured && step.interaction?.grading !== 'exact'});
@@ -349,6 +350,7 @@ export function answerEditor(step, stem, value, {formId = 'answerForm', inputId 
   const submit = node('button', 'primaryButton', t('Submit'));
   submit.id = submitId; submit.type = 'submit'; submit.setAttribute('form', formId); submit.disabled = !answerReady(input);
   bottom.append(hint, submit); form.append(label, control?.element || input, error);
+  mountAnswerConversion(form, input, step.interaction, {topic});
   return {form, input, submit, bottom};
 }
 

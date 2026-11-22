@@ -378,6 +378,7 @@ export function compositeInput(spec, {id, value = '', stem, disabled = false, fo
     && spec.sections.every((_, i) => completeSection(i)) && input.value.length <= 16384;
   const focus = () => (stemFields.find(item => !item.field.disabled)?.field || [...root.querySelectorAll('select,input')].find(field => !field.disabled))?.focus();
   input.questionControl = {complete, empty: () => Object.values(values).every(v => !v.trim()),
+    conversionSection: () => section,
     focus,
     setDisabled: value => {
       disabled = value; input.disabled = value;

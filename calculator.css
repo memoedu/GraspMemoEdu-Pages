@@ -231,6 +231,8 @@ body:has(.questionCalculator[open][data-layout="side"]) {
 .calculatorModel :is(input, select) { min-inline-size: 61px; }
 .calculatorInputNotice { margin: 6px 0; font-size: .85rem; color: var(--calculator-error); }
 .calculatorToolActions { justify-content: end; }
+.calculatorTransfer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-block-start: 8px; }
+.calculatorTransferStatus { color: var(--calculator-error); overflow-wrap: anywhere; }
 .calculatorResult {
   margin-block-start: 12px;
   padding: 13px;

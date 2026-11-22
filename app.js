@@ -1,21 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=bca9627f8ea46c76";
-import {answerReady} from './question-input.js?v=bca9627f8ea46c76';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=bca9627f8ea46c76';
-import {startPresence} from './presence.js?v=bca9627f8ea46c76';
-import {createLearningCache} from './learning-cache.js?v=bca9627f8ea46c76';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=bca9627f8ea46c76';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=a84a3c1c58c18aee";
+import {answerReady} from './question-input.js?v=a84a3c1c58c18aee';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=a84a3c1c58c18aee';
+import {startPresence} from './presence.js?v=a84a3c1c58c18aee';
+import {createLearningCache} from './learning-cache.js?v=a84a3c1c58c18aee';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=a84a3c1c58c18aee';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=bca9627f8ea46c76';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=bca9627f8ea46c76';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=bca9627f8ea46c76';
-import {renderSourceReader} from './learning-ui.js?v=bca9627f8ea46c76';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=bca9627f8ea46c76';
-import {createTrainingView} from './training.js?v=bca9627f8ea46c76';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=bca9627f8ea46c76';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=bca9627f8ea46c76';
-import {installAutocomplete} from './autocomplete.js?v=bca9627f8ea46c76';
-import {expressionCompletions} from './calculator-policy.js?v=bca9627f8ea46c76';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=bca9627f8ea46c76';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=a84a3c1c58c18aee';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=a84a3c1c58c18aee';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=a84a3c1c58c18aee';
+import {renderSourceReader} from './learning-ui.js?v=a84a3c1c58c18aee';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=a84a3c1c58c18aee';
+import {createTrainingView} from './training.js?v=a84a3c1c58c18aee';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=a84a3c1c58c18aee';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=a84a3c1c58c18aee';
+import {installAutocomplete} from './autocomplete.js?v=a84a3c1c58c18aee';
+import {expressionCompletions} from './calculator-policy.js?v=a84a3c1c58c18aee';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=a84a3c1c58c18aee';
+import {installAnswerConversion} from './answer-conversion.js?v=a84a3c1c58c18aee';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -246,7 +247,7 @@ function retireLegacyConnection() {
 async function request(path, options = {}) {
   const method = options.method || 'GET';
     const endpoint = path.split('?')[0];
-    const mutation = method !== 'GET' && endpoint !== 'presence';
+    const mutation = method !== 'GET' && !['presence', 'answer-conversion', 'voice-input/transcribe'].includes(endpoint);
     // Selecting a course only updates preferences. Keep the other workspace's
     // cached reads; learning writes and identity changes still invalidate all.
     const invalidateReads = () => endpoint === 'catalog/select'
@@ -1408,7 +1409,7 @@ function renderStepNavigation(target, step, actions) {
 }
 
 function answerForm(step, stem) {
-  const {form, input, submit, bottom} = answerEditor(step, stem, draftValue(step));
+  const {form, input, submit, bottom} = answerEditor(step, stem, draftValue(step), {topic: step.id === state.active_step_id});
   form.addEventListener("submit", submitAnswer);
   const refreshSubmit = () => {
     submit.disabled = (!answerReady(input) && !voiceAnswerPending(form)) || actionBusy || pauseBusy || !can("submit_answer");
@@ -1445,7 +1446,10 @@ function answerForm(step, stem) {
     explanation: step.revealed && step.explanation_html ? content(step.explanation_html) : null,
   });
   if (controls) form.append(controls);
-  if (step.revealed) { submit.hidden = true; if (input.questionControl) input.questionControl.setDisabled(true); else input.disabled = true; }
+  if (step.revealed) {
+    form.dataset.revealed = 'true'; submit.hidden = true;
+    if (input.questionControl) input.questionControl.setDisabled(true); else input.disabled = true;
+  }
   return form;
 }
 
@@ -1489,12 +1493,17 @@ function renderBusy() {
   syncAnswerClock();
   const disabled = actionBusy || pauseBusy || identityBusy;
   for (const element of $("stepCard").querySelectorAll("button, textarea")) {
-    if (element.closest('.questionInteraction')) continue;
+    if (element.closest('.questionInteraction, .answerConversion') || element.id === 'answerInput') continue;
     const feature = element.closest(".historyPagination") ? "review_history" : element.id === "submitButton" || element.closest(".answerForm") ? "submit_answer" : "learn";
     element.disabled = disabled || element.dataset.navAvailable === "false" || !can(feature);
     if (!can(feature)) element.title = featureMessage(feature);
   }
-  $("answerInput")?.questionControl?.setDisabled(disabled || !can('submit_answer'));
+  const answer = $("answerInput");
+  if (answer) {
+    const answerDisabled = disabled || !can('submit_answer') || answer.form?.dataset.revealed === 'true' || Boolean(state.pending_submission_id);
+    if (answer.questionControl) answer.questionControl.setDisabled(answerDisabled);
+    else answer.disabled = answerDisabled;
+  }
   if ($("submitButton") && !disabled) $("submitButton").disabled = !answerReady($("answerInput")) || !can("submit_answer");
   for (const element of $("historyPanel").querySelectorAll("button")) element.disabled = disabled || !can("review_history") || element.dataset.historyAvailable === 'false';
   for (const element of $("reviewNotice").querySelectorAll("button")) element.disabled = disabled || !can("review_history");
@@ -1686,7 +1695,8 @@ async function openTopic(id, subjectId, initial = null) {
 void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
-const { initPortal } = await import("./portal.js?v=bca9627f8ea46c76");
+installAnswerConversion(request);
+const { initPortal } = await import("./portal.js?v=a84a3c1c58c18aee");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

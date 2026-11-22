@@ -1,8 +1,8 @@
-import {t, locale, learningTitle, translateMessage} from './i18n.js?v=bca9627f8ea46c76';
-import {renderTaskTree, createOutlineGroup} from './task-tree.js?v=bca9627f8ea46c76';
-import {questionInput, choiceTypeField} from './question-input.js?v=bca9627f8ea46c76';
-import {submittedAnswer, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=bca9627f8ea46c76';
-import {enhanceTopicContent} from './topic-content.js?v=bca9627f8ea46c76';
+import {t, locale, learningTitle, translateMessage} from './i18n.js?v=a84a3c1c58c18aee';
+import {renderTaskTree, createOutlineGroup} from './task-tree.js?v=a84a3c1c58c18aee';
+import {questionInput, choiceTypeField} from './question-input.js?v=a84a3c1c58c18aee';
+import {submittedAnswer, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=a84a3c1c58c18aee';
+import {enhanceTopicContent} from './topic-content.js?v=a84a3c1c58c18aee';
 
 const el = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; };
 const button = (text, action, cls = 'secondaryButton') => { const n = el('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
