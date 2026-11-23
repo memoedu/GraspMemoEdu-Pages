@@ -2,7 +2,7 @@
 class VoicePcm extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.buffer = new Int16Array(1600);
+    this.buffer = new Int16Array(800);
     this.count = 0;
     this.active = true;
     this.port.onmessage = ({data}) => {

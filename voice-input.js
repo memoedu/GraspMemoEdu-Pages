@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=3f4192d65a1ad037';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=3f4192d65a1ad037';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=3f4192d65a1ad037';
-import {segmentMicrophone} from './voice-stream.js?v=3f4192d65a1ad037';
-import {dictationContext, voiceContext} from './voice-context.js?v=3f4192d65a1ad037';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=3f4192d65a1ad037';
+import {getLanguage} from './i18n.js?v=8f429bf0142eb1a4';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=8f429bf0142eb1a4';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=8f429bf0142eb1a4';
+import {segmentMicrophone} from './voice-stream.js?v=8f429bf0142eb1a4';
+import {dictationContext, voiceContext} from './voice-context.js?v=8f429bf0142eb1a4';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=8f429bf0142eb1a4';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -11,7 +11,7 @@ const strings = (zh, en) => getLanguage() === 'en' ? en : zh;
 const changed = 'voiceinputchange';
 const audioLimitMinutes = 2;
 const audioLimitMs = audioLimitMinutes * 60000;
-let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe;
+let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe, streamRequest;
 let paint = () => {};
 let paintDuration = () => {};
 
@@ -187,7 +187,7 @@ function appendTranscript(job, text) {
 
 function enqueue(job, audio) {
   // Resolve the capture independently of any pending network request.
-  job.segments.push(audio.then(blob => ({blob}), error => ({error})));
+  job.segments.push(audio.catch(error => ({error})));
   void process(job);
 }
 
@@ -197,10 +197,11 @@ async function process(job) {
   if (job.phase === 'recording' || job.phase === 'paused') update(recordingMessage(job));
   try {
     while (active(job) && job.segments.length) {
-      const {blob, error} = await job.segments[0];
+      const {blob, error, recognized} = await job.segments[0];
       if (!active(job)) return;
       if (error) { job.segments.shift(); throw error; }
-      const result = blob && await recordedResult(job, blob);
+      const text = await recognized;
+      const result = typeof text === 'string' ? {text} : blob && await recordedResult(job, blob);
       if (!active(job)) return;
       appendTranscript(job, result?.text?.trim());
       job.segments.shift();
@@ -265,7 +266,10 @@ async function start() {
   try {
     job.context = dictationContext(target);
     if (!target.answer) job.draft = previewAt(job);
-    job.recorder = await segmentMicrophone({maxDurationMs: audioLimitMs, signal: job.abort.signal});
+    job.recorder = await segmentMicrophone({maxDurationMs: audioLimitMs, signal: job.abort.signal, request: packet => {
+      if (job.identity !== identity()) throw DOMException('Account changed', 'AbortError');
+      return streamRequest(packet.op === 'open' ? {...packet, profile: target.profile, context: job.context} : packet);
+    }});
     if (active(job)) {
       job.startedAt = performance.now();
       setPhase(job, 'recording', strings('正在录音', 'Recording'));
@@ -347,6 +351,8 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   available = canUse;
   identity = getIdentity;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
+  streamRequest = body => request('voice-input/stream', {method: 'POST', body,
+    timeout: body.op === 'cut' || body.op === 'finish' ? 45000 : 12000});
   document.addEventListener('focusin', event => {
     if (editable(event.target) || activeFormulaField(event.target)) lastField = event.target;
     else if (!event.target.closest('.questionTools') && current?.phase !== 'ready') lastField = null;
