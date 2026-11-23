@@ -1,11 +1,11 @@
-import {inheritVoiceContext} from './voice-context.js?v=74aee9db00491510';
+import {inheritVoiceContext} from './voice-context.js?v=865006a6b8d8de41';
 import {assignableVariable, basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
   normalizeVariableName, permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule,
-  scientificCategories} from './calculator-policy.js?v=74aee9db00491510';
-import {calculateImmediate} from './calculator-engine.js?v=74aee9db00491510';
-import {toolInputs} from './calculator-inputs.js?v=74aee9db00491510';
-import {setInputCompletions} from './autocomplete.js?v=74aee9db00491510';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=74aee9db00491510';
+  scientificCategories} from './calculator-policy.js?v=865006a6b8d8de41';
+import {calculateImmediate} from './calculator-engine.js?v=865006a6b8d8de41';
+import {toolInputs} from './calculator-inputs.js?v=865006a6b8d8de41';
+import {setInputCompletions} from './autocomplete.js?v=865006a6b8d8de41';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=865006a6b8d8de41';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -249,7 +249,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     working = false;
   }
   function startWorker() {
-    return worker ||= new Worker(new URL('./calculator-worker.js?v=74aee9db00491510', import.meta.url), {type: 'module'});
+    return worker ||= new Worker(new URL('./calculator-worker.js?v=865006a6b8d8de41', import.meta.url), {type: 'module'});
   }
   function warmOnInput(event, sourceModule) {
     if (warming || event.target.matches('.calculatorStorageName')) return;
