@@ -1,7 +1,7 @@
-import {t} from './i18n.js?v=51fde18727f6d2c6';
-import {answerEmpty} from './question-input.js?v=51fde18727f6d2c6';
-import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=51fde18727f6d2c6';
-import {answerAssessment} from './point-assessment.js?v=51fde18727f6d2c6';
+import {t} from './i18n.js?v=a9d56b88c5ca1fa2';
+import {answerEmpty} from './question-input.js?v=a9d56b88c5ca1fa2';
+import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=a9d56b88c5ca1fa2';
+import {answerAssessment} from './point-assessment.js?v=a9d56b88c5ca1fa2';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -125,12 +125,13 @@ export function referenceAnswer(question) {
   box.append(prepareAnswerContent(body)); return box;
 }
 
-export function ratingChoices({labels, selected, disabled = false, onRate, binary = false}) {
+export function ratingChoices({labels, selected, disabled = false, onRate, binaryCorrectRating}) {
   const ratings = element('div', 'trainingRatings');
-  const choices = binary ? [[5, 'question.didRight'], [1, 'question.didWrong']] : labels.map((label, index) => [index + 1, label]);
+  const binary = binaryCorrectRating !== undefined;
+  const choices = binary ? [[binaryCorrectRating, 'question.didRight'], [1, 'question.didWrong']] : labels.map((label, index) => [index + 1, label]);
   ratings.style.setProperty('--rating-count', String(choices.length));
   choices.forEach(([rating, label]) => {
-    const control = element('button', `trainingRating ${binary ? `stepOutcome ${rating === 5 ? 'outcomeCorrect' : 'outcomeIncorrect'}` : `rating${rating}`}`);
+    const control = element('button', `trainingRating ${binary ? `stepOutcome ${rating === binaryCorrectRating ? 'outcomeCorrect' : 'outcomeIncorrect'}` : `rating${rating}`}`);
     control.type = 'button'; control.disabled = disabled; control.dataset.rating = rating;
     control.setAttribute('aria-pressed', String(selected === rating));
     control.setAttribute('aria-label', binary ? t(label) : `${rating} · ${t(label)}`); control.title = t(label);
@@ -163,8 +164,14 @@ export function showAnswerButton(reveal, {disabled = false, input, label = t('tr
   return show;
 }
 
+// Course submissions keep the original wire values, including in saved history.
+export function isCourseSelfRating(value) {
+  return /^自主评分：[1-4]$/.test(value ?? '');
+}
+
 // Shared controls; each reader keeps its original submission and grading policy.
-export function selfAssessment(question, input, {disabled = false, reveal, rate, explanation} = {}) {
+export function selfAssessment(question, input, {disabled = false, reveal, rate, explanation,
+  binaryCorrectRating = question.multi_step ? 5 : undefined} = {}) {
   if (!question.can_self_rate) return null;
   const box = element('div', 'selfAssessment');
   if (!question.revealed) {
@@ -175,6 +182,6 @@ export function selfAssessment(question, input, {disabled = false, reveal, rate,
   if (explanation) box.append(element('h3', 'exampleExplanationHeader', t('Explanation · 解析')), prepareAnswerContent(explanation, {explanation: true}));
   const labels = ['training.again', 'training.hard', 'training.good', 'training.easy'];
   if (question.can_stop_reviews) labels.push('training.retire');
-  const ratings = ratingChoices({labels, disabled, selected: question.self_rating, onRate: rate, binary: Boolean(question.multi_step)});
+  const ratings = ratingChoices({labels, disabled, selected: question.self_rating, onRate: rate, binaryCorrectRating});
   box.append(ratings); return box;
 }

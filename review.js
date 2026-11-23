@@ -1,14 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=51fde18727f6d2c6';
-import {attachFormulaEditing} from './formula-input.js?v=51fde18727f6d2c6';
-import {setQuestionTools} from './question-tools.js?v=51fde18727f6d2c6';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=51fde18727f6d2c6';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=51fde18727f6d2c6';
-import {mountAnswerConversion} from './answer-conversion.js?v=51fde18727f6d2c6';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=51fde18727f6d2c6';
-import {reportableContent} from './content-report.js?v=51fde18727f6d2c6';
-import {createLearningCache} from './learning-cache.js?v=51fde18727f6d2c6';
-import {enhanceTopicContent} from './topic-content.js?v=51fde18727f6d2c6';
-import {practiceHint} from './beginner-hints.js?v=51fde18727f6d2c6';
+import { t, translateMessage, learningTitle } from './i18n.js?v=a9d56b88c5ca1fa2';
+import {attachFormulaEditing} from './formula-input.js?v=a9d56b88c5ca1fa2';
+import {setQuestionTools} from './question-tools.js?v=a9d56b88c5ca1fa2';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=a9d56b88c5ca1fa2';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a9d56b88c5ca1fa2';
+import {mountAnswerConversion} from './answer-conversion.js?v=a9d56b88c5ca1fa2';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a9d56b88c5ca1fa2';
+import {reportableContent} from './content-report.js?v=a9d56b88c5ca1fa2';
+import {createLearningCache} from './learning-cache.js?v=a9d56b88c5ca1fa2';
+import {enhanceTopicContent} from './topic-content.js?v=a9d56b88c5ca1fa2';
+import {practiceHint} from './beginner-hints.js?v=a9d56b88c5ca1fa2';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -222,14 +222,15 @@ export function createReviewView(bridge) {
     const typeField = choiceTypeField(question.interaction); if (typeField) stem.before(typeField);
     if (structured && !editable) card.append(questionInput(question.interaction, {id: 'reviewSubmittedInteraction',
       stem, value: answer?.answer || (isCurrent ? read(draftKey()) || '' : ''), disabled: true, feedback: question.choice_feedback}).element);
-    if (answer) {
+    const feedback = isCurrent ? state.feedback : answer?.feedback || answer;
+    const selfRated = isCourseSelfRating(feedback?.reason);
+    if (answer && !selfRated) {
       const submitted = node('details', 'submittedAnswer'); submitted.append(node('summary', '', t('查看已提交答案')), submittedAnswer(question, answer.answer, answer.answer_display ?? answer.answer)); card.append(submitted);
     }
-    const feedback = isCurrent ? state.feedback : answer?.feedback || answer;
     if (feedback && typeof feedback.correct === 'boolean') {
       const box = node('div', `feedback ${feedback.correct ? 'correct' : 'incorrect'}`); box.setAttribute('role', 'status');
       const detail = node('div'); detail.append(node('strong', 'feedbackTitle', feedback.correct ? t('回答正确') : t('本题回答有误')));
-      if (feedback.reason) detail.append(node('p', 'feedbackReason', feedback.reason));
+      if (feedback.reason && !selfRated) detail.append(node('p', 'feedbackReason', feedback.reason));
       box.append(node('span', 'feedbackIcon', feedback.correct ? '✓' : '!'), detail); card.append(box);
       const reference = referenceAnswer(question); if (reference) card.append(reference);
       if (question.explanation_html) card.append(node('h3', 'exampleExplanationHeader', t('Explanation · 解析')),
@@ -262,6 +263,7 @@ export function createReviewView(bridge) {
         : structured ? 'question.completeHint' : '只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。')));
       card.append(form);
       const controls = selfAssessment(question, input, {disabled: busy || !can('submit_answer'),
+        binaryCorrectRating: 4,
         reveal: () => mutate('reveal', payload()),
         rate: rating => mutate('submit', {...payload(), answer: `自主评分：${rating}`, self_rating: rating, elapsed_ms: tick(true)}),
         explanation: question.revealed ? reportableContent(content(question.explanation_html, state.content_references), reportContext,
