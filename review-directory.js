@@ -1,4 +1,4 @@
-import {t, getLanguage} from './i18n.js?v=ca08e18c2db32619';
+import {t, getLanguage} from './i18n.js?v=6a7af7ba0045af91';
 
 export function paperNumber(number) {
   if (getLanguage() !== 'zh-CN') return t('paper.number', {number});
@@ -39,7 +39,7 @@ export function renderReviewDirectory(root, data, {courseSidebar, taskTree, star
   if (!data.trees?.length) cards.append(element('p', 'portalEmpty', t('paper.none')));
   if (data.all_materials) return body;
   const papers = element('section', 'incompleteTasks'); papers.dataset.reviewKind = 'paper';
-  papers.append(element('h2', 'trainingSectionTitle', t('paper.papers')), element('p', 'inputHint', t('paper.overlap')));
+  papers.append(element('h2', 'trainingSectionTitle', t('paper.papers')), element('p', 'inputHint beginnerOnly', t('paper.overlap')));
   body.append(papers);
   const entries = [...data.active, ...data.items].filter(item => item.kind === 'paper');
   const groups = new Map();

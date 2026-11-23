@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=ca08e18c2db32619';
-import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
-import {voiceAnswerPending} from './voice-input.js?v=ca08e18c2db32619';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=ca08e18c2db32619';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
-import {createLearningCache} from './learning-cache.js?v=ca08e18c2db32619';
-import {helpableContent, reportableContent} from './content-report.js?v=ca08e18c2db32619';
-import {prepareMathContent} from './math-presentation.js?v=ca08e18c2db32619';
+import {t, translateMessage} from './i18n.js?v=6a7af7ba0045af91';
+import {setQuestionTools} from './question-tools.js?v=6a7af7ba0045af91';
+import {voiceAnswerPending} from './voice-input.js?v=6a7af7ba0045af91';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=6a7af7ba0045af91';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=6a7af7ba0045af91';
+import {createLearningCache} from './learning-cache.js?v=6a7af7ba0045af91';
+import {helpableContent, reportableContent} from './content-report.js?v=6a7af7ba0045af91';
+import {prepareMathContent} from './math-presentation.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return prepareMathContent(x); };
-import {createContentTimer} from './content-timer.js?v=ca08e18c2db32619';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=ca08e18c2db32619';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=ca08e18c2db32619';
-import {chunkPeek} from './memory-chunk.js?v=ca08e18c2db32619';
-import {pointAssessment} from './point-assessment.js?v=ca08e18c2db32619';
-import {trainingAudio} from './training-audio.js?v=ca08e18c2db32619';
-import {learningHint} from './beginner-hints.js?v=ca08e18c2db32619';
+import {createContentTimer} from './content-timer.js?v=6a7af7ba0045af91';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=6a7af7ba0045af91';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=6a7af7ba0045af91';
+import {chunkPeek} from './memory-chunk.js?v=6a7af7ba0045af91';
+import {pointAssessment} from './point-assessment.js?v=6a7af7ba0045af91';
+import {trainingAudio} from './training-audio.js?v=6a7af7ba0045af91';
+import {learningHint} from './beginner-hints.js?v=6a7af7ba0045af91';
 
 export function createPaperView({root, request, href, getAccess, formatDate, progressChanged, courseSidebar, taskTree}) {
   const template = document.getElementById('appLayout').cloneNode(true);
@@ -293,7 +293,7 @@ export function createPaperView({root, request, href, getAccess, formatDate, pro
     setQuestionTools(main, item);
     let stem = content(item, 'question', item.html); main.replaceChildren(heading);
     if (state.phase === 'done') main.append(node('p', 'completionBanner', t('paper.finished')), node('p', '', t('paper.summary', {correct: state.items.filter(q => q.result?.correct).length, count: state.items.length})));
-    main.append(node('p', 'inputHint', t(state.mode === 'paper' ? 'paper.paperHint' : 'paper.questionHint')));
+    main.append(node('p', 'inputHint beginnerOnly', t(state.mode === 'paper' ? 'paper.paperHint' : 'paper.questionHint')));
     const type = choiceTypeField(item.interaction); if (type) main.append(type); main.append(stem);
     if (item.multi_step) stem = renderMultiStep(main, item.multi_step, {decorate:(body,kind) => {
       if (item.content_context) helpableContent(body, item.content_context, `${kind}:${item.content_context.question_id}`, item.content_version);

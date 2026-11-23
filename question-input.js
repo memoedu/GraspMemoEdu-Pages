@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=ca08e18c2db32619';
-import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=ca08e18c2db32619';
-import {setOptionContent} from './math-presentation.js?v=ca08e18c2db32619';
-import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=ca08e18c2db32619';
-import {enhanceSourceContent} from './topic-content.js?v=ca08e18c2db32619';
+import {t} from './i18n.js?v=6a7af7ba0045af91';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=6a7af7ba0045af91';
+import {setOptionContent} from './math-presentation.js?v=6a7af7ba0045af91';
+import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=6a7af7ba0045af91';
+import {enhanceSourceContent} from './topic-content.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls, text) => {
   const element = document.createElement(tag); element.className = cls;
@@ -109,7 +109,7 @@ export function questionInput(spec, {id, value = '', stem, disabled = false, for
   function renderMatching() {
     root.querySelector('.matchingBoard')?.remove();
     const board = node('div', 'matchingBoard');
-    board.append(node('p', 'interactionHint', t('question.matchHint')));
+    board.append(node('p', 'interactionHint beginnerOnly', t('question.matchHint')));
     const rows = node('div', 'matchingRows');
     values.forEach((pair, index) => {
       const row = node('div', 'matchingRow');

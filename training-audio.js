@@ -1,4 +1,4 @@
-import {ct, contextError} from './context-library-messages.js?v=ca08e18c2db32619';
+import {ct, contextError} from './context-library-messages.js?v=6a7af7ba0045af91';
 /* Audio is an input/content capability; text still uses the shared answer path. */
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -147,7 +147,7 @@ export function trainingAudio(question, {request, contentVersion, onTranscript, 
   actions.append(load); root.append(actions, audio);
   if (['read_aloud', 'retell'].includes(media.mode) && onTranscript && !disabled) {
     actions.append(record, transcribe); root.append(preview);
-    root.append(node('p', 'inputHint', ct('录音只用于转写。请核对答案框中的文字后提交，结果评价表达内容。')));
+    root.append(node('p', 'inputHint beginnerOnly', ct('录音只用于转写。请核对答案框中的文字后提交，结果评价表达内容。')));
     void request(apiPath('status')).then(result => {
       if (disposed) return;
       asrAvailable = !!result.transcription_available; update();

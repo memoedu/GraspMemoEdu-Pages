@@ -1,5 +1,5 @@
-import {ct, contextError} from './context-library-messages.js?v=ca08e18c2db32619';
-import {sourceAttributions} from './memory-chunk.js?v=ca08e18c2db32619';
+import {ct, contextError} from './context-library-messages.js?v=6a7af7ba0045af91';
+import {sourceAttributions} from './memory-chunk.js?v=6a7af7ba0045af91';
 /* Shared reading component. Content is rendered as text, including dictionary output. */
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -173,7 +173,7 @@ export function createContextLibraryView(bridge) {
     const view = node('section', 'contextLibrary');
     view.append(button(ct('返回阅读材料'), () => show(), 'textButton'));
     view.append(node('h1', 'lessonTitle', data.material.title));
-    view.append(node('p', 'inputHint', ct('点击带下划线的词查看释义；也可以选中文字后查词并保留疑惑。')));
+    view.append(node('p', 'inputHint beginnerOnly', ct('点击带下划线的词查看释义；也可以选中文字后查词并保留疑惑。')));
     if (data.preview) view.append(node('p', 'inputHint', ct('管理员临时预览：阅读标记不写入正式学习记录。')));
     const columns = node('div', 'readingColumns'), article = node('article', 'readingArticle');
     for (const paragraph of data.material.paragraphs) {
