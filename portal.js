@@ -1,28 +1,28 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=17a5c57bb9bc8d86";
-import {attachFormulaEditing} from './formula-input.js?v=17a5c57bb9bc8d86';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=17a5c57bb9bc8d86';
-import { createReviewView } from "./review.js?v=17a5c57bb9bc8d86";
-import { renderCourseGraph } from "./course-graph.js?v=17a5c57bb9bc8d86";
-import {questionInput, choiceTypeField} from './question-input.js?v=17a5c57bb9bc8d86';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=17a5c57bb9bc8d86';
-import {enhanceTopicContent} from './topic-content.js?v=17a5c57bb9bc8d86';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=17a5c57bb9bc8d86';
-import {createCatalogPicker} from './catalog-picker.js?v=17a5c57bb9bc8d86';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=17a5c57bb9bc8d86';
-import {createAtomicView} from './atomic.js?v=17a5c57bb9bc8d86';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=17a5c57bb9bc8d86';
-import {sourceAttributions} from './memory-chunk.js?v=17a5c57bb9bc8d86';
-import {createTrainingView} from './training.js?v=17a5c57bb9bc8d86';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=17a5c57bb9bc8d86";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=9bd76c894704be76";
+import {attachFormulaEditing} from './formula-input.js?v=9bd76c894704be76';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=9bd76c894704be76';
+import { createReviewView } from "./review.js?v=9bd76c894704be76";
+import { renderCourseGraph } from "./course-graph.js?v=9bd76c894704be76";
+import {questionInput, choiceTypeField} from './question-input.js?v=9bd76c894704be76';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=9bd76c894704be76';
+import {enhanceTopicContent} from './topic-content.js?v=9bd76c894704be76';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=9bd76c894704be76';
+import {createCatalogPicker} from './catalog-picker.js?v=9bd76c894704be76';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=9bd76c894704be76';
+import {createAtomicView} from './atomic.js?v=9bd76c894704be76';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=9bd76c894704be76';
+import {sourceAttributions} from './memory-chunk.js?v=9bd76c894704be76';
+import {createTrainingView} from './training.js?v=9bd76c894704be76';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=9bd76c894704be76";
 
-import {createPaperView} from './review-papers.js?v=17a5c57bb9bc8d86';
-import {createContextLibraryView} from './context-library.js?v=17a5c57bb9bc8d86';
+import {createPaperView} from './review-papers.js?v=9bd76c894704be76';
+import {createContextLibraryView} from './context-library.js?v=9bd76c894704be76';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=17a5c57bb9bc8d86';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=17a5c57bb9bc8d86';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=17a5c57bb9bc8d86';
-import {createStudentDashboard} from './student-dashboard.js?v=17a5c57bb9bc8d86';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=17a5c57bb9bc8d86';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=9bd76c894704be76';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=9bd76c894704be76';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=9bd76c894704be76';
+import {createStudentDashboard} from './student-dashboard.js?v=9bd76c894704be76';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=9bd76c894704be76';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -42,7 +42,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=17a5c57bb9bc8d86').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=9bd76c894704be76').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -896,8 +896,11 @@ export function initPortal(bridge) {
     const display = courseDisplayEntries(data, catalog?.courses.find(course => course.id === data.course.id)?.outline || []);
     if (data.course_hierarchy_enabled && allowed("course_hierarchy")) {
       for (const task of display.entries.filter(task => task.type !== "Lesson" && task.presentation !== "draft")) pending.append(incompleteTask(task, data));
-      taskTree(pending, data, {entries: display.entries.filter(task => task.type === 'Lesson' || task.presentation === 'draft'),
+      // Source order only applies to the chapter tree.
+      const chapters = document.createDocumentFragment();
+      taskTree(chapters, data, {entries: display.entries.filter(task => task.type === 'Lesson' || task.presentation === 'draft'),
         hierarchy: display.hierarchy, sourceOrder: display.sourceOrder});
+      pending.append(chapters);
     } else {
       const parents = new Map((data.units || []).flatMap(unit => unit.topic_ids.map(id => [id, unit.id])));
       const entries = orderTopicSiblings(display.entries,
