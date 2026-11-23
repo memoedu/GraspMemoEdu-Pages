@@ -1,6 +1,7 @@
-import {setVoiceContext} from './voice-context.js?v=6e954c2a910f29e5';
-import {getLanguage} from './i18n.js?v=6e954c2a910f29e5';
-import {calculatorToolGroups} from './calculator.js?v=6e954c2a910f29e5';
+import {setVoiceContext} from './voice-context.js?v=b733c23b452c82d3';
+import {getLanguage} from './i18n.js?v=b733c23b452c82d3';
+import {calculatorToolGroups} from './calculator.js?v=b733c23b452c82d3';
+import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=b733c23b452c82d3';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -94,12 +95,18 @@ export function installToolbars(host, voice) {
   });
 }
 
-export function setQuestionTools(anchor, question) {
+export function setQuestionTools(anchor, question, whiteboard) {
   toolbars.get(anchor)?.remove();
   toolbars.delete(anchor);
+  configureWhiteboard(anchor.parentElement, whiteboard);
   if (!anchor.parentNode || !question) return;
   const english = getLanguage() === 'en';
-  const groups = calculatorToolGroups(question.calculate, english);
+  const session = questionToolSession(whiteboard?.key);
+  const groups = calculatorToolGroups(question.calculate, english, session);
+  if (whiteboard) groups.unshift({label: english ? 'Whiteboard' : '白板', tools: [{
+    id: 'whiteboard', label: english ? 'Whiteboard' : '白板', icon: 'M3 3h18v15H3zM7 14l5-6 4 3M9 21h6',
+    open: button => openWhiteboard(anchor.parentElement, button, question, whiteboard, session, english),
+  }]});
   if (!groups.length) return;
   const rail = document.createElement('aside');
   rail.className = 'questionToolRail';
@@ -121,8 +128,9 @@ export function setQuestionTools(anchor, question) {
     button.dataset.readOnly = 'true';
     button.title = label;
     button.setAttribute('aria-label', label);
-    button.setAttribute('aria-haspopup', 'dialog');
-    button.setAttribute('aria-expanded', 'false');
+    if (id !== 'whiteboard') button.setAttribute('aria-haspopup', 'dialog');
+    else if (anchor.parentElement?.classList.contains('whiteboardOpen')) button.setAttribute('data-whiteboard-launch', '');
+    button.setAttribute('aria-expanded', String(button.hasAttribute('data-whiteboard-launch')));
     button.append(icon(path));
     button.addEventListener('click', () => {
       message.textContent = '';

@@ -1,5 +1,5 @@
-import {calculatorWorksheets} from './calculator-policy.js?v=6e954c2a910f29e5';
-import {openCalculator} from './calculator-panel.js?v=6e954c2a910f29e5';
+import {calculatorWorksheets} from './calculator-policy.js?v=b733c23b452c82d3';
+import {openCalculator} from './calculator-panel.js?v=b733c23b452c82d3';
 
 const icons = {
   expression: 'M5 3h14v18H5zM8 7h8M8 11h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1m-9 3h1m3 0h1m3 0h1',
@@ -30,8 +30,7 @@ const toolGroups = [
   ['应用建模', 'Applied modeling', ['geography', 'finance', 'optimization']],
 ];
 
-export function calculatorToolGroups(config, english) {
-  const session = {saved: new Map(), history: [], degrees: false};
+export function calculatorToolGroups(config, english, session = {saved: new Map(), history: [], degrees: false, memory: new Map()}) {
   const available = new Map(calculatorWorksheets(config).map(worksheet => {
     const [id, zh, en] = worksheet;
     return [id, {id, label: english ? en : zh, icon: icons[id], open(launcher) {

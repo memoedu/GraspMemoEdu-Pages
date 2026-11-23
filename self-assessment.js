@@ -1,7 +1,8 @@
-import {t} from './i18n.js?v=6e954c2a910f29e5';
-import {answerEmpty} from './question-input.js?v=6e954c2a910f29e5';
-import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=6e954c2a910f29e5';
-import {answerAssessment} from './point-assessment.js?v=6e954c2a910f29e5';
+import {t} from './i18n.js?v=b733c23b452c82d3';
+import {answerEmpty} from './question-input.js?v=b733c23b452c82d3';
+import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=b733c23b452c82d3';
+import {answerAssessment} from './point-assessment.js?v=b733c23b452c82d3';
+import {fromWhiteboard, whiteboardText} from './whiteboard-answer.js?v=b733c23b452c82d3';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -58,6 +59,12 @@ export function prepareExplanationLayout(root) {
 }
 
 export function submittedAnswer(question, answer, display = answer) {
+  if (fromWhiteboard(answer)) {
+    const text = whiteboardText(answer);
+    const body = element('pre', '', text);
+    renderPlainMath(body, text);
+    return body;
+  }
   const spec = question.interaction || question.question?.interaction;
   let value; try { value = JSON.parse(answer); } catch { /* Keep literal free answers. */ }
   const selected = spec?.type === 'choice' ? new Set(spec.multiple ? value?.selected || [] : [value?.selected]) : new Set();

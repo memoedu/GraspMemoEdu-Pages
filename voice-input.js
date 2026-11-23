@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=6e954c2a910f29e5';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=6e954c2a910f29e5';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=6e954c2a910f29e5';
-import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=6e954c2a910f29e5';
-import {dictationContext, voiceContext} from './voice-context.js?v=6e954c2a910f29e5';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=6e954c2a910f29e5';
+import {getLanguage} from './i18n.js?v=b733c23b452c82d3';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=b733c23b452c82d3';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=b733c23b452c82d3';
+import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=b733c23b452c82d3';
+import {dictationContext, voiceContext} from './voice-context.js?v=b733c23b452c82d3';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=b733c23b452c82d3';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -48,13 +48,15 @@ function destination(field) {
   if (!editable(field)) return null;
   return {field, element: field, context: voiceContext(field), value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
     to: field.selectionEnd ?? field.value.length,
-    profile: field.closest('.questionCalculator') ? 'calculator' : field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
+    profile: field.closest('.questionCalculator,.whiteboardMath') ? 'calculator' : field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
 }
 
 function currentDestination() {
   const active = document.activeElement;
-  const target = destination(active?.closest('.questionTools') ? lastField : active);
   const modal = currentModal();
+  const board = !modal && active?.closest('.questionWorkspace.whiteboardOpen')?.querySelector('[data-whiteboard-expression]');
+  const target = destination(board && active?.matches('iframe') ? board :
+    active?.closest('.questionTools') ? (board && !lastField?.closest('.whiteboardMath') ? board : lastField) : active);
   if (target && (!modal || modal.contains(target.field))) return target;
   const answer = !modal && answerTarget(document, {topic: true});
   return answer ? {answer, context: answer.context, unchanged: answer.pin(), profile: answer.voiceProfile} : null;
@@ -72,6 +74,7 @@ function insert(target, text) {
     if (field.value !== next) { field.value = value; return false; }
   }
   field.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: text}));
+  if (field.hasAttribute('data-whiteboard-expression')) field.dispatchEvent(new CustomEvent('whiteboard-dictation', {detail: text}));
   return true;
 }
 

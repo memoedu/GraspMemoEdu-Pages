@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=6e954c2a910f29e5';
+  from './calculator-policy.js?v=b733c23b452c82d3';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=6e954c2a910f29e5');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=6e954c2a910f29e5');
-const applied = () => import('./vendor/calculator/applied.mjs?v=6e954c2a910f29e5');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=6e954c2a910f29e5');
+const core = () => import('./vendor/calculator/core.mjs?v=b733c23b452c82d3');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=b733c23b452c82d3');
+const applied = () => import('./vendor/calculator/applied.mjs?v=b733c23b452c82d3');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=b733c23b452c82d3');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
@@ -162,7 +162,7 @@ function storedValue(math, value, config, extensions) {
 }
 
 function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false,
-  extensions = false, names, bindings, memory = {}} = {}) {
+  extensions = false, names, bindings, memory = {}, expanding = []} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
   const original = commonNotation(value).normalize('NFC').replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1');
   ensure(!original.includes('__gmeVar'), 'restricted');
@@ -213,8 +213,14 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       }
       if (!symbolic && permitsKey(config, 'memory_registers') && assignableVariable(name)
           && Object.hasOwn(memory ?? {}, name)) {
-        const value = storedValue(math, memory[name], config, extensions);
-        return () => value;
+        const entry = memory[name];
+        if (typeof entry?.expression === 'string') {
+          ensure(expanding.length < 4 && !expanding.includes(name) && entry.expression.length <= 256, 'limit');
+          return expressionPlan(math, entry.expression, config, {variable, answer, degrees, freeSymbols, extensions,
+            names, bindings, memory, expanding: [...expanding, name]}).evaluate;
+        }
+        const stored = storedValue(math, entry, config, extensions);
+        return () => stored;
       }
       if (freeSymbols && assignableVariable(name)) return () => undefined;
       if (names && assignableVariable(name)) {
@@ -435,6 +441,16 @@ function definiteIntegral(integrate, evaluate, lower, upper) {
   } finally {
     console.warn = previousWarn;
   }
+}
+
+export async function storedExpression(source, config, name, memory) {
+  checkKey(config, 'memory_registers');
+  ensure(typeof source === 'string' && source.length <= 256 && !source.includes('='), 'restricted');
+  const expression = source.trim();
+  ensure(expression && assignableVariable(name), 'restricted');
+  expressionPlan(await core(), expression, config, {freeSymbols: true, extensions: false,
+    memory: {...memory, [name]: {expression}}, expanding: [name]});
+  return {expression};
 }
 
 export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory}) {
