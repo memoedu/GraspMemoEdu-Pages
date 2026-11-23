@@ -1,12 +1,13 @@
-import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=d5737a77ee4f0ad2';
-import {formulaSpans, formulaTemplates, formulaToken, matchesCompletion} from './formula-catalog.js?v=d5737a77ee4f0ad2';
-import {getLanguage} from './i18n.js?v=d5737a77ee4f0ad2';
-import previews from './vendor/formula/previews.mjs?v=d5737a77ee4f0ad2';
+import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=12fbf355cca92815';
+import {formulaSpans, formulaTemplates, formulaToken, matchesCompletion} from './formula-catalog.js?v=12fbf355cca92815';
+import {getLanguage} from './i18n.js?v=12fbf355cca92815';
+import previews from './vendor/formula/previews.mjs?v=12fbf355cca92815';
 
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
 const style = 'formulaSourceHidden';
 const active = new Set();
 const hosts = new WeakMap();
+const sourceAnchors = new WeakMap();
 const paired = new WeakSet();
 let runtime, observer;
 const choices = formulaTemplates.filter(item => previews[item.sample]).map(item => ({
@@ -19,12 +20,14 @@ function candidates(query) {
 }
 
 export function activeFormulaField(element) {
+  const source = sourceAnchors.get(element);
+  if (source) return source();
   const control = hosts.get(element?.closest?.('[data-formula-surface]'));
   return control?.anchor(element);
 }
 
 function load() {
-  runtime ||= import('./vendor/formula/editor.mjs?v=d5737a77ee4f0ad2').catch(error => { runtime = null; throw error; });
+  runtime ||= import('./vendor/formula/editor.mjs?v=12fbf355cca92815').catch(error => { runtime = null; throw error; });
   return runtime;
 }
 
@@ -121,7 +124,7 @@ export function attachLiteralAnswer(input) {
 }
 
 export function attachFormulaEditing(input, {group = 'other', source = input, after = source, launch = true,
-  onValue, sourceField, readSource, literal = false} = {}) {
+  onValue, sourceField, readSource, voiceAnchor, literal = false} = {}) {
   if (input.readOnly) return null;
   const host = document.createElement('div');
   host.className = 'formulaInput';
@@ -144,7 +147,7 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
   const controller = {
     anchor(element) {
       if (!editor || host.hidden || !enabled()) return null;
-      return {field: input, insert: editor.anchor(element)};
+      return {field: input, surface: host, ...editor.anchor(element)};
     },
     get visible() { return !disposed && !!editor && !host.hidden; },
     selection: () => controller.visible ? editor.sourceSelection() : null,
@@ -162,6 +165,7 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
     },
     destroy() {
       disposed = true;
+      if (sourceField && voiceAnchor) sourceAnchors.delete(sourceField);
       events.abort();
       active.delete(controller);
       attributeObserver?.disconnect();
@@ -181,6 +185,10 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
     },
   };
   hosts.set(host, controller);
+  if (sourceField && voiceAnchor) sourceAnchors.set(sourceField, () => {
+    if (disposed || !enabled() || controller.visible || !sourceField.getClientRects().length) return null;
+    return {field: input, surface: sourceField, ...voiceAnchor()};
+  });
   controller.connected = () => !disposed && input.isConnected && host.isConnected;
 
   function reflect(value) {
