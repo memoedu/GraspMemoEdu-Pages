@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=a9d56b88c5ca1fa2";
-import {answerReady} from './question-input.js?v=a9d56b88c5ca1fa2';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=a9d56b88c5ca1fa2';
-import {startPresence} from './presence.js?v=a9d56b88c5ca1fa2';
-import {createLearningCache} from './learning-cache.js?v=a9d56b88c5ca1fa2';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=a9d56b88c5ca1fa2';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=299527f404a0b784";
+import {answerReady} from './question-input.js?v=299527f404a0b784';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=299527f404a0b784';
+import {startPresence} from './presence.js?v=299527f404a0b784';
+import {createLearningCache} from './learning-cache.js?v=299527f404a0b784';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=299527f404a0b784';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=a9d56b88c5ca1fa2';
-import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=a9d56b88c5ca1fa2';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=a9d56b88c5ca1fa2';
-import {renderSourceReader} from './learning-ui.js?v=a9d56b88c5ca1fa2';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=a9d56b88c5ca1fa2';
-import {createTrainingView} from './training.js?v=a9d56b88c5ca1fa2';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=a9d56b88c5ca1fa2';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=a9d56b88c5ca1fa2';
-import {installAutocomplete} from './autocomplete.js?v=a9d56b88c5ca1fa2';
-import {expressionCompletions} from './calculator-policy.js?v=a9d56b88c5ca1fa2';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=a9d56b88c5ca1fa2';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=a9d56b88c5ca1fa2';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=299527f404a0b784';
+import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=299527f404a0b784';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=299527f404a0b784';
+import {renderSourceReader} from './learning-ui.js?v=299527f404a0b784';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=299527f404a0b784';
+import {createTrainingView} from './training.js?v=299527f404a0b784';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=299527f404a0b784';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=299527f404a0b784';
+import {installAutocomplete} from './autocomplete.js?v=299527f404a0b784';
+import {expressionCompletions} from './calculator-policy.js?v=299527f404a0b784';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=299527f404a0b784';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=299527f404a0b784';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1462,9 +1462,13 @@ function renderStepNavigation(target, step, actions) {
     primary = button(t(step.kind === 'bank_practice' ? 'reader.completeTask' : '下一页'), 'primaryButton', () => mutate('continue', mutationPayload()));
     if (step.kind !== 'bank_practice') primary.setAttribute('aria-label', t('Continue，继续学习'));
   } else if (actions.includes('submit')) primary = target.querySelector('#submitButton');
-  else if (step.kind === 'completion') primary = button(t(state.skipped_modules?.length ? 'nav.backHome' : 'reader.finishLearning'), 'primaryButton', () => {
-    portal?.progressChanged(); location.hash = $("topicHomeLink").hash || `/subjects/${topicSubjectId || 'math'}/courses`;
-  });
+  else if (step.kind === 'completion') {
+    const incomplete = state.skipped_modules?.length;
+    const finish = button(t(incomplete ? 'nav.backHome' : 'reader.finishLearning'), 'primaryButton', () => {
+      portal?.progressChanged(); location.hash = $("topicHomeLink").hash || `/subjects/${topicSubjectId || 'math'}/courses`;
+    });
+    primary = incomplete ? finish : portal?.completionAction(finish) ?? finish;
+  }
   readerNavigation(target, {previous: index > 0 ? pages[index - 1] : null, next: index >= 0 ? pages[index + 1] : null,
     onSelect: page => selectStep(page.id), canNavigate: can('review_history'), titleOf: readerStepTitle, primary,
     ...(step.kind === 'bank_practice' ? {previousLabel: 'reader.backToReading'} : {})});
@@ -1761,7 +1765,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, getAccountScope: () => identityGeneration, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=a9d56b88c5ca1fa2");
+const { initPortal } = await import("./portal.js?v=299527f404a0b784");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
