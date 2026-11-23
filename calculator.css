@@ -195,6 +195,15 @@
 .calculatorOptions:empty { display: none; }
 .calculatorOptions [data-calculator-key="log_base"] { min-inline-size: 44px; }
 .calculatorOptions select { flex: 1 1 145px; width: auto; }
+.calculatorOptions:has([data-calculator-key="modular_power"]) { gap: 4px; }
+.calculatorOptions:has([data-calculator-key="modular_power"]) .calculatorControl { min-inline-size: 44px; padding-inline: 5px; }
+.calculatorOptions:has([data-calculator-key="modular_power"]) select { flex-basis: 49px; padding-inline: 4px; }
+.calculatorModular:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 7px;
+}
 .calculatorKeys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
 .calculatorKey {
   padding-inline: 0;
@@ -216,7 +225,16 @@
   font-size: .83rem;
   color: var(--calculator-accent-deep);
 }
+.calculatorMore { border-block-start: 1px solid var(--calculator-edge); }
+.calculatorExtensionKeys { display: flex; flex-wrap: wrap; gap: 7px; }
+.calculatorExtensionKeys:not(:empty) { margin-block-start: 8px; }
+.calculatorExtensionKeys .calculatorKey { flex: 1 1 auto; padding-inline: 9px; }
+.calculatorMore .calculatorField:has(select) > span { color: var(--calculator-muted); }
+.calculatorExtensionForm { color: var(--calculator-text); }
+.calculatorExtensionForm > form { margin-block-start: 8px; }
+.calculatorExtensionDetails { margin-block-start: 4px; }
 .questionCalculator summary { padding-block: 9px; cursor: pointer; font-weight: 640; }
+.calculatorMore summary { box-sizing: border-box; min-block-size: 44px; padding-block: 12px; }
 .calculatorHistory ol { list-style: none; padding: 0; margin: 0; }
 .calculatorHistory li + li { border-block-start: 1px solid var(--calculator-edge); }
 .calculatorHistory li button { width: 100%; display: flex; justify-content: space-between; white-space: normal; gap: 12px; }
@@ -307,6 +325,7 @@
   color: var(--calculator-screen-text);
 }
 .calculatorResultRows { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px; }
+.calculatorDisplay .calculatorResultRows { font: .9rem/1.4 var(--calculator-font); text-align: start; letter-spacing: normal; }
 .calculatorResultRows dd { margin: 0; font-family: var(--calculator-number-font); }
 .calculatorChart { display: block; max-inline-size: 100%; block-size: auto; }
 @media (max-width: 480px) {

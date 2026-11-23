@@ -79,7 +79,7 @@ export function keyCompletions(keys, config) {
     ? [{label: value.replace(/\($/, '') || value, value, keys: aliases[value] ? [value, aliases[value]] : [value]}] : []);
 }
 
-export function expressionCompletions(config = {level: 'scientific'}, {previousAnswer = true, variable, equation} = {}) {
+export function expressionCompletions(config = {level: 'scientific'}, {previousAnswer = true, variable, equation, extensions = false} = {}) {
   const entries = Object.entries(functions).flatMap(([name, [id, tier]]) =>
     permitsKey(config, id, tier) && permitsKey(config, 'open') ? [{label: name, value: name + '('}] : []);
   const allowedKeys = keypad.filter(([id, , insertion]) => !id.startsWith('constant_')
@@ -93,6 +93,11 @@ export function expressionCompletions(config = {level: 'scientific'}, {previousA
   if (permitsKey(config, 'complex', 2) && !variable) entries.push({label: 'i', value: 'i'});
   if (variable) entries.push({label: variable, value: variable});
   if (equation) entries.push({label: '=', value: '='});
+  if (extensions) {
+    for (const [name, [module]] of expressionExtensions) {
+      if (permitsExtension(config, module, name)) entries.push({label: name, value: name + '('});
+    }
+  }
   const unique = new Map();
   for (const entry of entries) {
     const first = unique.get(entry.value);
@@ -185,12 +190,46 @@ export function toolOperation(module, operation) {
   return tools.find(spec => spec[0] === module)?.[3].find(item => item[0] === operation);
 }
 
+// Numeric operations accept normal expression arguments in the same order as the worksheet fields.
+const callableOperations = {
+  matrix_multiply: ['matrix', 'matrix'], determinant: ['matrix'], transpose: ['matrix'],
+  matrix_inverse: ['matrix'], linear_system: ['matrix', 'vector'],
+  normal_cdf: [], normal_quantile: [], binomial_pmf: [], binomial_cdf: [], poisson_pmf: [], student_t_cdf: [],
+  sigmoid: ['vector'], softplus: ['vector'], relu: ['vector'], softmax: ['vector'], log_softmax: ['vector'],
+  cross_entropy: ['vector'], mse: ['vector', 'vector'], cosine_similarity: ['vector', 'vector'],
+  standardize: ['vector'], min_max: ['vector'],
+  ohms_law: [], rc_time: [], ideal_gas: [], dilution: [],
+  future_value: [], net_present_value: ['number', 'vector'], internal_rate: ['vector'],
+};
+
+export const expressionExtensions = new Map(tools.flatMap(([module, , , operations]) =>
+  operations.filter(([id]) => Object.hasOwn(callableOperations, id)).map(([id, , , fields]) =>
+    [id, [module, fields.map(([field, , , example], index) =>
+      [field, callableOperations[id][index] === 'vector' && !example.startsWith('[') ? '[' + example + ']' : example])]])));
+
+export function permitsExtension(config, module, key) {
+  return permitsModule(config, module) && permitsKey(config, key) && permitsKey(config, 'open') && permitsKey(config, 'close');
+}
+
+const standaloneModules = new Set(['graph', 'statistics', 'symbolic', 'machine_learning']);
+const standaloneOperation = (module, operation) => module === 'symbolic' ? operation !== 'simplify'
+  : module === 'machine_learning' ? ['classification', 'pca'].includes(operation) : standaloneModules.has(module);
+
+function availableTools(config, include) {
+  return tools.filter(([module]) => permitsModule(config, module)).flatMap(([module, zh, en, operations]) => {
+    const visible = operations.filter(([key]) => include(module, key));
+    return visible.some(([key]) => permitsKey(config, key)) ? [[module, zh, en, visible]] : [];
+  });
+}
+
+export function scientificCategories(config) {
+  return availableTools(config, (module, key) => !standaloneOperation(module, key) && !['simplify', 'modular_power'].includes(key));
+}
+
 export function calculatorWorksheets(config) {
-  const available = tools.filter(([id, , , operations]) => permitsModule(config, id)
-    && operations.some(([key]) => permitsKey(config, key)));
-  if (permitsModule(config, 'expression') && permitsKey(config, 'evaluate')) {
-    const title = config.level === 'basic' ? ['基础计算器', 'Basic calculator'] : ['科学计算器', 'Scientific calculator'];
-    available.unshift(['expression', ...title]);
-  }
-  return available;
+  if (!permitsModule(config, 'expression') || !permitsKey(config, 'evaluate')) return availableTools(config, () => true);
+  const title = config.level === 'basic' ? ['基础计算器', 'Basic calculator'] : ['科学计算器', 'Scientific calculator'];
+  const standalone = availableTools(config, standaloneOperation).map(([module, zh, en, operations]) => module === 'machine_learning'
+    ? [module, '机器学习分析', 'Machine learning analysis', operations] : [module, zh, en, operations]);
+  return [['expression', ...title], ...standalone];
 }
