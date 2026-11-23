@@ -1,8 +1,9 @@
-import {inheritVoiceContext} from './voice-context.js?v=8f429bf0142eb1a4';
-import {basedLogKey, constants, expressionCompletions, keypad, levels, memoryRegisters, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=8f429bf0142eb1a4';
-import {toolInputs} from './calculator-inputs.js?v=8f429bf0142eb1a4';
-import {setInputCompletions} from './autocomplete.js?v=8f429bf0142eb1a4';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=8f429bf0142eb1a4';
+import {inheritVoiceContext} from './voice-context.js?v=a3cb9e57123710a9';
+import {basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
+  permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule, scientificCategories} from './calculator-policy.js?v=a3cb9e57123710a9';
+import {toolInputs} from './calculator-inputs.js?v=a3cb9e57123710a9';
+import {setInputCompletions} from './autocomplete.js?v=a3cb9e57123710a9';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=a3cb9e57123710a9';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -156,7 +157,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     format.setAttribute('aria-pressed', 'false');
   }
 
-  let worker, timer, working = false, closed = false;
+  let worker, timer, runningControl, working = false, closed = false;
   const {saved, history} = session;
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   let registerCandidate = answer ? session.expressionRegisterCandidate : null;
@@ -239,6 +240,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     clearTimeout(timer);
     worker?.terminate();
     worker = null;
+    if (runningControl) runningControl.disabled = false;
+    runningControl = null;
     working = false;
   }
   function close(returnFocus) {
@@ -261,6 +264,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   };
   function show(result) {
     output.dataset.state = 'success';
+    format.hidden = true;
     if (result.plot) output.replaceChildren(chart(result.plot, local('函数图像', 'Function graph')));
     else if (result.entries) {
       const data = create('dl', 'calculatorResultRows');
@@ -272,17 +276,18 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     } else showText(result.text, true);
     const values = result.entries?.map(([, value]) => renderValue(value));
     setAnswer(result.text || (values?.length === 1 ? values[0] : values?.join('\n')) || null,
-      result.numeric ?? result.complex ?? null);
+      result.numeric ?? result.complex ?? result.array ?? null);
   }
-  function run(module, operation, input, control, receive) {
+  function run(sourceModule, operation, input, control, receive) {
     if (working || control.disabled) return;
     const version = edit;
     working = true; control.disabled = true;
+    runningControl = control;
     setAnswer(null);
     output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
-    const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
+    const finish = () => { clearTimeout(timer); working = false; runningControl = null; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=8f429bf0142eb1a4', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=a3cb9e57123710a9', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -290,39 +295,85 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         if (data.error) { showError(data.error); return; }
         if (receive) { receive(data.result); return; }
         if (module === 'expression') {
-          session.previousAnswer = data.result.numeric;
-          history.push({expression: input.expression, assignments: input.assignments, result: data.result.text});
+          const numeric = data.result.numeric ?? data.result.complex ?? data.result.array;
+          if (numeric !== undefined) session.previousAnswer = numeric;
+        }
+        if (sourceModule === 'expression' || operation === 'simplify' || operation === 'modular_power') {
+          history.push({expression: input.expression, assignments: input.assignments, result: data.result.text,
+            modulus: input.modulus});
           if (history.length > 12) history.shift();
           renderHistory();
         }
         show(data.result);
+        if (control.closest('.calculatorExtensionForm')) {
+          dialog.scrollTop = 0;
+          if (document.activeElement === control) {
+            output.tabIndex = -1;
+            output.focus({preventScroll: true});
+          }
+        }
       };
       worker.onerror = event => { event.preventDefault(); stop(); finish(); showError('invalid'); };
       timer = setTimeout(() => { stop(); finish(); showError('timeout'); }, 8000);
-      worker.postMessage({config, module, operation, input, degrees: session.degrees, answer: session.previousAnswer,
+      worker.postMessage({config, module: sourceModule, operation, input, degrees: session.degrees, answer: session.previousAnswer,
         memory: Object.fromEntries([...memory].map(([letter, entry]) => [letter, entry.value]))});
     } catch { stop(); finish(); showError('invalid'); }
   }
 
-  function worksheet() {
+  function toolForm(selectedModule, specs) {
     const form = create('form', 'calculatorForm');
-    const invalidate = () => { edit++; setAnswer(null); };
-    form.addEventListener('input', invalidate, true);
+    const method = create('select');
+    for (const [id, zh, en] of specs) {
+      const option = create('option', '', local(zh, en));
+      option.value = id; option.disabled = !permitsKey(config, id);
+      method.append(option);
+    }
+    const savedMethod = saved.get(selectedModule);
+    method.value = specs.some(([id]) => id === savedMethod && permitsKey(config, id)) ? savedMethod
+      : [...method.options].find(option => !option.disabled).value;
+    if (specs.length > 1) label(form, local('运算', 'Operation'), method);
+    const fields = create('div', 'calculatorToolFields');
+    form.append(fields);
+    function renderFields() {
+      saved.set(selectedModule, method.value);
+      const spec = specs.find(([id]) => id === method.value)[3];
+      const prefix = selectedModule + '/' + method.value + '/';
+      const {outer, fillExample} = toolInputs(spec, {module: selectedModule, operation: method.value, local, config,
+        get: id => saved.get(prefix + id) || '', set: (id, value) => saved.set(prefix + id, value)});
+      const actions = create('div', 'calculatorToolActions');
+      actions.append(button(local('填入示例', 'Fill example'), () => { edit++; setAnswer(null); fillExample(); }),
+        button(local('计算结果', 'Calculate'), null, 'submit', 'calculatorControl calculatorPrimary'));
+      fields.replaceChildren(outer, actions);
+    }
+    form.addEventListener('input', () => { edit++; setAnswer(null); }, true);
+    method.addEventListener('change', () => { stop(); showText(''); delete output.dataset.state; renderFields(); });
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      run(selectedModule, method.value, Object.fromEntries(new FormData(form)), fields.querySelector('[type="submit"]'));
+    });
+    renderFields();
+    return form;
+  }
+
+  function worksheet() {
     if (module === 'expression') {
+      const form = create('div', 'calculatorForm');
+      const invalidate = () => { edit++; setAnswer(null); };
+      form.addEventListener('input', event => { if (!event.target.closest('form')) invalidate(); }, true);
       const input = create('input', 'calculatorExpression');
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
       const memoryAllowed = permitsKey(config, 'memory_registers');
       const candidates = term => memoryAllowed && memoryRegisters.includes(term) ? []
-        : expressionCompletions(config, {previousAnswer: Number.isFinite(session.previousAnswer)});
+        : expressionCompletions(config, {previousAnswer: session.previousAnswer != null, extensions: true});
       setInputCompletions(input, candidates);
       let focused = input, assign;
       const display = create('div', 'calculatorDisplay');
       label(display, local('表达式', 'Expression'), input);
       const variableFields = create('div', 'calculatorAssignments');
       variableFields.id = 'calculatorAssignments';
-      showText(history.at(-1)?.result || '0', true);
+      showText(answer || history.at(-1)?.result || '0', true);
       display.append(variableFields, resultLine); form.append(display);
       const currentAssignments = () => session.assignmentDraft?.expression === input.value
         ? session.assignmentDraft.values : null;
@@ -347,10 +398,12 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       }
       input.addEventListener('focus', () => { focused = input; });
       input.addEventListener('input', () => { saved.set(module, input.value); renderAssignments(); });
-      const insert = value => {
-        const field = focused.isConnected ? focused : input;
+      const activeField = () => focused.isConnected && !(focused === modulus && modularFields.hidden) ? focused : input;
+      const insert = (value, selection) => {
+        const field = activeField();
         const start = field.selectionStart ?? field.value.length;
         field.setRangeText(value, start, field.selectionEnd ?? start, 'end');
+        if (selection) field.setSelectionRange(start + selection[0], start + selection[1]);
         field.dispatchEvent(new Event('input'));
         field.focus();
       };
@@ -413,29 +466,57 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       const numericPad = create('div', 'calculatorNumericPad');
       numericPad.append(options);
       form.append(numericPad);
+      let modulus, remainder, modularFields, modular;
+      if (permitsModule(config, 'modular') && permitsKey(config, 'modular_power')) {
+        modularFields = create('div', 'calculatorModular');
+        modularFields.id = 'calculatorModular';
+        modularFields.hidden = true;
+        modular = button(local('精确模幂', 'Mod pow'), () => {
+          modularFields.hidden = !modularFields.hidden;
+          modular.setAttribute('aria-expanded', String(!modularFields.hidden));
+          if (!modularFields.hidden) modulus.focus();
+        });
+        modular.setAttribute('aria-expanded', 'false');
+        modular.setAttribute('aria-controls', modularFields.id);
+        modular.title = local('精确模幂', 'Exact modular power');
+        modular.setAttribute('aria-label', modular.title);
+        modular.dataset.calculatorKey = 'modular_power';
+        modulus = create('input');
+        modulus.type = 'text'; modulus.maxLength = 2048; modulus.inputMode = 'numeric';
+        modulus.dataset.autocomplete = 'off';
+        modulus.value = saved.get('modular/modular_power/modulus') || '';
+        modulus.addEventListener('focus', () => { focused = modulus; });
+        modulus.addEventListener('input', () => saved.set('modular/modular_power/modulus', modulus.value));
+        remainder = button(local('取模', 'Find remainder'), () => run('modular', 'modular_power',
+          {expression: input.value, modulus: modulus.value}, remainder));
+        label(modularFields, local('正整数模数', 'Positive modulus'), modulus);
+        modularFields.append(remainder); options.append(modular); numericPad.append(modularFields);
+      }
       const keys = create('div', 'calculatorKeys');
       let equals;
       for (const [key, name, insertion, minimum = 1] of keypad) {
         if (levels.indexOf(config.level) < minimum) continue;
-        const action = key === 'evaluate' ? null : () => {
+        const action = key === 'evaluate' ? () => run(module, 'evaluate', {
+          expression: input.value, assignments: Object.fromEntries(currentAssignments() || []),
+        }, equals) : () => {
           if (key === 'clear') {
             stop(); equals.disabled = !permitsKey(config, 'evaluate');
             if (assign) assign.disabled = false;
             setAnswer(null);
-            const field = focused.isConnected ? focused : input;
+            const field = activeField();
             if (field === input) session.assignmentDraft = null;
             field.value = ''; field.dispatchEvent(new Event('input'));
             showText('0'); delete output.dataset.state; field.focus(); return;
           }
           if (key === 'backspace') {
-            const field = focused.isConnected ? focused : input;
+            const field = activeField();
             if (field.selectionStart === field.selectionEnd && field.selectionStart > 0)
               field.setSelectionRange(field.selectionStart - 1, field.selectionEnd);
             insert(''); return;
           }
           insert(insertion);
         };
-        const keyButton = button(name, action, key === 'evaluate' ? 'submit' : 'button', 'calculatorKey');
+        const keyButton = button(name, action, 'button', 'calculatorKey');
         keyButton.dataset.calculatorKey = key;
         keyButton.disabled = !permitsKey(config, key, minimum);
         if (key === 'evaluate') {
@@ -447,18 +528,70 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         keys.append(keyButton);
       }
       numericPad.append(keys);
+      const headerTools = create('div', 'calculatorHeaderTools');
+      let simplify;
+      if (permitsModule(config, 'symbolic') && permitsKey(config, 'simplify')) {
+        simplify = button(local('化简', 'Simplify'), () => {
+          cancelMemory();
+          run('symbolic', 'simplify', {expression: input.value}, simplify);
+        });
+        simplify.dataset.calculatorKey = 'simplify';
+      }
       if (levels.indexOf(config.level) >= 2) {
         const extra = create('details', 'calculatorMore');
         extra.append(create('summary', '', local('更多科学函数', 'More scientific functions')));
-        const functions = create('div', 'calculatorKeys');
-        for (const [key, name] of [['sinh', 'sinh'], ['cosh', 'cosh'], ['tanh', 'tanh'], ['cbrt', '∛'],
-          ['floor', 'floor'], ['ceil', 'ceil'], ['round', 'round']]) {
-          const extraKey = button(name, () => insert(key + '('), 'button', 'calculatorKey');
-          extraKey.disabled = !permitsKey(config, key, 2);
-          extraKey.dataset.calculatorKey = key;
-          functions.append(extraKey);
+        const categories = scientificCategories(config);
+        const functions = create('div', 'calculatorExtensionKeys');
+        const worksheetSlot = create('div', 'calculatorExtensionForm');
+        const category = create('select');
+        for (const [id, zh, en] of [['common', '常用函数', 'Common functions'], ...categories]) {
+          const option = create('option', '', local(zh, en)); option.value = id; category.append(option);
         }
-        extra.append(functions); numericPad.append(extra);
+        category.value = saved.get('scientific-category') || 'common';
+        if (categories.length) label(extra, local('类别', 'Category'), category);
+        function renderCategory() {
+          saved.set('scientific-category', category.value);
+          functions.replaceChildren(); worksheetSlot.replaceChildren();
+          if (category.value === 'common') {
+            for (const [key, name] of [['sinh', 'sinh'], ['cosh', 'cosh'], ['tanh', 'tanh'], ['cbrt', '∛'],
+              ['floor', 'floor'], ['ceil', 'ceil'], ['round', 'round']]) {
+              const extraKey = button(name, () => insert(key + '('), 'button', 'calculatorKey');
+              extraKey.disabled = !permitsKey(config, key, 2);
+              extraKey.dataset.calculatorKey = key;
+              functions.append(extraKey);
+            }
+            return;
+          }
+          const [id, , , specs] = categories.find(([id]) => id === category.value);
+          for (const [key, zh, en] of specs) {
+            if (!expressionExtensions.has(key) || !permitsExtension(config, id, key)) continue;
+            const [, fields] = expressionExtensions.get(key);
+            const signature = key + '(' + fields.map(([name]) => name).join(', ') + ')';
+            const extensionKey = button(local(zh, en), () => {
+              const field = activeField() === modulus ? input : activeField();
+              focused = field;
+              const selected = field.value.slice(field.selectionStart, field.selectionEnd);
+              const args = fields.map(([, example], index) => index === 0 && selected ? selected : example).join(', ');
+              insert(key + '(' + args + ')', [key.length + 1, key.length + 1 + args.length]);
+            }, 'button', 'calculatorKey');
+            extensionKey.dataset.calculatorKey = key;
+            extensionKey.title = signature;
+            functions.append(extensionKey);
+          }
+          if (functions.childElementCount) {
+            const details = create('details', 'calculatorExtensionDetails');
+            details.append(create('summary', '', local('表单输入', 'Form input')));
+            details.addEventListener('toggle', () => {
+              if (details.open && details.childElementCount === 1) details.append(toolForm(id, specs));
+            });
+            worksheetSlot.append(details);
+          } else worksheetSlot.append(toolForm(id, specs));
+        }
+        category.addEventListener('change', renderCategory);
+        extra.append(functions, worksheetSlot); numericPad.append(extra);
+        extra.addEventListener('toggle', () => {
+          if (extra.open && !functions.childElementCount && !worksheetSlot.childElementCount) renderCategory();
+        });
       }
       if (memoryAllowed) {
         const memoryPad = create('div', 'calculatorRegisterPad');
@@ -477,13 +610,16 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         form.append(memoryPad, status);
         let mode = '', pending;
         const copy = button(local('复制', 'Copy'), async () => {
-          if (registerCandidate == null) return;
-          const snapshot = {value: registerCandidate, text: output.textContent};
-          pending = snapshot;
-          openPad('store');
+          if (answer == null) return;
+          const snapshot = {value: registerCandidate, text: output.querySelector('dl') ? answer : output.textContent};
+          if (registerCandidate != null) {
+            pending = snapshot;
+            openPad('store');
+          }
           try { await navigator.clipboard.writeText(snapshot.text); }
           catch {
             if (pending === snapshot) notice.textContent = local('剪贴板不可用，仍可储值。', 'Clipboard unavailable. You can still store the result.');
+            else status.textContent = local('剪贴板不可用。', 'Clipboard unavailable.');
           }
         });
         const recall = button('RCL', () => openPad('recall'));
@@ -491,12 +627,12 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         recall.title = local('调用储值', 'Recall stored value');
         copy.setAttribute('aria-label', copy.title);
         recall.setAttribute('aria-label', recall.title);
-        const headerTools = create('div', 'calculatorHeaderTools');
-        headerTools.append(copy, recall, closeButton);
-        headline.append(headerTools);
+        headerTools.append(copy);
+        if (simplify) headerTools.append(simplify);
+        headerTools.append(recall);
         for (const key of [copy, recall]) key.setAttribute('aria-controls', memoryPad.id);
         refreshMemory = () => {
-          copy.disabled = registerCandidate == null || working;
+          copy.disabled = answer == null || working;
           recall.disabled = !memory.size || working;
           copy.setAttribute('aria-expanded', String(mode === 'store'));
           recall.setAttribute('aria-expanded', String(mode === 'recall'));
@@ -543,65 +679,42 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           (letters.querySelector('button:not(:disabled)') || back).focus();
         }
         refreshMemory();
-      }
+      } else if (simplify) headerTools.append(simplify);
+      headerTools.append(closeButton); headline.append(headerTools);
       // Adapted from Calc's renderHistory (Matt, MIT), scoped to the current question.
       const historyPane = create('details', 'calculatorHistory');
       const entries = create('ol');
       historyPane.append(create('summary', '', local('本题计算记录', 'Calculation history')), entries);
       renderHistory = () => {
         historyPane.hidden = history.length === 0;
-        entries.replaceChildren(...history.slice().reverse().map(({expression, assignments, result}) => {
+        entries.replaceChildren(...history.slice().reverse().map(({expression, assignments, result, modulus: originalModulus}) => {
           const row = create('li');
           const values = Object.entries(assignments || {});
           const reuse = button('', () => {
             session.assignmentDraft = values.length ? {expression, values: new Map(values)} : null;
+            if (originalModulus && modulus) {
+              modulus.value = originalModulus;
+              modulus.dispatchEvent(new Event('input'));
+              if (modularFields.hidden) modular.click();
+            }
             input.value = expression; input.dispatchEvent(new Event('input')); input.focus();
           });
-          const context = values.map(([name, value]) => name + ' = ' + value).join(', ');
+          const context = originalModulus ? 'mod ' + originalModulus : values.map(([name, value]) => name + ' = ' + value).join(', ');
           reuse.append(create('span', '', context ? expression + '  (' + context + ')' : expression),
             create('strong', '', '= ' + result));
           row.append(reuse); return row;
         }));
       };
       renderHistory(); form.append(historyPane);
-      form.addEventListener('submit', event => {
-        event.preventDefault();
-        if (numericPad.hidden) return;
-        run(module, 'evaluate', {expression: input.value, assignments: Object.fromEntries(currentAssignments() || [])}, equals);
+      form.addEventListener('keydown', event => {
+        if (event.defaultPrevented || event.isComposing || event.key !== 'Enter' || numericPad.hidden) return;
+        if (event.target === input || variableFields.contains(event.target) || event.target === modulus) {
+          event.preventDefault();
+          (event.target === modulus ? remainder : equals).click();
+        }
       });
-    } else {
-      const method = create('select');
-      for (const [id, zh, en] of operations) {
-        const option = create('option', '', local(zh, en));
-        option.value = id; option.disabled = !permitsKey(config, id);
-        method.append(option);
-      }
-      method.value = saved.get(module) || [...method.options].find(option => !option.disabled).value;
-      if (operations.length > 1) label(form, local('运算', 'Operation'), method);
-      const fields = create('div', 'calculatorToolFields');
-      form.append(fields);
-      function renderFields() {
-        stop(); showText(''); delete output.dataset.state;
-        invalidate();
-        saved.set(module, method.value);
-        fields.replaceChildren();
-        const spec = operations.find(([id]) => id === method.value)[3];
-        const prefix = module + '/' + method.value + '/';
-        const {outer, fillExample} = toolInputs(spec, {module, operation: method.value, local, config,
-          get: id => saved.get(prefix + id) || '', set: (id, value) => saved.set(prefix + id, value)});
-        const actions = create('div', 'calculatorToolActions');
-        actions.append(button(local('填入示例', 'Fill example'), () => { invalidate(); fillExample(); }),
-          button(local('计算结果', 'Calculate'), null, 'submit', 'calculatorControl calculatorPrimary'));
-        fields.append(outer, actions);
-      }
-      method.addEventListener('change', renderFields);
-      renderFields();
-      form.addEventListener('submit', event => {
-        event.preventDefault();
-        run(module, method.value, Object.fromEntries(new FormData(form)), fields.querySelector('[type="submit"]'));
-      });
-    }
-    content.append(form);
+      content.append(form);
+    } else content.append(toolForm(module, operations));
   }
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(true); });
   dialog.addEventListener('keydown', event => {

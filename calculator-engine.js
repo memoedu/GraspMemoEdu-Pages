@@ -1,5 +1,6 @@
-import {constants, functions, memoryRegisters, operators, permitsConstant, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=8f429bf0142eb1a4';
+import {constants, expressionExtensions, functions, memoryRegisters, operators, permitsConstant, permitsExtension,
+  permitsKey, permitsModule, toolOperation}
+  from './calculator-policy.js?v=a3cb9e57123710a9';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -12,9 +13,9 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=8f429bf0142eb1a4');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=8f429bf0142eb1a4');
-const applied = () => import('./vendor/calculator/applied.mjs?v=8f429bf0142eb1a4');
+const core = () => import('./vendor/calculator/core.mjs?v=a3cb9e57123710a9');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=a3cb9e57123710a9');
+const applied = () => import('./vendor/calculator/applied.mjs?v=a3cb9e57123710a9');
 
 function inputText(value, limit = 4096) {
   ensure(typeof value === 'string' && value.trim() && value.length <= limit);
@@ -37,23 +38,40 @@ function checkNotation(source, config) {
 const commonNotation = value => inputText(value, 1024).replaceAll('π', 'pi').replaceAll('×', '*')
   .replaceAll('÷', '/').replaceAll('−', '-');
 
-const reservedSymbols = new Set(['ans', 'answer', 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined']);
+const answerSymbols = new Set(['Ans', 'ans', 'answer']);
+const reservedSymbols = new Set([...answerSymbols, 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined']);
 const assignable = name => /^[A-Za-z][A-Za-z0-9_]{0,23}$/.test(name) && !reservedSymbols.has(name)
   && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
 
-function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, names, bindings, memory = {}} = {}) {
+function storedValue(math, value, config, extensions) {
+  if (Number.isFinite(value)) return value;
+  if (Array.isArray(value)) {
+    ensure(extensions && levelsAllowArrays(config), 'restricted');
+    return Array.isArray(value[0]) ? matrix(value) : list(value);
+  }
+  checkKey(config, 'complex', 2);
+  ensure(Number.isFinite(value?.re) && Number.isFinite(value?.im), 'domain');
+  return math.complex(value.re, value.im);
+}
+
+function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false,
+  extensions = false, names, bindings, memory = {}} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
   const original = commonNotation(value);
   checkNotation(original, config);
   const source = original.replace(
     /(?<![A-Za-z_])log(?:_(?:\{([^{}]+)\}|([A-Za-z][A-Za-z0-9_]*|\d+(?:\.\d+)?))|([₀-₉]+))\s*\(/g,
-    (_, expression, simple, digits) => {
+    (match, expression, simple, digits) => {
+      if (extensions && simple && expressionExtensions.has('log_' + simple)) return match;
       const base = expression || simple || [...digits].map(digit => subscriptDigits.indexOf(digit)).join('');
       checkNotation(base, config);
       return 'logBase((' + base + '),';
     },
   );
   let remaining = 180;
+  const compose = (args, apply) => extensions
+    ? x => Promise.all(args.map(async read => read(x))).then(apply)
+    : x => apply(args.map(read => read(x)));
   function compile(node, depth) {
     ensure(--remaining >= 0 && depth <= 32, 'limit');
     if (node.isParenthesisNode) return compile(node.content, depth + 1);
@@ -63,10 +81,11 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
     }
     if (node.isSymbolNode) {
       if (node.name === variable) return x => x;
-      if ((node.name === 'ans' || node.name === 'answer') && !symbolic) {
+      if (answerSymbols.has(node.name) && !symbolic) {
         checkKey(config, 'ans');
-        ensure(Number.isFinite(answer));
-        return () => answer;
+        ensure(answer != null);
+        const value = storedValue(math, answer, config, extensions);
+        return () => value;
       }
       if (node.name === 'i') {
         checkKey(config, 'complex', 2);
@@ -74,13 +93,10 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       }
       if (!symbolic && permitsKey(config, 'memory_registers') && memoryRegisters.includes(node.name)
           && Object.hasOwn(memory ?? {}, node.name)) {
-        const stored = memory[node.name];
-        if (Number.isFinite(stored)) return () => stored;
-        checkKey(config, 'complex', 2);
-        ensure(Number.isFinite(stored?.re) && Number.isFinite(stored?.im), 'domain');
-        const value = math.complex(stored.re, stored.im);
+        const value = storedValue(math, memory[node.name], config, extensions);
         return () => value;
       }
+      if (freeSymbols && assignable(node.name)) return () => undefined;
       if (names && assignable(node.name)) {
         checkKey(config, 'assign_variables', 2);
         names.add(node.name);
@@ -94,18 +110,32 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       ensure(!symbolic || ['pi', 'e'].includes(node.name), 'restricted');
       return () => constants[node.name][3];
     }
+    if (node.isArrayNode && extensions && levelsAllowArrays(config)) {
+      ensure(node.items.length > 0, 'domain');
+      const args = node.items.map(child => compile(child, depth + 1));
+      return compose(args, values => Array.isArray(values[0]) ? matrix(values) : list(values));
+    }
     if (node.isOperatorNode) {
       ensure(Object.hasOwn(operators, node.op) && !node.isPercentage, 'restricted');
       checkKey(config, operators[node.op], node.op === '!' ? 2 : 1);
       const args = node.args.map(child => compile(child, depth + 1));
-      return x => {
-        const values = args.map(read => read(x));
+      return compose(args, values => {
+        ensure(values.every(value => !Array.isArray(value)), 'domain');
         if (node.op === '!') ensure(Number.isInteger(values[0]) && values[0] >= 0 && values[0] <= 170, 'domain');
         return math[node.fn](...values);
-      };
+      });
     }
     if (node.isFunctionNode && node.fn.isSymbolNode) {
       const name = node.fn.name;
+      const extension = extensions && expressionExtensions.get(name);
+      if (extension) {
+        const [module, fields] = extension;
+        ensure(permitsExtension(config, module, name), 'restricted');
+        ensure(fields.length === node.args.length);
+        const args = node.args.map(child => compile(child, depth + 1));
+        return compose(args, values => runOperation(math, name,
+          Object.fromEntries(fields.map(([field], index) => [field, values[index]])), config, {asExpression: true}));
+      }
       const basedLog = name === 'logBase' || name === 'log' && node.args.length === 2;
       ensure(basedLog || Object.hasOwn(functions, name), 'restricted');
       const [key, tier, minimum, maximum = minimum] = basedLog ? ['log_base', 1, 2] : functions[name];
@@ -113,8 +143,8 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       ensure(node.args.length >= minimum && node.args.length <= maximum);
       const args = node.args.map(child => compile(child, depth + 1));
       const implementation = {ln: 'log', nCr: 'combinations', nPr: 'permutations'}[name] || name;
-      return x => {
-        const values = args.map(read => read(x));
+      return compose(args, values => {
+        ensure(values.every(value => !Array.isArray(value)), 'domain');
         if (basedLog) {
           const [argument, base] = name === 'logBase' ? values.reverse() : values;
           ensure(Number.isFinite(base) && base > 0 && base !== 1, 'domain');
@@ -127,7 +157,7 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
         if (degrees && ['sin', 'cos', 'tan'].includes(name)) values[0] *= Math.PI / 180;
         const result = math[implementation](...values);
         return degrees && ['asin', 'acos', 'atan'].includes(name) ? result * 180 / Math.PI : result;
-      };
+      });
     }
     throw new CalculationError('restricted');
   }
@@ -145,7 +175,14 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
   return {source, evaluate};
 }
 
+const levelsAllowArrays = config => permitsModule(config, 'matrix') || permitsModule(config, 'machine_learning')
+  || permitsModule(config, 'finance');
+
 function numericText(value) {
+  if (typeof value === 'number') {
+    ensure(Number.isFinite(value), 'domain');
+    return value;
+  }
   const source = inputText(value, 96);
   ensure(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(source));
   const result = Number(source);
@@ -164,13 +201,17 @@ const positive = value => {
 };
 
 function list(value, maximum = 1024) {
+  if (Array.isArray(value)) {
+    ensure(value.length > 0 && value.length <= maximum && value.every(Number.isFinite), 'domain');
+    return value;
+  }
   const parts = inputText(value, 12000).split(/[,，\s]+/);
   ensure(parts.length <= maximum, 'limit');
   return parts.map(numericText);
 }
 
 function matrix(value) {
-  const data = JSON.parse(inputText(value, 12000));
+  const data = Array.isArray(value) ? value : JSON.parse(inputText(value, 12000));
   ensure(Array.isArray(data) && data.length > 0 && data.length <= 32 && Array.isArray(data[0]));
   const width = data[0].length;
   ensure(width > 0 && width <= 32 && data.every(row =>
@@ -282,35 +323,50 @@ export async function calculate({config, module, operation, input = {}, degrees 
     checkKey(config, 'evaluate');
     checkKey(config, operation, 2);
     const names = new Set();
-    expressionPlan(await core(), input.expression, config, {degrees, answer, names, memory});
+    expressionPlan(await core(), input.expression, config, {degrees, answer, names, memory, extensions: true});
     return {variables: [...names]};
   }
   ensure(module === 'expression' && operation === 'evaluate' || toolOperation(module, operation), 'restricted');
   checkKey(config, operation);
   const math = await core();
+  const context = {degrees, answer, memory};
+  if (operation === 'evaluate') {
+    const names = new Set(), bindings = new Map();
+    const expression = expressionPlan(math, input.expression, config, {...context, names, bindings, extensions: true});
+    const supplied = input.assignments ?? {};
+    ensure(typeof supplied === 'object' && !Array.isArray(supplied) && Object.keys(supplied).length <= 12);
+    for (const name of names) {
+      ensure(Object.hasOwn(supplied, name) && typeof supplied[name] === 'string' && supplied[name].trim(), 'unassigned');
+      const assigned = await expressionPlan(math, supplied[name], config, {...context, extensions: true}).evaluate();
+      ensure(Number.isFinite(assigned) || Array.isArray(assigned) || assigned?.isComplex, 'domain');
+      if (assigned?.isComplex) storedValue(math, assigned, config, true);
+      bindings.set(name, assigned);
+    }
+    const value = await expression.evaluate();
+    if (value?.isComplex) checkKey(config, 'complex', 2);
+    const text = formatted(math, value);
+    if (value?.isComplex) return {text, complex: {re: value.re, im: value.im}};
+    if (Array.isArray(value)) return {text, array: value};
+    return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
+  }
+  const value = await runOperation(math, operation, input, config, context);
+  if (value?.plot) return value;
+  if (Array.isArray(value?.entries)) {
+    const scalar = value.entries.length === 1 && value.entries[0][1];
+    return Number.isFinite(scalar) ? {...value, numeric: scalar} : value;
+  }
+  if (operation === 'modular_power' && Number.isSafeInteger(Number(value))) return {text: value, numeric: Number(value)};
+  const text = formatted(math, value);
+  if (Array.isArray(value)) return {text, array: value};
+  return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
+}
+
+async function runOperation(math, operation, input, config, context) {
   const n = name => numericText(input[name]);
   const numbers = () => list(input.x);
-  const plan = flags => expressionPlan(math, input.expression, config, {degrees, answer, memory, ...flags});
+  const plan = flags => expressionPlan(math, input.expression, config, {...context, ...flags});
   let value;
   switch (operation) {
-    case 'evaluate': {
-      const names = new Set(), bindings = new Map();
-      const expression = plan({names, bindings});
-      const supplied = input.assignments ?? {};
-      ensure(typeof supplied === 'object' && !Array.isArray(supplied) && Object.keys(supplied).length <= 12);
-      for (const name of names) {
-        ensure(Object.hasOwn(supplied, name) && typeof supplied[name] === 'string' && supplied[name].trim(), 'unassigned');
-        const assigned = expressionPlan(math, supplied[name], config, {degrees, answer, memory}).evaluate();
-        ensure(Number.isFinite(assigned) || assigned?.isComplex && Number.isFinite(assigned.re) && Number.isFinite(assigned.im), 'domain');
-        if (assigned?.isComplex) checkKey(config, 'complex', 2);
-        bindings.set(name, assigned);
-      }
-      value = expression.evaluate();
-      if (value?.isComplex) checkKey(config, 'complex', 2);
-      const text = formatted(math, value);
-      if (value?.isComplex) return {text, complex: {re: value.re, im: value.im}};
-      return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
-    }
     case 'plot': {
       const lower = n('lower'), upper = n('upper');
       ensure(lower < upper && Number.isFinite(upper - lower), 'domain');
@@ -328,7 +384,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
     case 'transpose': value = math.transpose(matrix(input.a)); break;
     case 'matrix_inverse': value = math.inv(matrix(input.a)); break;
     case 'linear_system': {
-      const vector = inputText(input.b).replace(/^\[([^\[\]]+)\]$/, '$1');
+      const vector = Array.isArray(input.b) ? input.b : inputText(input.b).replace(/^\[([^\[\]]+)\]$/, '$1');
       value = math.lusolve(matrix(input.a), list(vector, 32)).flat();
       break;
     }
@@ -368,11 +424,13 @@ export async function calculate({config, module, operation, input = {}, degrees 
     case 'simplify': {
       const variable = input.variable === undefined ? 'x' : inputText(input.variable, 12);
       ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && !Object.hasOwn(constants, variable)
-        && !['i', 'ans', 'answer'].includes(variable));
+        && !reservedSymbols.has(variable));
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
-      const text = pieces.map(piece => expressionPlan(math, piece, config, {variable, symbolic: true}).source).join('=');
-      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=8f429bf0142eb1a4');
+      const text = pieces.map(piece => expressionPlan(math, piece, config, {
+        variable, symbolic: true, freeSymbols: operation === 'simplify',
+      }).source).join('=');
+      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=a3cb9e57123710a9');
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
         : operation === 'differentiate' ? nerdamer.diff(text, variable)
         : operation === 'solve' ? nerdamer.solve(text, variable) : nerdamer.simplify(text);
@@ -382,20 +440,19 @@ export async function calculate({config, module, operation, input = {}, degrees 
       break;
     }
     default:
-      return appliedCalculation(math, operation, input, n);
+      return appliedCalculation(math, operation, input, n, context.asExpression);
   }
-  return {text: formatted(math, value)};
+  return value;
 }
 
-async function appliedCalculation(math, operation, input, n) {
+async function appliedCalculation(math, operation, input, n, asExpression) {
   let value;
   switch (operation) {
     case 'sigmoid':
     case 'softplus':
     case 'relu': {
-      const x = list(input.x);
       const transform = operation === 'relu' ? x => Math.max(0, x) : (await applied())[operation];
-      value = x.map(transform);
+      value = typeof input.x === 'number' ? transform(n('x')) : list(input.x).map(transform);
       break;
     }
     case 'softmax':
@@ -451,9 +508,18 @@ async function appliedCalculation(math, operation, input, n) {
       return rows(['explained_variance', pca.getExplainedVariance()], ['scores', pca.predict(x).to2DArray()]);
     }
     case 'convert_units': value = math.unit(inputText(input.value, 120)).to(inputText(input.unit, 60)).format({precision: 13}); break;
-    case 'ohms_law': return rows(['current_a', n('voltage') / positive(n('resistance'))]);
-    case 'rc_time': return rows(['time_s', positive(n('resistance')) * positive(n('capacitance'))]);
-    case 'ideal_gas': return rows(['pressure_pa', positive(n('amount')) * constants.R[3] * positive(n('temperature')) / positive(n('volume'))]);
+    case 'ohms_law': {
+      const current = n('voltage') / positive(n('resistance'));
+      return asExpression ? current : rows(['current_a', current]);
+    }
+    case 'rc_time': {
+      const time = positive(n('resistance')) * positive(n('capacitance'));
+      return asExpression ? time : rows(['time_s', time]);
+    }
+    case 'ideal_gas': {
+      const pressure = positive(n('amount')) * constants.R[3] * positive(n('temperature')) / positive(n('volume'));
+      return asExpression ? pressure : rows(['pressure_pa', pressure]);
+    }
     case 'balance': value = (await applied()).balance(inputText(input.expression, 260)).equation; break;
     case 'dilution': {
       const initial = positive(n('initial')), final = positive(n('final')), concentration = n('concentration');
@@ -549,5 +615,5 @@ async function appliedCalculation(math, operation, input, n) {
     }
     default: throw new CalculationError('restricted');
   }
-  return {text: formatted(math, value)};
+  return value;
 }
