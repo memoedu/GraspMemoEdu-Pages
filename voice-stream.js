@@ -1,4 +1,4 @@
-import {recordMicrophone} from './microphone-recorder.js?v=712f67980d6162a6';
+import {recordMicrophone} from './microphone-recorder.js?v=d3138b96ff00ccb8';
 
 function wave(frames, size) {
   const header = new ArrayBuffer(44), view = new DataView(header);
@@ -17,17 +17,23 @@ function encoded(frames) {
 }
 
 export async function streamMicrophone({request, profile, context, signal, maxDurationMs, sameIdentity, onPreview}) {
+  const fallback = media => recordMicrophone({signal, media, wholeRecording: true});
   if (!globalThis.AudioWorkletNode || !globalThis.AudioContext || !crypto.randomUUID) {
-    return recordMicrophone({signal, maxDurationMs});
+    return fallback();
   }
   const media = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, latency: {ideal: .02}}});
-  let audio, node, timer;
-  const release = () => {
-    clearTimeout(timer);
-    media.getTracks().forEach(track => track.stop());
+  let audio, node, source, finishTimer;
+  const releaseGraph = () => {
+    source?.disconnect();
     node?.disconnect();
     if (audio && audio.state !== 'closed') void audio.close().catch(() => {});
   };
+  const release = () => {
+    clearTimeout(finishTimer);
+    media.getTracks().forEach(track => track.stop());
+    releaseGraph();
+  };
+  let setupTimer;
   try {
     signal.throwIfAborted();
     // A capture graph needs a clock, not a speaker. Avoid the output device's playout buffer.
@@ -38,12 +44,24 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
     }
     audio ||= new AudioContext(options);
     if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
-    await audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=712f67980d6162a6', import.meta.url));
-    await audio.resume();
+    await Promise.race([
+      audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=d3138b96ff00ccb8', import.meta.url)).then(() => audio.resume()),
+      new Promise((_, reject) => {
+        setupTimer = setTimeout(() => reject(Error('Microphone audio graph did not start')), 1200);
+      }),
+    ]);
     signal.throwIfAborted();
     node = new AudioWorkletNode(audio, 'voice-pcm', {channelCount: 1, channelCountMode: 'explicit',
       processorOptions: {samples: onPreview ? 800 : 1600}});
-    const source = audio.createMediaStreamSource(media);
+    source = audio.createMediaStreamSource(media);
+  } catch (error) {
+    if (signal.aborted || !globalThis.MediaRecorder) { release(); throw error; }
+    releaseGraph();
+    return fallback(media);
+  } finally {
+    clearTimeout(setupTimer);
+  }
+  try {
     const take = crypto.randomUUID();
     const send = body => {
       if (!sameIdentity()) throw DOMException('Account changed', 'AbortError');
@@ -53,7 +71,8 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
     const result = new Promise((resolve, reject) => { resolveRecording = resolve; rejectRecording = reject; });
     const transcript = new Promise(resolve => { resolveTranscript = resolve; });
     let ready = false, sending = false, failed = false, retired = false, captureDone = false;
-    let state = 'recording', offset = 0, size = 0, started = performance.now(), remaining = maxDurationMs;
+    let state = 'recording', offset = 0, size = 0;
+    const capacity = Math.min(120000, maxDurationMs) * 32;
     const captured = [], queue = [];
     const cancelTake = () => {
       if (ready && !retired && sameIdentity()) {
@@ -93,14 +112,21 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
     }
     function endCapture() {
       if (captureDone) return;
-      captureDone = true; release();
+      captureDone = true; state = 'finishing'; release();
       if (signal.aborted) rejectRecording(signal.reason);
+      else if (!size) { failure(Error('Recording is empty')); rejectRecording(Error('Recording is empty')); }
       else resolveRecording(wave(captured, size));
     }
     const stop = () => {
       if (state === 'finishing' || captureDone) return;
-      state = 'finishing'; clearTimeout(timer);
+      state = 'finishing';
       node.port.postMessage('finish');
+      // A suspended graph on a phone might never acknowledge stop.
+      finishTimer = setTimeout(() => {
+        if (!failed) queue.push('finish');
+        endCapture();
+        void pump();
+      }, 500);
     };
     function abort() {
       failure(signal.reason); endCapture();
@@ -112,10 +138,10 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
     node.port.onmessage = ({data}) => {
       if (captureDone || signal.aborted) return;
       if (data instanceof ArrayBuffer) {
-        const left = 120 * 32000 - size;
+        const left = capacity - size;
         if (data.byteLength > left) data = data.slice(0, left);
         if (data.byteLength) { captured.push(data); size += data.byteLength; if (!failed) queue.push(data); }
-        if (size >= 120 * 32000) stop();
+        if (size >= capacity) stop();
       } else if (data !== 'resume') {
         if (!failed) queue.push(data);
         if (data === 'finish') endCapture();
@@ -124,21 +150,19 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
       if (state !== 'finishing' || captureDone) void pump();
     };
     signal.addEventListener('abort', abort, {once: true});
+    media.getAudioTracks().forEach(track => track.addEventListener('ended', stop, {once: true}));
     transcript.then(() => { if (captureDone) signal.removeEventListener('abort', abort); });
     source.connect(node); node.connect(audio.destination);
-    timer = setTimeout(stop, remaining);
     void send({op: 'open', profile, context, ...(onPreview && {live: true})}).then(() => {
       ready = true;
       if (signal.aborted || failed) cancelTake(); else void pump();
     }).catch(failure);
     return {result, transcript, stop, pause() {
       if (state !== 'recording') return;
-      state = 'paused'; remaining -= performance.now() - started;
-      clearTimeout(timer); node.port.postMessage('pause');
+      state = 'paused'; node.port.postMessage('pause');
     }, resume() {
       if (state !== 'paused') return;
-      state = 'recording'; started = performance.now();
-      timer = setTimeout(stop, Math.max(0, remaining)); node.port.postMessage('resume');
+      state = 'recording'; node.port.postMessage('resume');
     }};
   } catch (error) {
     release();
