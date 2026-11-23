@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=9bd76c894704be76";
-import {answerReady} from './question-input.js?v=9bd76c894704be76';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=9bd76c894704be76';
-import {startPresence} from './presence.js?v=9bd76c894704be76';
-import {createLearningCache} from './learning-cache.js?v=9bd76c894704be76';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=9bd76c894704be76';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=ca08e18c2db32619";
+import {answerReady} from './question-input.js?v=ca08e18c2db32619';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=ca08e18c2db32619';
+import {startPresence} from './presence.js?v=ca08e18c2db32619';
+import {createLearningCache} from './learning-cache.js?v=ca08e18c2db32619';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=ca08e18c2db32619';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=9bd76c894704be76';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=9bd76c894704be76';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=9bd76c894704be76';
-import {renderSourceReader} from './learning-ui.js?v=9bd76c894704be76';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=9bd76c894704be76';
-import {createTrainingView} from './training.js?v=9bd76c894704be76';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=9bd76c894704be76';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=9bd76c894704be76';
-import {installAutocomplete} from './autocomplete.js?v=9bd76c894704be76';
-import {expressionCompletions} from './calculator-policy.js?v=9bd76c894704be76';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=9bd76c894704be76';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=9bd76c894704be76';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=ca08e18c2db32619';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=ca08e18c2db32619';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=ca08e18c2db32619';
+import {renderSourceReader} from './learning-ui.js?v=ca08e18c2db32619';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=ca08e18c2db32619';
+import {createTrainingView} from './training.js?v=ca08e18c2db32619';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=ca08e18c2db32619';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
+import {installAutocomplete} from './autocomplete.js?v=ca08e18c2db32619';
+import {expressionCompletions} from './calculator-policy.js?v=ca08e18c2db32619';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=ca08e18c2db32619';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=ca08e18c2db32619';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -247,7 +247,7 @@ function retireLegacyConnection() {
 async function request(path, options = {}) {
   const method = options.method || 'GET';
     const endpoint = path.split('?')[0];
-    const mutation = method !== 'GET' && !['presence', 'answer-conversion', 'voice-input/transcribe'].includes(endpoint);
+    const mutation = method !== 'GET' && !['presence', 'answer-conversion', 'voice-input/transcribe', 'voice-input/stream'].includes(endpoint);
     // Selecting a course only updates preferences. Keep the other workspace's
     // cached reads; learning writes and identity changes still invalidate all.
     const invalidateReads = () => endpoint === 'catalog/select'
@@ -1729,7 +1729,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=9bd76c894704be76");
+const { initPortal } = await import("./portal.js?v=ca08e18c2db32619");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

@@ -1,16 +1,16 @@
-import {t, learningTitle} from './i18n.js?v=9bd76c894704be76';
-import {attachFormulaEditing} from './formula-input.js?v=9bd76c894704be76';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=9bd76c894704be76';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=9bd76c894704be76';
-import {enhanceTopicContent} from './topic-content.js?v=9bd76c894704be76';
-import {prepareMathContent} from './math-presentation.js?v=9bd76c894704be76';
-import {sourceAttributions} from './memory-chunk.js?v=9bd76c894704be76';
-import {mountPassageBlanks} from './composite-input.js?v=9bd76c894704be76';
-import {placeContentActions} from './content-report.js?v=9bd76c894704be76';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=9bd76c894704be76';
-import {setQuestionTools} from './question-tools.js?v=9bd76c894704be76';
-import {enableVoiceAnswer} from './voice-input.js?v=9bd76c894704be76';
-import {mountAnswerConversion} from './answer-conversion.js?v=9bd76c894704be76';
+import {t, learningTitle} from './i18n.js?v=ca08e18c2db32619';
+import {attachFormulaEditing} from './formula-input.js?v=ca08e18c2db32619';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca08e18c2db32619';
+import {enhanceTopicContent} from './topic-content.js?v=ca08e18c2db32619';
+import {prepareMathContent} from './math-presentation.js?v=ca08e18c2db32619';
+import {sourceAttributions} from './memory-chunk.js?v=ca08e18c2db32619';
+import {mountPassageBlanks} from './composite-input.js?v=ca08e18c2db32619';
+import {placeContentActions} from './content-report.js?v=ca08e18c2db32619';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=ca08e18c2db32619';
+import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
+import {enableVoiceAnswer} from './voice-input.js?v=ca08e18c2db32619';
+import {mountAnswerConversion} from './answer-conversion.js?v=ca08e18c2db32619';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -356,7 +356,7 @@ export function answerEditor(step, stem, value, {formId = 'answerForm', inputId 
   submit.id = submitId; submit.type = 'submit'; submit.setAttribute('form', formId); submit.disabled = !answerReady(input);
   bottom.append(hint, submit); form.append(label, control?.element || input, error);
   if (!structured && step.interaction?.grading !== 'exact') attachFormulaEditing(input, {group: 'answer'});
-  mountAnswerConversion(form, input, step.interaction, {topic});
+  mountAnswerConversion(form, input, step.interaction, {topic, question: step});
   return {form, input, submit, bottom};
 }
 
