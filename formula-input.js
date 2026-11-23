@@ -1,12 +1,13 @@
-import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=35de3b2120782aa7';
-import {bareMathRuns, formulaSpans, formulaTemplates, formulaToken, matchesCompletion} from './formula-catalog.js?v=35de3b2120782aa7';
-import {getLanguage} from './i18n.js?v=35de3b2120782aa7';
-import previews from './vendor/formula/previews.mjs?v=35de3b2120782aa7';
+import {refreshCompletionSurface, setCompletionSurface, setInputCompletions} from './autocomplete.js?v=66e03cbc581f24aa';
+import {formulaSpans, formulaTemplates, formulaToken, matchesCompletion} from './formula-catalog.js?v=66e03cbc581f24aa';
+import {getLanguage} from './i18n.js?v=66e03cbc581f24aa';
+import previews from './vendor/formula/previews.mjs?v=66e03cbc581f24aa';
 
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
 const style = 'formulaSourceHidden';
 const active = new Set();
 const hosts = new WeakMap();
+const paired = new WeakSet();
 let runtime, observer;
 const choices = formulaTemplates.filter(item => previews[item.sample]).map(item => ({
   ...item, value: item.sample, preview: previews[item.sample],
@@ -23,7 +24,7 @@ export function activeFormulaField(element) {
 }
 
 function load() {
-  runtime ||= import('./vendor/formula/editor.mjs?v=35de3b2120782aa7').catch(error => { runtime = null; throw error; });
+  runtime ||= import('./vendor/formula/editor.mjs?v=66e03cbc581f24aa').catch(error => { runtime = null; throw error; });
   return runtime;
 }
 
@@ -104,69 +105,19 @@ function pairAnswerInput(input, literal) {
   });
 }
 
-function attachAnswerTyping(input, finish) {
-  const entry = document.createElement('span'), preview = document.createElement('span');
-  entry.className = 'answerFormulaEntry'; preview.className = 'answerFormulaPreview';
-  preview.hidden = true;
-  preview.setAttribute('aria-label', local('公式预览', 'Formula preview'));
-  const focused = input === document.activeElement;
-  input.before(entry);
-  if (entry.moveBefore && entry.isConnected) entry.moveBefore(input, null);
-  else entry.append(input);
-  entry.append(preview);
-  if (focused && document.activeElement !== input) input.focus({preventScroll: true});
-  pairAnswerInput(input, !finish);
-  let rendered, revision = 0;
-  async function refresh() {
-    const value = input.value, current = ++revision;
-    if (entry.classList.contains(style) || !value || !(formulaSpans(value).length || bareMathRuns(value).length)) {
-      preview.hidden = true; rendered = undefined; return;
-    }
-    if (value === rendered) return;
-    try {
-      const {answerMathSpans, renderAnswerPreview} = await load();
-      if (revision !== current || value !== input.value || !entry.isConnected) return;
-      renderAnswerPreview(preview, answerMathSpans(value));
-      rendered = value;
-    } catch { preview.hidden = true; }
-  }
-  input.addEventListener('focus', refresh);
-  input.addEventListener('input', refresh);
-  if (finish) {
-    input.addEventListener('blur', () => finish(false));
-    preview.addEventListener('pointerdown', event => event.preventDefault());
-    preview.addEventListener('click', () => finish(true));
-  }
-  queueMicrotask(refresh);
-  return entry;
-}
-
 export function attachLiteralAnswer(input) {
-  let mounted = false;
+  let controller;
   const mount = () => {
-    if (mounted || !input.isConnected || input.readOnly || input.disabled) return;
-    mounted = true;
-    attachAnswerTyping(input);
+    if (controller?.connected() || !input.isConnected || input.readOnly || input.disabled) return;
+    controller = attachFormulaEditing(input, {group: 'answer', literal: true, launch: false});
   };
   input.addEventListener('focus', mount);
   input.addEventListener('input', mount);
   queueMicrotask(mount);
-  setInputCompletions(input, () => choices, {match: formulaToken, apply(candidate, from, to) {
-    // Keep plain function calls usable by the exact-answer and command readers.
-    const simple = /^[A-Za-z]+$/.test(candidate.label) && candidate.latex.endsWith('\\left(#?\\right)');
-    if (simple && input.value[to] === '(') {
-      replaceTyped(input, from, to, candidate.label, from + candidate.label.length + 1);
-      return true;
-    }
-    const text = simple ? candidate.label + '(#?)' : candidate.latex;
-    const slot = text.indexOf('#?'), value = text.replaceAll('#?', '');
-    replaceTyped(input, from, to, value, from + (slot < 0 ? value.length : slot));
-    return true;
-  }});
 }
 
 export function attachFormulaEditing(input, {group = 'other', source = input, after = source, launch = true,
-  onValue, sourceField, readSource} = {}) {
+  onValue, sourceField, readSource, literal = false} = {}) {
   if (input.readOnly) return null;
   const host = document.createElement('div');
   host.className = 'formulaInput';
@@ -177,28 +128,21 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
   button.type = 'button';
   button.className = 'textButton formulaInputButton';
   button.textContent = local('插入公式', 'Insert formula');
-  if (launch) host.before(button);
+  if (launch) host.after(button);
 
   const enabled = () => !(input.disabled || input.readOnly || source === input && input.hidden);
   let editor, pending, disposed = false, sending = false, attributeObserver, detachSource;
+  const events = new AbortController();
   const directAnswer = group === 'answer' && source === input;
-  const entry = directAnswer ? attachAnswerTyping(input, async focus => {
-    if (editor || sending || !enabled() || !input.value) return;
-    const value = input.value;
-    try {
-      const {answerMathSpans} = await load();
-      if (disposed || value !== input.value || !answerMathSpans(value).length || !focus && document.activeElement === input) return;
-      const surface = await open(true);
-      if (focus && surface) surface.focus(input.selectionStart, true);
-    } catch { /* The literal draft stays usable if the editor cannot load. */ }
-  }) : source;
+  if (directAnswer && !paired.has(input)) { pairAnswerInput(input, literal); paired.add(input); }
+  let revision = 0, composing = false;
   button.disabled = !enabled();
   const controller = {
     anchor(element) {
       if (!editor || host.hidden || !enabled()) return null;
       return {field: input, insert: editor.anchor(element)};
     },
-    get visible() { return !!editor && !host.hidden; },
+    get visible() { return !disposed && !!editor && !host.hidden; },
     selection: () => controller.visible ? editor.sourceSelection() : null,
     focusAt: (offset, end) => editor?.focusSource(offset, end),
     sync() {
@@ -207,17 +151,19 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
       if (!editor || sending) return;
       editor.setDisabled();
       editor.replaceSource(input.value);
+      if (!directAnswer) reflect(editor.value());
       if (input.required) editor.root.setAttribute('aria-required', 'true');
       else editor.root.removeAttribute('aria-required');
       host.hidden = source === input && input.hidden;
     },
     destroy() {
       disposed = true;
+      events.abort();
       active.delete(controller);
       attributeObserver?.disconnect();
       detachSource?.();
       editor?.destroy();
-      entry.classList.remove(style);
+      source.classList.remove(style);
       host.remove();
       button.remove();
     },
@@ -231,7 +177,7 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
     },
   };
   hosts.set(host, controller);
-  controller.connected = () => input.isConnected;
+  controller.connected = () => !disposed && input.isConnected && host.isConnected;
 
   function reflect(value) {
     if (input.value === value) return;
@@ -256,24 +202,27 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
     if (pending) return pending;
     pending = (async () => {
       try {
-        const {createFormulaEditor} = await load();
+        const {createFormulaEditor, answerMathSpans} = await load();
         if (disposed || !input.isConnected || !enabled()) return null;
         const label = input.labels?.[0]?.textContent || input.getAttribute('aria-label') || local('公式与文字', 'Formulas and text');
         const surface = await createFormulaEditor(host, {
           label, value: () => input.value, enabled, maxLength: () => input.maxLength < 0 ? Infinity : input.maxLength,
-          change: reflect, submit: forwardSubmit, candidates, answer: directAnswer, detectInitialBare,
+          change: reflect, submit: forwardSubmit, candidates, answer: directAnswer, literal, detectInitialBare,
           register: (element, read) => setCompletionSurface(element, group, read),
-          refresh: refreshCompletionSurface, formula: local('公式', 'Formula'), previewLabel: local('公式预览', 'Formula preview'),
+          refresh: refreshCompletionSurface, formula: local('公式', 'Formula'),
           fraction: local('改为分式', 'Set as a fraction'), operator: local('修正运算符排版', 'Format the operator'),
         });
-        if (disposed || !input.isConnected || !enabled()) { surface.destroy(); return null; }
+        if (disposed || !input.isConnected || !enabled() || composing || detectInitialBare && !answerMathSpans(input.value).length) {
+          surface.destroy(); return null;
+        }
         editor = surface;
         editor.replaceSource(input.value);
         if (input.getAttribute('aria-describedby')) editor.root.setAttribute('aria-describedby', input.getAttribute('aria-describedby'));
         if (input.required) editor.root.setAttribute('aria-required', 'true');
         editor.root.addEventListener('keydown', forwardSubmit);
-        entry.classList.add(style);
+        source.classList.add(style);
         host.hidden = false;
+        if (!directAnswer) reflect(editor.value());
         return editor;
       } catch {
         // Dismiss the enhancement on an asset failure and retain the native draft.
@@ -283,16 +232,28 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
     return pending;
   }
 
-  async function showTypedFormula() {
-    if (!input.isConnected || !enabled() || sending) return;
+  async function showTypedFormula(event) {
+    if (!input.isConnected || !enabled() || sending || disposed || event?.isComposing) return;
+    const current = ++revision;
     if (editor) { controller.sync(); return; }
-    if (!formulaSpans(input.value).length) return;
-    const focused = source === input ? document.activeElement === input : source.contains(document.activeElement);
-    const offset = source === input ? input.selectionEnd : input.value.length;
-    const oldFocus = document.activeElement;
-    const surface = await open();
-    if (focused && surface && (document.activeElement === oldFocus || document.activeElement === document.body))
-      surface.focus(offset);
+    const text = input.value;
+    const delimited = formulaSpans(text).length > 0;
+    if (!delimited && !/[\\α-ωΑ-Ω√∞≤≥≠±×÷−+*/^_=()[\]{}<>-]/.test(text)) return;
+    if (!delimited && !directAnswer && !/\\[A-Za-z]/.test(text)) return;
+    // Wait for the end of a control word so \sin does not consume the prefix of \sinh.
+    if (!delimited && /\\[a-z]+$/i.test(text)) await new Promise(resolve => setTimeout(resolve, 180));
+    try {
+      const {answerMathSpans} = await load();
+      if (current !== revision || input.value !== text || disposed || !answerMathSpans(text).length) return;
+      const focused = source === input ? document.activeElement === input : source.contains(document.activeElement);
+      const previous = document.activeElement;
+      const offset = source === input ? input.selectionEnd : readSource?.()?.to ?? text.length;
+      const surface = await open(true);
+      if (current !== revision || !surface || disposed) return;
+      if (focused && (document.activeElement === previous || document.activeElement === document.body)) {
+        surface.focusTyped(text, offset);
+      }
+    } catch { /* Native editing remains available when the enhancement cannot load. */ }
   }
 
   button.addEventListener('pointerdown', event => event.preventDefault());
@@ -321,22 +282,14 @@ export function attachFormulaEditing(input, {group = 'other', source = input, af
       });
       return true;
     }});
-    input.addEventListener('paste', event => {
-      const raw = event.clipboardData?.getData('text/plain');
-      const text = raw?.trim();
-      if (!text || !/^\\[a-zA-Z]+/.test(text) || /[\r\n]/.test(text)) return;
-      event.preventDefault();
-      const from = input.selectionStart, to = input.selectionEnd, pinned = input.value;
-      const paste = part => {
-        if (input.value !== pinned || input.selectionStart !== from || input.selectionEnd !== to || !input.isConnected) return;
-        const available = input.maxLength < 0 ? part.length : input.maxLength - pinned.length + to - from;
-        input.setRangeText(part.slice(0, Math.max(0, available)), from, to, 'end');
-        input.dispatchEvent(new Event('input', {bubbles: true}));
-      };
-      void load().then(({isLatexFragment}) => paste(isLatexFragment(text) ? '\\(' + text + '\\)' : raw), () => paste(raw));
-    });
+    input.addEventListener('focus', () => { void load().catch(() => {}); }, {once: true, signal: events.signal});
   }
-  input.addEventListener('input', () => { void showTypedFormula(); });
+  input.addEventListener('input', event => { void showTypedFormula(event); }, {signal: events.signal});
+  input.addEventListener('compositionstart', () => { composing = true; revision++; }, {signal: events.signal});
+  input.addEventListener('compositionend', () => { composing = false; void showTypedFormula(); }, {signal: events.signal});
+  input.addEventListener('invalid', event => {
+    if (controller.visible) { event.preventDefault(); editor.root.focus(); }
+  }, {signal: events.signal});
   queueMicrotask(() => {
     if (input.isConnected) {
       active.add(controller);
