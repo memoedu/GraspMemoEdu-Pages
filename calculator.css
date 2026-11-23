@@ -66,8 +66,10 @@
   min-inline-size: 0;
 }
 .calculatorHeader { justify-content: space-between; margin-block-end: 12px; gap: 10px; }
+.calculatorHeader:lang(en) { flex-wrap: wrap; row-gap: 4px; }
 .calculatorHeaderTools, .calculatorRegisterHeading { display: flex; align-items: center; gap: 6px; }
 .calculatorHeaderTools { flex: none; }
+.calculatorHeaderTools:lang(en) { margin-inline-start: auto; }
 .calculatorHeaderTools .calculatorControl { min-inline-size: 44px; padding-inline: 7px; }
 .calculatorRegisterHeading { justify-content: space-between; margin-block-end: 8px; }
 .calculatorRegisterHeading > span { font-weight: 650; color: var(--calculator-muted); }
