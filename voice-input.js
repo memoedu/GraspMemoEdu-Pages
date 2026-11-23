@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=a3cb9e57123710a9';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=a3cb9e57123710a9';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=a3cb9e57123710a9';
-import {segmentMicrophone} from './voice-stream.js?v=a3cb9e57123710a9';
-import {dictationContext, voiceContext} from './voice-context.js?v=a3cb9e57123710a9';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=a3cb9e57123710a9';
+import {getLanguage} from './i18n.js?v=ac18bacda6f39812';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=ac18bacda6f39812';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=ac18bacda6f39812';
+import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=ac18bacda6f39812';
+import {dictationContext, voiceContext} from './voice-context.js?v=ac18bacda6f39812';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ac18bacda6f39812';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -12,6 +12,7 @@ const changed = 'voiceinputchange';
 const audioLimitMinutes = 2;
 const audioLimitMs = audioLimitMinutes * 60000;
 let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe, streamRequest;
+let accountScope = () => null;
 let paint = () => {};
 let paintDuration = () => {};
 
@@ -42,10 +43,10 @@ function editable(field) {
 
 function destination(field) {
   const formula = activeFormulaField(field);
-  if (formula) return {...formula, context: voiceContext(formula.field), math: field.localName === 'math-field',
+  if (formula) return {...formula, element: field, context: voiceContext(formula.field), math: field.localName === 'math-field',
     profile: formula.field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
   if (!editable(field)) return null;
-  return {field, context: voiceContext(field), value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
+  return {field, element: field, context: voiceContext(field), value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
     to: field.selectionEnd ?? field.value.length,
     profile: field.closest('.questionCalculator') ? 'calculator' : field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
 }
@@ -74,64 +75,21 @@ function insert(target, text) {
   return true;
 }
 
-// The provisional range belongs to this recording. Only the final insertion emits an input event.
-function textboxDraft(target) {
-  const {field, value, from, to} = target;
-  let shown = value, active = false;
-  function restore() {
-    if (active && field.value === shown) {
-      field.value = value;
-      if (field.selectionStart !== null) field.setSelectionRange(from, to);
-    }
-    active = false;
-    shown = value;
-  }
-  return {
-    clear: restore,
-    preview(text) {
-      if (!editable(field) || field.value !== shown) return false;
-      const next = value.slice(0, from) + text + value.slice(to);
-      if (!text || field.maxLength >= 0 && next.length > field.maxLength) { restore(); return true; }
-      if (next === shown) return true;
-      const before = field.value;
-      if (field.selectionStart === null) {
-        field.value = next;
-        if (field.value !== next) { field.value = before; return true; }
-      } else field.setRangeText(text, from, to + shown.length - value.length, 'end');
-      shown = field.value;
-      active = true;
-      return true;
-    },
-  };
-}
-
-function previewAt(job) {
-  const {target} = job;
-  const draft = target.preview ? target : textboxDraft(target);
+function guardInsertion(target) {
   const surface = target.surface || target.field;
   const events = new AbortController();
   let interrupted = false;
-  function interrupt() {
-    interrupted = true;
-    draft.clear();
-  }
-  for (const type of ['beforeinput', 'input', 'compositionstart', 'pointerdown']) {
+  function interrupt() { interrupted = true; }
+  for (const type of ['beforeinput', 'compositionstart', 'pointerdown']) {
     surface.addEventListener(type, interrupt, {capture: true, signal: events.signal});
   }
-  // Restore the committed value before a form, shortcut or navigation reads its fields.
   surface.addEventListener('keydown', event => {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey || target.field instanceof HTMLInputElement)) {
-      draft.clear(); return;
-    }
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey || target.field instanceof HTMLInputElement)) return;
     if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) interrupt();
   }, {capture: true, signal: events.signal});
-  target.field.form?.addEventListener('submit', () => draft.clear(), {capture: true, signal: events.signal});
   return {
-    show(text) {
-      if (interrupted || current !== job || job.identity !== identity()) return;
-      if (job.page !== location.hash || target.context !== voiceContext(target.field) || !draft.preview(text)) interrupt();
-    },
-    close() { events.abort(); draft.clear(); },
+    range: target.math && target.readText(),
+    close() { events.abort(); },
     get interrupted() { return interrupted; },
   };
 }
@@ -179,10 +137,47 @@ function recordingMessage(job) {
 
 function appendTranscript(job, text) {
   if (!text) return;
-  const separator = !job.text ? '' : job.target.answer ? '\n' :
-    job.target.profile !== 'calculator' && /[a-z0-9]$/i.test(job.text) && /^[a-z0-9]/i.test(text) ? ' ' : '';
-  job.text += separator + text;
-  job.draft?.show(job.text);
+  const previous = job.text || job.previousText;
+  const separator = !previous ? '' : job.target.answer ? '\n' :
+    job.target.profile !== 'calculator' && job.target.field.type !== 'number' &&
+      /[a-z0-9]$/i.test(previous) && /^[a-z0-9]/i.test(text) ? ' ' : '';
+  const segment = separator + text;
+  if (commitSegment(job, segment)) job.previousText = text;
+  else job.text += job.text ? segment : text;
+}
+
+function commitSegment(job, text) {
+  const {target, insertion} = job;
+  if (!insertion || insertion.interrupted || job.page !== location.hash ||
+      target.context !== voiceContext(target.field)) return false;
+  insertion.close();
+  job.insertion = null;
+  let pinned = target;
+  if (insertion.range) {
+    // MathLive can finish updating ProseMirror after the previous insertion.
+    // Resolve a fresh editor anchor only if its full text and range still match.
+    pinned = destination(target.element);
+    if (pinned?.field !== target.field || pinned.context !== target.context) return false;
+    const range = pinned.readText();
+    if (range.before !== insertion.range.before || range.selected !== insertion.range.selected ||
+        range.after !== insertion.range.after) return false;
+  }
+  if (!insert(pinned, text)) return false;
+  if (!active(job)) return true;
+  // The editor's real selection now follows the inserted segment. Read it
+  // back before the next result so only the original segment replaces a range.
+  const next = destination(target.element) || destination(document.activeElement);
+  if (next?.field === target.field && next.context === target.context) {
+    if (next.field.type === 'number') next.from = next.to = next.value.length;
+    job.target = next;
+    job.insertion = guardInsertion(next);
+    job.context = dictationContext(next);
+  } else if (job.context) {
+    const textbox = job.context.textbox;
+    job.context = {...job.context, textbox: {...textbox, selected: '',
+      before: ((textbox?.before || '') + text).slice(-4096).replace(/^[\uDC00-\uDFFF]/, '')}};
+  }
+  return true;
 }
 
 function enqueue(job, audio) {
@@ -217,25 +212,20 @@ async function process(job) {
     return;
   }
   if (job.failure) { setPhase(job, 'failed', job.failure); return; }
-  if (!job.text) {
-    job.draft?.close();
-    current = null;
-    update(job.captureError || strings('未识别到文字。', 'No speech was recognized.'));
-    return;
-  }
-  if (job.target.answer) { await fillAnswer(job); return; }
-  job.draft?.close();
-  const {field} = job.target, form = field.form;
-  if (!job.draft?.interrupted && job.page === location.hash && job.target.context === voiceContext(field) && insert(job.target, job.text)) {
-    current = null;
-    update(job.captureError
-      ? strings('录音中断，已插入此前完成的转写。', 'Recording interrupted. Earlier segments were inserted.')
-      : strings('已插入转写文字。', 'Transcript inserted.'));
-    if (job.submit?.form === form && form?.isConnected && !job.submit.disabled) form.requestSubmit(job.submit);
-  } else {
+  if (job.text && job.target.answer) { await fillAnswer(job); return; }
+  job.insertion?.close();
+  if (job.text) {
     job.submit = null;
     setPhase(job, 'ready', strings('原输入已改变。请选择输入位置后插入转写。', 'The original input changed. Select a destination to insert the transcript.'));
+    return;
   }
+  current = null;
+  update(job.captureError || (job.previousText
+    ? strings('已插入转写文字。', 'Transcript inserted.')
+    : strings('未识别到文字。', 'No speech was recognized.')));
+  const form = job.target.field?.form;
+  if (job.previousText && !job.captureError && job.submit?.form === form && form?.isConnected && !job.submit.disabled)
+    form.requestSubmit(job.submit);
 }
 
 async function fillAnswer(job) {
@@ -265,8 +255,8 @@ async function start() {
   setPhase(job, 'opening', strings('正在打开麦克风…', 'Opening microphone…'));
   try {
     job.context = dictationContext(target);
-    if (!target.answer) job.draft = previewAt(job);
-    job.recorder = await segmentMicrophone({maxDurationMs: audioLimitMs, signal: job.abort.signal, request: packet => {
+    if (!target.answer) job.insertion = guardInsertion(target);
+    job.recorder = await segmentMicrophone({scope: microphoneScope(), maxDurationMs: audioLimitMs, signal: job.abort.signal, request: packet => {
       if (job.identity !== identity()) throw DOMException('Account changed', 'AbortError');
       return streamRequest(packet.op === 'open' ? {...packet, profile: target.profile, context: job.context} : packet);
     }});
@@ -288,14 +278,14 @@ async function start() {
   } catch (error) {
     freezeDuration(job);
     if (current !== job) return;
-    if (job.recorder && (job.segments.length || job.text)) {
+    if (job.recorder && (job.segments.length || job.text || job.previousText)) {
       job.captureDone = true;
       job.captureError = strings('录音设备中断，请重新录音。', 'The microphone stopped. Please record again.');
       setPhase(job, job.failure ? 'failed' : 'transcribing', job.failure || job.captureError);
       void process(job);
       return;
     }
-    job.draft?.close();
+    job.insertion?.close();
     current = null;
     update(error.message === 'Recording is empty'
       ? strings('没有录到声音，请检查麦克风后重试。', 'No audio was captured. Check your microphone and try again.')
@@ -336,7 +326,7 @@ export function resetVoiceInput() {
     const job = current;
     current = null;
     freezeDuration(job);
-    job.draft?.close();
+    job.insertion?.close();
     job.abort.abort();
   }
   lastField = null;
@@ -347,9 +337,17 @@ function currentModal() {
   return Array.from(document.querySelectorAll('dialog:modal')).at(-1);
 }
 
-export function installVoiceInput({canUse, getIdentity, request}) {
+function microphoneScope() {
+  if (!available()) return undefined;
+  const path = location.hash.split('?')[0];
+  const topic = path.match(/^#(?:\/subjects\/[^/]+)?\/(?:topic|review)\/[^/]+/);
+  return JSON.stringify([accountScope(), topic?.[0] || path]);
+}
+
+export function installVoiceInput({canUse, getIdentity, getAccountScope = getIdentity, request}) {
   available = canUse;
   identity = getIdentity;
+  accountScope = getAccountScope;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
   streamRequest = body => request('voice-input/stream', {method: 'POST', body,
     timeout: body.op === 'cut' || body.op === 'finish' ? 45000 : 12000});
@@ -384,10 +382,11 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   new MutationObserver(() => {
     if (!pointerActive && voice.hidden === canRecord()) paint();
   }).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden']});
-  addEventListener('pagehide', resetVoiceInput);
+  addEventListener('pagehide', () => { resetVoiceInput(); retainMicrophone(); });
   addEventListener('hashchange', () => {
-    if ((current?.target.answer || current?.target.context) && current.page !== location.hash) resetVoiceInput();
+    if (current && current.page !== location.hash) resetVoiceInput();
     else paint();
+    retainMicrophone(microphoneScope());
   });
   return voice;
 }
@@ -395,6 +394,7 @@ export function installVoiceInput({canUse, getIdentity, request}) {
 export function refreshVoiceInput() {
   if (current && (!available() || current.identity !== identity())) resetVoiceInput();
   else paint();
+  retainMicrophone(microphoneScope());
 }
 
 function voiceControls(holdLayout) {
@@ -440,7 +440,13 @@ function voiceControls(holdLayout) {
   const end = button(() => strings('结束录音', 'Stop recording'), () => stop());
   const cut = button(() => strings('转写', 'Transcribe'), () => {
     const job = current;
+    const recording = job.phase === 'recording';
+    freezeDuration(job);
+    job.elapsed = 0;
+    if (recording) job.startedAt = performance.now();
     enqueue(job, job.recorder.cut());
+    paintDuration();
+    tickDuration(job);
   });
   const retry = button(() => strings('重试转写', 'Retry transcription'), () => {
     if (current.phase === 'conversion_failed') void fillAnswer(current);
