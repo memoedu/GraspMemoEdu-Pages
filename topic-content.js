@@ -1,7 +1,7 @@
-import {mountMermaid} from './vendor/mermaid/index.js?v=ddc42ebe3987c14f';
-import {renderBacklinks} from './vendor/document-backlinks.mjs?v=ddc42ebe3987c14f';
-import {t} from './i18n.js?v=ddc42ebe3987c14f';
-import {prepareMathContent} from './math-presentation.js?v=ddc42ebe3987c14f';
+import {mountMermaid} from './vendor/mermaid/index.js?v=2a04bc1c131b654f';
+import {renderBacklinks} from './vendor/document-backlinks.mjs?v=2a04bc1c131b654f';
+import {t} from './i18n.js?v=2a04bc1c131b654f';
+import {prepareMathContent} from './math-presentation.js?v=2a04bc1c131b654f';
 
 export function referenceHref(target) {
   const base = `#/subjects/${encodeURIComponent(target.subject_id)}/topic/${encodeURIComponent(target.topic_id)}`;
@@ -47,9 +47,10 @@ export function enhanceSourceContent(root) {
   root.classList.toggle('sourceBook', book);
   // Block images and their adjacent original captions share one alignment.
   // Inline illustrations stay in their original sentence.
-  for (const paragraph of root.querySelectorAll('p')) {
-    if (paragraph.closest('figure,figcaption') || !paragraph.querySelector('img')
-        || paragraph.textContent.trim() || paragraph.querySelector('svg,math,mjx-container,code')) continue;
+  const imageParagraphs = new Set([...root.querySelectorAll('img')].map(image => image.closest('p')));
+  for (const paragraph of imageParagraphs) {
+    if (!paragraph || !root.contains(paragraph) || paragraph.closest('figure,figcaption') || paragraph.textContent.trim()
+        || paragraph.querySelector('svg,math,mjx-container,code')) continue;
     const figure = document.createElement('figure'); figure.className = 'sourceFigure';
     paragraph.before(figure); figure.append(paragraph);
     const caption = document.createElement('figcaption');
@@ -82,7 +83,7 @@ export function enhanceSourceContent(root) {
       }
     }
   }
-  if (!root.querySelector('[id^="node-"]')) {
+  if (root.querySelector('h1,h2,h3,h4,h5,h6') && !root.querySelector('[id^="node-"]')) {
     const containers = [root, ...root.querySelectorAll('div,section,article')].reverse();
     for (const container of containers) {
       if (!Array.from(container.children).some(child => /^H[1-6]$/.test(child.tagName))) continue;

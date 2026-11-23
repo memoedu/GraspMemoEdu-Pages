@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=ddc42ebe3987c14f";
-import {answerReady} from './question-input.js?v=ddc42ebe3987c14f';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=ddc42ebe3987c14f';
-import {startPresence} from './presence.js?v=ddc42ebe3987c14f';
-import {createLearningCache} from './learning-cache.js?v=ddc42ebe3987c14f';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=ddc42ebe3987c14f';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=2a04bc1c131b654f";
+import {answerReady} from './question-input.js?v=2a04bc1c131b654f';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=2a04bc1c131b654f';
+import {startPresence} from './presence.js?v=2a04bc1c131b654f';
+import {createLearningCache} from './learning-cache.js?v=2a04bc1c131b654f';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=2a04bc1c131b654f';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=ddc42ebe3987c14f';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=ddc42ebe3987c14f';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=ddc42ebe3987c14f';
-import {renderSourceReader} from './learning-ui.js?v=ddc42ebe3987c14f';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=ddc42ebe3987c14f';
-import {createTrainingView} from './training.js?v=ddc42ebe3987c14f';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=ddc42ebe3987c14f';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=ddc42ebe3987c14f';
-import {installAutocomplete} from './autocomplete.js?v=ddc42ebe3987c14f';
-import {expressionCompletions} from './calculator-policy.js?v=ddc42ebe3987c14f';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=ddc42ebe3987c14f';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=ddc42ebe3987c14f';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=2a04bc1c131b654f';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=2a04bc1c131b654f';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=2a04bc1c131b654f';
+import {renderSourceReader} from './learning-ui.js?v=2a04bc1c131b654f';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=2a04bc1c131b654f';
+import {createTrainingView} from './training.js?v=2a04bc1c131b654f';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=2a04bc1c131b654f';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=2a04bc1c131b654f';
+import {installAutocomplete} from './autocomplete.js?v=2a04bc1c131b654f';
+import {expressionCompletions} from './calculator-policy.js?v=2a04bc1c131b654f';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=2a04bc1c131b654f';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=2a04bc1c131b654f';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -772,7 +772,7 @@ function syncAnswerClock(forcePause = false) {
   return Math.min(86400000, Math.round(answerClock.total));
 }
 
-function applyState(next, { force = false, announceChange = false } = {}) {
+function applyState(next, { force = false, announceChange = false, deferRender = false } = {}) {
   if (state && next?.course_version === state.course_version && next.revision < state.revision) return;
   if (next?.unified_topic && next.training_mode === 'atomic_retrieval') {
     if (access?.learner_id && next.learner_id !== access.learner_id) throw new ApiError(t("此学习记录不属于当前身份，请刷新。"), 0, "identity_mismatch");
@@ -801,7 +801,6 @@ function applyState(next, { force = false, announceChange = false } = {}) {
   state = next;
   connectionIssue = null;
   identityRecoveryAllowed = true;
-  renderIdentity();
   if (state.status === "paused" || state.status === "completed") {
     submissionError = null;
     stopPolling();
@@ -810,8 +809,10 @@ function applyState(next, { force = false, announceChange = false } = {}) {
   if (submissionError && (submissionError.step_id !== state.active_step_id || submissionError.attempt_id !== state.attempt_id)) submissionError = null;
   if (state.pending_submission_id) schedulePoll(state.pending_submission_id);
   else if (!pollBusy) stopPolling();
-  if (changed || force) render();
-  else renderConnectionNotice();
+  if (!deferRender) {
+    if (changed || force) render();
+    else renderConnectionNotice();
+  }
   if (announceChange && changed && previousStep !== state.current_step_id) announce(readerStepTitle(selectedStep()) || t("学习进度已更新"));
 }
 
@@ -875,11 +876,13 @@ async function mutate(path, payload, { pause = false } = {}) {
   retryAction = null;
   pageMessage = null;
   renderBusy();
+  let rendered = false;
   try {
     const previousStatus = state.status;
     const next = await topicRequest(path, { method: "POST", body: payload });
     if (generation !== connectionGeneration) return;
     applyState(next, { force: true, announceChange: true });
+    rendered = true;
     notifyOtherTabs();
     if (path === "skip") {
       announce(t('reader.skipDone'));
@@ -907,7 +910,8 @@ async function mutate(path, payload, { pause = false } = {}) {
     if (generation === connectionGeneration) {
       if (pause) pauseBusy = false;
       else actionBusy = false;
-      render();
+      if (rendered) renderBusy();
+      else render();
     }
   }
 }
@@ -945,10 +949,12 @@ async function sendSubmission(payload) {
   const record = { payload, submission_id: null, status: "sending" };
   persistSubmission(record);
   renderBusy();
+  let rendered = false;
   try {
     const result = await topicRequest("submit", { method: "POST", body: payload });
     if (generation !== connectionGeneration) return;
     handleSubmission(result, record);
+    rendered = true;
     notifyOtherTabs();
   } catch (error) {
     if (generation !== connectionGeneration) return;
@@ -970,22 +976,27 @@ async function sendSubmission(payload) {
   } finally {
     if (generation === connectionGeneration) {
       actionBusy = false;
-      render();
+      if (rendered) renderBusy();
+      else render();
     }
   }
 }
 
 function handleSubmission(result, record = readJSON(recordKey())) {
-  if (result.state) applyState(result.state);
-  if (state?.status === "paused" || state?.status === "completed") return;
+  if (result.state) applyState(result.state, {deferRender: true});
+  if (state?.status === "paused" || state?.status === "completed") { render(); return; }
   // A late response from an older attempt must not replace polling for a newer one.
   if (state?.pending_submission_id && state.pending_submission_id !== result.submission_id) {
     schedulePoll(state.pending_submission_id);
+    render();
     return;
   }
   if (result.state && state && result.state.revision < state.revision) return;
   const latestRecord = readJSON(recordKey());
-  if (record?.payload && latestRecord?.payload && record.payload.request_id !== latestRecord.payload.request_id) return;
+  if (record?.payload && latestRecord?.payload && record.payload.request_id !== latestRecord.payload.request_id) {
+    render();
+    return;
+  }
   if (result.status === "pending") {
     if (record) persistSubmission({ ...record, status: "pending", submission_id: result.submission_id });
     submissionError = null;
@@ -1075,16 +1086,19 @@ function render() {
   renderProgress();
   renderPause();
   renderHistory();
+  renderSelectedStep();
+  $("saveStatus").textContent = state.read_only ? '阅读原材料' : connectionIssue ? t("等待重新连接") : state.pending_submission_id ? t("答案已提交，正在判题") : t("学习进度已保存");
+}
+
+function renderSelectedStep({history = true} = {}) {
   const step = selectedStep();
   renderReview(step);
   renderStep(step);
   renderResult(step);
-  renderBusy();
-  $("saveStatus").textContent = state.read_only ? '阅读原材料' : connectionIssue ? t("等待重新连接") : state.pending_submission_id ? t("答案已提交，正在判题") : t("学习进度已保存");
+  renderBusy({history});
   const module = state.modules.find((item) => item.id === step?.module_id);
   const moduleIndex = state.modules.indexOf(module);
   $("footerPosition").textContent = moduleIndex >= 0 ? t("reader.modulePosition", { current: moduleIndex + 1, total: state.modules.length }) : "";
-  syncAnswerClock();
 }
 
 function renderPageNotice() {
@@ -1173,7 +1187,9 @@ function renderHistory() {
       introduction: section => {
         const step = visited.find(item => item.kind === 'introduction' && item.introduction_id === section.id);
         const row = button(section.title.replace(/^Introduction(?=\s*[:：]|$)/i, t('Introduction')),
-          'historyItem topicHistoryIntroduction', () => selectStep(step.id), !step || actionBusy);
+          'historyItem topicHistoryIntroduction', () => selectStep(step?.id), !step || actionBusy);
+        if (step) row.dataset.historyId = step.id;
+        if (step?.id === state.current_step_id) row.setAttribute('aria-current', 'step');
         row.dataset.historyAvailable = String(Boolean(step));
         return row;
       },
@@ -1249,7 +1265,8 @@ function historyGroup(title, status, steps, className = "", currentAttempt = nul
       const marks = [];
       if (step.id === state.active_step_id && readingStatus() !== 'completed') marks.push(t('当前'));
       else if (currentAttempt && step.attempt_id !== currentAttempt && step.kind !== 'introduction') marks.push(t('reader.historyAttempt', {attempt: attempts.indexOf(step.attempt_id) + 1}));
-      return {label, onSelect: () => selectStep(step.id), disabled: actionBusy, selected: step.id === state.current_step_id, marks};
+      return {label, onSelect: () => selectStep(step.id), disabled: actionBusy, selected: step.id === state.current_step_id,
+        dataset: {historyId: step.id}, marks};
     })}).group;
 }
 function selectStep(id) {
@@ -1260,7 +1277,10 @@ function selectStep(id) {
   syncAnswerClock(true);
   localStep = id;
   state = {...state, current_step_id: id};
-  render();
+  const history = $("historyPanel");
+  history.querySelector('.historyItem[aria-current="step"]')?.removeAttribute('aria-current');
+  history.querySelector(`.historyItem[data-history-id="${CSS.escape(id)}"]`)?.setAttribute('aria-current', 'step');
+  renderSelectedStep({history: false});
   focusStep();
 }
 
@@ -1499,7 +1519,7 @@ function renderCompletion(target) {
   target.append(list);
 }
 
-function renderBusy() {
+function renderBusy({history = true} = {}) {
   if (!state) return;
   syncAnswerClock();
   const disabled = actionBusy || pauseBusy || identityBusy;
@@ -1516,7 +1536,9 @@ function renderBusy() {
     else answer.disabled = answerDisabled;
   }
   if ($("submitButton") && !disabled) $("submitButton").disabled = !answerReady($("answerInput")) || !can("submit_answer");
-  for (const element of $("historyPanel").querySelectorAll("button")) element.disabled = disabled || !can("review_history") || element.dataset.historyAvailable === 'false';
+  if (history) {
+    for (const element of $("historyPanel").querySelectorAll("button")) element.disabled = disabled || !can("review_history") || element.dataset.historyAvailable === 'false';
+  }
   for (const element of $("reviewNotice").querySelectorAll("button")) element.disabled = disabled || !can("review_history");
   const skipVisible = readingStatus() === 'in_progress' && !state.topic_locked && state.topic_kind !== 'introduction'
     && state.current_step_id === state.active_step_id
@@ -1707,7 +1729,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=ddc42ebe3987c14f");
+const { initPortal } = await import("./portal.js?v=2a04bc1c131b654f");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
