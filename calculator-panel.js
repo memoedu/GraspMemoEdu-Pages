@@ -1,9 +1,11 @@
-import {inheritVoiceContext} from './voice-context.js?v=ac18bacda6f39812';
-import {basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
-  permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule, scientificCategories} from './calculator-policy.js?v=ac18bacda6f39812';
-import {toolInputs} from './calculator-inputs.js?v=ac18bacda6f39812';
-import {setInputCompletions} from './autocomplete.js?v=ac18bacda6f39812';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ac18bacda6f39812';
+import {inheritVoiceContext} from './voice-context.js?v=13a9df8eb2d5bb60';
+import {assignableVariable, basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
+  normalizeVariableName, permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule,
+  scientificCategories} from './calculator-policy.js?v=13a9df8eb2d5bb60';
+import {calculateImmediate} from './calculator-engine.js?v=13a9df8eb2d5bb60';
+import {toolInputs} from './calculator-inputs.js?v=13a9df8eb2d5bb60';
+import {setInputCompletions} from './autocomplete.js?v=13a9df8eb2d5bb60';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=13a9df8eb2d5bb60';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -90,7 +92,7 @@ const resultLabels = {
 };
 const errors = {
   restricted: ['当前题目未开放此运算。', 'This operation is unavailable for this question.'],
-  unassigned: ['请点击「赋值」，并填写原式中每个变量的值。', 'Select Assign and enter a value for each variable.'],
+  unassigned: ['请点击「变量值」，并填写原式中每个未储存变量的值。', 'Select Variable values and enter the missing values.'],
   invalid: ['请检查输入格式及参数。', 'Check the input format and parameters.'],
   domain: ['输入超出定义域，或结果无有限数值。', 'Outside the domain or no finite result.'],
   limit: ['输入或计算规模超出范围。', 'The input or calculation is too large.'],
@@ -157,12 +159,12 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     format.setAttribute('aria-pressed', 'false');
   }
 
-  let worker, timer, runningControl, working = false, closed = false;
+  let worker, timer, warming, runningControl, working = false, closed = false;
   const {saved, history} = session;
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   let registerCandidate = answer ? session.expressionRegisterCandidate : null;
   const memory = new Map();
-  let refreshMemory = () => {}, cancelMemory = () => false;
+  let refreshMemory = () => {}, cancelMemory = () => false, remember = () => {};
   const workspace = launch.closest('.questionWorkspace');
   inheritVoiceContext(dialog, workspace);
   const target = () => workspace && answerTarget(workspace);
@@ -238,11 +240,28 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const resizeTools = new ResizeObserver(measure);
   function stop() {
     clearTimeout(timer);
+    clearTimeout(warming);
+    warming = null;
     worker?.terminate();
     worker = null;
     if (runningControl) runningControl.disabled = false;
     runningControl = null;
     working = false;
+  }
+  function startWorker() {
+    return worker ||= new Worker(new URL('./calculator-worker.js?v=13a9df8eb2d5bb60', import.meta.url), {type: 'module'});
+  }
+  function warmOnInput(event, sourceModule) {
+    if (warming || event.target.matches('.calculatorStorageName')) return;
+    if (sourceModule === 'expression' && !(/[\p{L}]\s*\(|\^|√/u).test(event.target.value || '')) return;
+    warming = setTimeout(() => {
+      warming = null;
+      if (closed) return;
+      try {
+        if (!worker) startWorker().onerror = event => { event.preventDefault(); stop(); };
+        worker.postMessage({warmup: true, module: sourceModule, expression: event.target.value || ''});
+      } catch { stop(); }
+    }, 80);
   }
   function close(returnFocus) {
     if (closed) return;
@@ -281,42 +300,52 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   function run(sourceModule, operation, input, control, receive) {
     if (working || control.disabled) return;
     const version = edit;
+    const registers = Object.fromEntries([...memory].map(([name, entry]) => [name, entry.value]));
+    function complete(result) {
+      if (receive) { receive(result); return; }
+      if (module === 'expression') {
+        const numeric = result.numeric ?? result.complex ?? result.array;
+        if (numeric !== undefined) session.previousAnswer = numeric;
+        if (result.register) remember(result.register, {value: numeric, text: result.text});
+      }
+      if (sourceModule === 'expression' || operation === 'simplify' || operation === 'modular_power') {
+        history.push({expression: input.expression, assignments: input.assignments, result: result.text, modulus: input.modulus});
+        if (history.length > 12) history.shift();
+        renderHistory();
+      }
+      show(result);
+      if (control.closest('.calculatorExtensionForm')) {
+        dialog.scrollTop = 0;
+        if (document.activeElement === control) {
+          output.tabIndex = -1;
+          output.focus({preventScroll: true});
+        }
+      }
+    }
+    if (sourceModule === 'expression' && operation === 'evaluate') {
+      try {
+        const result = calculateImmediate(input.expression, config, registers, session.previousAnswer);
+        if (result) { complete(result); return; }
+      } catch (error) { showError(error.code); return; }
+    }
     working = true; control.disabled = true;
     runningControl = control;
     setAnswer(null);
     output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
     const finish = () => { clearTimeout(timer); working = false; runningControl = null; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=ac18bacda6f39812', import.meta.url), {type: 'module'});
+      startWorker();
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
         if (version !== edit) { showText(''); refreshTransfer(); return; }
         if (data.error) { showError(data.error); return; }
-        if (receive) { receive(data.result); return; }
-        if (module === 'expression') {
-          const numeric = data.result.numeric ?? data.result.complex ?? data.result.array;
-          if (numeric !== undefined) session.previousAnswer = numeric;
-        }
-        if (sourceModule === 'expression' || operation === 'simplify' || operation === 'modular_power') {
-          history.push({expression: input.expression, assignments: input.assignments, result: data.result.text,
-            modulus: input.modulus});
-          if (history.length > 12) history.shift();
-          renderHistory();
-        }
-        show(data.result);
-        if (control.closest('.calculatorExtensionForm')) {
-          dialog.scrollTop = 0;
-          if (document.activeElement === control) {
-            output.tabIndex = -1;
-            output.focus({preventScroll: true});
-          }
-        }
+        complete(data.result);
       };
       worker.onerror = event => { event.preventDefault(); stop(); finish(); showError('invalid'); };
       timer = setTimeout(() => { stop(); finish(); showError('timeout'); }, 8000);
       worker.postMessage({config, module: sourceModule, operation, input, degrees: session.degrees, answer: session.previousAnswer,
-        memory: Object.fromEntries([...memory].map(([letter, entry]) => [letter, entry.value]))});
+        memory: registers});
     } catch { stop(); finish(); showError('invalid'); }
   }
 
@@ -345,7 +374,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         button(local('计算结果', 'Calculate'), null, 'submit', 'calculatorControl calculatorPrimary'));
       fields.replaceChildren(outer, actions);
     }
-    form.addEventListener('input', () => { edit++; setAnswer(null); }, true);
+    form.addEventListener('input', event => { edit++; setAnswer(null); warmOnInput(event, selectedModule); }, true);
     method.addEventListener('change', () => { stop(); showText(''); delete output.dataset.state; renderFields(); });
     form.addEventListener('submit', event => {
       event.preventDefault();
@@ -359,13 +388,18 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     if (module === 'expression') {
       const form = create('div', 'calculatorForm');
       const invalidate = () => { edit++; setAnswer(null); };
-      form.addEventListener('input', event => { if (!event.target.closest('form')) invalidate(); }, true);
+      form.addEventListener('input', event => {
+        if (!event.target.closest('form') && !event.target.matches('.calculatorStorageName')) {
+          invalidate();
+          warmOnInput(event, module);
+        }
+      }, true);
       const input = create('input', 'calculatorExpression');
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
       const memoryAllowed = permitsKey(config, 'memory_registers');
-      const candidates = term => memoryAllowed && memoryRegisters.includes(term) ? []
+      const candidates = term => memoryAllowed && (memoryRegisters.includes(term) || term && memory.has(normalizeVariableName(term))) ? []
         : expressionCompletions(config, {previousAnswer: session.previousAnswer != null, extensions: true});
       setInputCompletions(input, candidates);
       let focused = input, assign;
@@ -443,7 +477,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         }
       }
       if (permitsKey(config, 'assign_variables', 2)) {
-        assign = button(local('赋值', 'Assign'), () => {
+        assign = button(local('变量值', 'Variable values'), () => {
           const expression = input.value;
           run(module, 'assign_variables', {expression}, assign, ({variables}) => {
             delete output.dataset.state;
@@ -460,7 +494,6 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         });
         assign.dataset.calculatorKey = 'assign_variables';
         assign.setAttribute('aria-controls', variableFields.id);
-        options.append(assign);
       }
       renderAssignments();
       const numericPad = create('div', 'calculatorNumericPad');
@@ -609,6 +642,65 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         memoryPad.append(heading, letters, notice);
         form.append(memoryPad, status);
         let mode = '', pending;
+        const storageRow = create('div', 'calculatorStorageRow');
+        const storageName = create('input', 'calculatorStorageName');
+        storageName.type = 'text'; storageName.maxLength = 48; storageName.autocomplete = 'off';
+        storageName.dataset.autocomplete = 'off';
+        storageName.spellcheck = false;
+        storageName.placeholder = 'α, x₁, v²';
+        storageName.setAttribute('aria-label', local('储存变量名', 'Storage variable name'));
+        const saveStorage = button(local('保存', 'Save'), storeNamed);
+        const cancelStorage = button(local('取消', 'Cancel'), () => {
+          if (runningControl === saveStorage) {
+            edit++;
+            stop();
+            showText('');
+            delete output.dataset.state;
+          }
+          storageRow.hidden = true;
+          openStorage.focus();
+        });
+        const openStorage = button(local('储存', 'Store'), () => {
+          storageName.setCustomValidity('');
+          storageName.value = '';
+          storageRow.hidden = false;
+          storageName.focus();
+        });
+        const arrow = create('span', '', '→');
+        arrow.setAttribute('aria-hidden', 'true');
+        storageRow.append(arrow, storageName, saveStorage, cancelStorage);
+        storageRow.hidden = true;
+        display.append(storageRow);
+        options.append(openStorage);
+        storageName.addEventListener('input', () => storageName.setCustomValidity(''));
+        storageName.addEventListener('keydown', event => {
+          if (event.key !== 'Enter' || event.isComposing) return;
+          event.preventDefault();
+          storeNamed();
+        });
+        remember = (name, entry) => {
+          memory.set(name, entry);
+          renderAssignments();
+          status.textContent = local('已存入 ', 'Stored in ') + name;
+          const refocus = storageRow.contains(document.activeElement);
+          storageRow.hidden = true;
+          if (refocus) input.focus();
+          refreshMemory();
+        };
+        function storeNamed() {
+          const name = normalizeVariableName(storageName.value);
+          if (!assignableVariable(name)) {
+            storageName.setCustomValidity(local('请输入可用的变量名。', 'Enter a valid variable name.'));
+            storageName.reportValidity();
+            return;
+          }
+          if (registerCandidate != null) {
+            remember(name, {value: registerCandidate, text: output.textContent});
+            return;
+          }
+          run(module, 'evaluate', {expression: name + '=' + input.value,
+            assignments: Object.fromEntries(currentAssignments() || [])}, saveStorage);
+        }
         const copy = button(local('复制', 'Copy'), async () => {
           if (answer == null) return;
           const snapshot = {value: registerCandidate, text: output.querySelector('dl') ? answer : output.textContent};
@@ -638,6 +730,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           recall.setAttribute('aria-expanded', String(mode === 'recall'));
         };
         cancelMemory = () => {
+          if (!storageRow.hidden) { cancelStorage.click(); return true; }
           if (!mode) return false;
           const trigger = mode === 'store' ? copy : recall;
           mode = ''; pending = null;
@@ -652,13 +745,12 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           notice.textContent = '';
           if (mode === 'recall') pending = null;
           legend.textContent = mode === 'store' ? local('将结果存入字母', 'Store result in a letter') : local('调用已存字母', 'Recall a stored letter');
-          letters.replaceChildren(...memoryRegisters.map(letter => {
+          const visible = mode === 'store' ? memoryRegisters : [...new Set([...memoryRegisters, ...memory.keys()])];
+          letters.replaceChildren(...visible.map(letter => {
             const entry = memory.get(letter);
             const key = button(letter, () => {
               if (mode === 'store') {
-                memory.set(letter, pending);
-                renderAssignments();
-                status.textContent = local('已存入 ', 'Stored in ') + letter;
+                remember(letter, pending);
                 cancelMemory();
               } else {
                 cancelMemory();
@@ -681,6 +773,11 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         refreshMemory();
       } else if (simplify) headerTools.append(simplify);
       headerTools.append(closeButton); headline.append(headerTools);
+      if (assign) {
+        const variableActions = create('div', 'calculatorVariableActions');
+        variableActions.append(assign);
+        form.append(variableActions);
+      }
       // Adapted from Calc's renderHistory (Matt, MIT), scoped to the current question.
       const historyPane = create('details', 'calculatorHistory');
       const entries = create('ol');

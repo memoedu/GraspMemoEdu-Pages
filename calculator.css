@@ -82,6 +82,15 @@
   text-overflow: ellipsis;
 }
 .calculatorRegisterPad .calculatorInputNotice:empty { display: none; }
+.calculatorStorageRow:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-start: 8px;
+  color: var(--calculator-screen-text);
+}
+.calculatorStorageRow .calculatorStorageName { flex: 1; min-inline-size: 0; }
+.calculatorVariableActions { display: flex; justify-content: flex-end; }
 .calculatorHeader h2 {
   margin: 0;
   font: 720 clamp(1.06rem, 2.4vw, 1.35rem)/1.2 var(--calculator-font);
