@@ -1,15 +1,15 @@
-import {t, translateMessage} from './i18n.js?v=e65614ed86a4941d';
-import {subjectHref, subjectLabel} from './subjects.js?v=e65614ed86a4941d';
-import {catalogPath, workspaceLayout} from './catalog-workspace.js?v=e65614ed86a4941d';
-import {renderReviewSections} from './review-directory.js?v=e65614ed86a4941d';
-import {createReviewTaskStarter} from './review-papers.js?v=e65614ed86a4941d';
+import {t, translateMessage} from './i18n.js?v=433aee787fec0675';
+import {subjectHref, subjectLabel} from './subjects.js?v=433aee787fec0675';
+import {catalogPath, workspaceLayout} from './catalog-workspace.js?v=433aee787fec0675';
+import {renderReviewSections} from './review-directory.js?v=433aee787fec0675';
+import {createReviewTaskStarter} from './review-papers.js?v=433aee787fec0675';
 
 const encode = encodeURIComponent;
 
 export function createFreeStudyView({root, request, scopedRequest, savedCourseRoot, taskTree, node, control, link, loading}) {
   let dispose = () => {};
 
-  async function open({subjects, canReview, isCurrent}) {
+  async function open({subjects, canReview, canClip, isCurrent}) {
     let selection = (await request('free-study')).subjects;
     if (!isCurrent()) return;
 
@@ -233,6 +233,17 @@ export function createFreeStudyView({root, request, scopedRequest, savedCourseRo
     dialog.addEventListener('cancel', event => { if (close.disabled) event.preventDefault(); });
     market.disabled = !subjects.length;
     root.replaceChildren(header, layout, dialog);
+    if (canClip) {
+      const clips = node('section', 'clipperLibrary');
+      header.after(clips);
+      try {
+        const {mountClipperLibrary} = await import('./clipper-library.js?v=433aee787fec0675');
+        if (isCurrent() && clips.isConnected) mountClipperLibrary({root: clips, request, node, control, link, isCurrent});
+      } catch (error) {
+        if (isCurrent() && clips.isConnected) clips.append(node('p', 'fieldError', error.message));
+      }
+      if (!isCurrent()) return;
+    }
     render();
   }
 

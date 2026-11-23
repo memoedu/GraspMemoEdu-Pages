@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=e65614ed86a4941d';
+import {escapedAt, mathSpans} from './math-syntax.js?v=433aee787fec0675';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -76,10 +76,11 @@ const protectedContent = 'mjx-container,math,svg,code,pre,kbd,samp,a,script,styl
 const pendingText = new WeakSet();
 const pendingDisplays = new WeakSet();
 const mountedSvg = new WeakSet();
+const glyphCodepoints = new WeakMap();
 let fragmentNumber = 0, renderer;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=e65614ed86a4941d').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=433aee787fec0675').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -122,6 +123,8 @@ function scopeGlyphs(root) {
     // MathJax cache identifiers can repeat in separate mounts of stored HTML.
     for (const glyph of svg.querySelectorAll('defs :is([id^="MJX-"],[id^="rendered-math-"])')) {
       const old = glyph.id;
+      const codepoint = /^MJX-.*-([A-F0-9]{2,6})$/i.exec(old)?.[1];
+      if (codepoint) glyphCodepoints.set(glyph, codepoint);
       glyph.id = prefix + ++count;
       if (!ids.has(old)) ids.set(old, glyph.id);
     }
@@ -133,6 +136,51 @@ function scopeGlyphs(root) {
     if (href?.startsWith('#') && ids.has(href.slice(1))) use.setAttribute('href', '#' + ids.get(href.slice(1)));
     if (xlink?.startsWith('#') && ids.has(xlink.slice(1))) use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#' + ids.get(xlink.slice(1)));
   }
+}
+
+const mathEscape = text => text.replace(/[#$%&_{}]/g, '\\$&')
+  .replaceAll('−', '-').replaceAll('\u2061', ' ').replaceAll('\u2062', '');
+const presentationOnly = new Set(['defs', 'rect', 'line', 'annotation', 'annotation-xml']);
+
+function presentationLatex(node) {
+  const tag = node.getAttribute('data-mml-node') || node.localName;
+  if (tag === 'use' || tag === 'path') {
+    const href = node.getAttribute('href') || node.getAttribute('xlink:href') || '';
+    const glyph = href.startsWith('#') ? node.ownerDocument.getElementById(href.slice(1)) : null;
+    const code = node.getAttribute('data-c') || glyphCodepoints.get(glyph) ||
+      /^#MJX-.*-([A-F0-9]{2,6})$/i.exec(href)?.[1];
+    const point = /^[A-F0-9]{2,6}$/i.test(code || '') ? parseInt(code, 16) : 0;
+    return point >= 32 && point <= 0x10ffff ? mathEscape(String.fromCodePoint(point)) : '';
+  }
+  const children = node.childElementCount
+    ? [...node.children].filter(child => !presentationOnly.has(child.localName)).map(presentationLatex)
+    : [mathEscape(node.textContent)];
+  const [base = '', sub = '', upper = ''] = children;
+  switch (tag) {
+    case 'mfrac': return '\\frac{' + base + '}{' + sub + '}';
+    case 'msup': return '{' + base + '}^{' + sub + '}';
+    case 'msub': return '{' + base + '}_{' + sub + '}';
+    case 'msubsup': return '{' + base + '}_{' + sub + '}^{' + upper + '}';
+    case 'msqrt': return '\\sqrt{' + children.join('') + '}';
+    case 'mroot': return '\\sqrt[' + sub + ']{' + base + '}';
+    case 'mover': return '\\overset{' + sub + '}{' + base + '}';
+    case 'munder': return '\\underset{' + sub + '}{' + base + '}';
+    case 'munderover': return '\\overset{' + upper + '}{\\underset{' + sub + '}{' + base + '}}';
+    case 'mtable': return '\\begin{matrix}' + children.join(' \\\\ ') + '\\end{matrix}';
+    case 'mtr': case 'mlabeledtr': return children.join(' & ');
+    case 'mtext': return '\\text{' + children.join('') + '}';
+    default: return children.join('');
+  }
+}
+
+// Recover the formula represented by older SVG and MathML without source attributes.
+export function presentationMathSource(node) {
+  const math = node.matches('math') ? node : node.querySelector('math,svg [data-mml-node="math"]');
+  if (!math) return '';
+  const latex = presentationLatex(math).trim();
+  if (!latex) return '';
+  const display = node.matches('[display="true"],[display="block"]');
+  return display ? '\\[' + latex + '\\]' : '\\(' + latex + '\\)';
 }
 
 // Some older imports put the matrix in a display node between two paragraphs
