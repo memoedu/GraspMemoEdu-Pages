@@ -1,29 +1,30 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=38bdd9ea02fafb0e";
-import {attachFormulaEditing} from './formula-input.js?v=38bdd9ea02fafb0e';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=38bdd9ea02fafb0e';
-import { createReviewView } from "./review.js?v=38bdd9ea02fafb0e";
-import { renderCourseGraph } from "./course-graph.js?v=38bdd9ea02fafb0e";
-import {questionInput, choiceTypeField} from './question-input.js?v=38bdd9ea02fafb0e';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=38bdd9ea02fafb0e';
-import {enhanceTopicContent} from './topic-content.js?v=38bdd9ea02fafb0e';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=38bdd9ea02fafb0e';
-import {createCatalogPicker} from './catalog-picker.js?v=38bdd9ea02fafb0e';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=38bdd9ea02fafb0e';
-import {createAtomicView} from './atomic.js?v=38bdd9ea02fafb0e';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=38bdd9ea02fafb0e';
-import {sourceAttributions} from './memory-chunk.js?v=38bdd9ea02fafb0e';
-import {createTrainingView} from './training.js?v=38bdd9ea02fafb0e';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=38bdd9ea02fafb0e";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=6e954c2a910f29e5";
+import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=6e954c2a910f29e5';
+import { createReviewView } from "./review.js?v=6e954c2a910f29e5";
+import { renderCourseGraph } from "./course-graph.js?v=6e954c2a910f29e5";
+import {questionInput, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=6e954c2a910f29e5';
+import {enhanceTopicContent} from './topic-content.js?v=6e954c2a910f29e5';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=6e954c2a910f29e5';
+import {createCatalogPicker} from './catalog-picker.js?v=6e954c2a910f29e5';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=6e954c2a910f29e5';
+import {createAtomicView} from './atomic.js?v=6e954c2a910f29e5';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=6e954c2a910f29e5';
+import {sourceAttributions} from './memory-chunk.js?v=6e954c2a910f29e5';
+import {createTrainingView} from './training.js?v=6e954c2a910f29e5';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=6e954c2a910f29e5';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=6e954c2a910f29e5";
 
-import {createPaperView} from './review-papers.js?v=38bdd9ea02fafb0e';
-import {createFreeStudyView} from './free-study.js?v=38bdd9ea02fafb0e';
-import {createContextLibraryView} from './context-library.js?v=38bdd9ea02fafb0e';
+import {createPaperView} from './review-papers.js?v=6e954c2a910f29e5';
+import {createFreeStudyView} from './free-study.js?v=6e954c2a910f29e5';
+import {createContextLibraryView} from './context-library.js?v=6e954c2a910f29e5';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=38bdd9ea02fafb0e';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=38bdd9ea02fafb0e';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=38bdd9ea02fafb0e';
-import {createStudentDashboard} from './student-dashboard.js?v=38bdd9ea02fafb0e';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=38bdd9ea02fafb0e';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=6e954c2a910f29e5';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6e954c2a910f29e5';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=6e954c2a910f29e5';
+import {createStudentDashboard} from './student-dashboard.js?v=6e954c2a910f29e5';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=6e954c2a910f29e5';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -43,7 +44,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=38bdd9ea02fafb0e').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=6e954c2a910f29e5').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -63,7 +64,7 @@ export function initPortal(bridge) {
   function pruneChatEditors(all = false) {
     for (const editor of chatEditors) if (all || !editor.host.isConnected) {editor.destroy(); chatEditors.delete(editor);}
   }
-  const replyDrafts = new Map();
+  const replyDrafts = new Map(), readBankGroups = new Map();
   const dashboards = new Map(), scrolls = new Map(), answerCache = new Map();
   const workspaceLocations = createWorkspaceLocations(parsePlatformRoute);
   const bankRoute = route => route?.subjectId && /^\/banks(?:\/|$)/.test(route.path);
@@ -72,7 +73,7 @@ export function initPortal(bridge) {
     const sidebar = $('traininghistoryPanel') || $('historyPanel');
     workspaceLocations.remember(hash, leaving ? sidebar?.scrollTop || 0 : undefined);
   }
-  function clearWorkspaceLocations() { workspaceLocations.clear(); currentHash = ''; }
+  function clearWorkspaceLocations() { workspaceLocations.clear(); readBankGroups.clear(); currentHash = ''; }
   const routeKey = () => location.hash || "#/";
   const selectedDashboard = () => dashboards.get(selectedCourse);
   const timezone = () => profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -121,12 +122,16 @@ export function initPortal(bridge) {
     },
   });
   const courseHomeHref = () => subjectHref(currentRoute?.subjectId || 'math', catalogPath('courses', selectedCourse, selectedRoot));
-  const localHref = (path) => {
+  const localHref = (path, course = null, rootId = null) => {
     let raw = path.replace(/^#/, '');
     if (/^\/(topic|review)\//.test(raw) && /^\/courses\/[^/]+(?:\/progress)?$/.test(currentRoute?.path || '')) {
+      course = decodeURIComponent(currentRoute.path.split('/')[2]);
+      rootId = currentRoute.params.get('root');
+    }
+    if (course && /^\/(topic|review)\//.test(raw)) {
       const [pathname, search] = raw.split('?'), params = new URLSearchParams(search);
-      params.set('course', decodeURIComponent(currentRoute.path.split('/')[2]));
-      if (currentRoute.params.has('root')) params.set('root', currentRoute.params.get('root'));
+      params.set('course', course);
+      if (rootId) params.set('root', rootId);
       raw = pathname + '?' + params;
     }
     return /^\/(learn|courses|banks|guide|topic|review|reviews)(\/|\?|$)/.test(raw)
@@ -140,8 +145,13 @@ export function initPortal(bridge) {
   };
   const dayKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone: timezone(), year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
   const clockTime = (value) => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(locale(), { timeZone: timezone(), hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "—";
+  const focusMode = createFocusMode({
+    toolbar: $('focusToolbar'), toggle: $('focusToggle'), nextHref: nextLearningHref,
+    locationChanged: () => { currentHash = routeKey(); currentRoute = parseRoute(); },
+  });
   const review = createReviewView({
     ...bridge, request: call, root, homeHref: courseHomeHref, formatDate: value => apiDate(value, true), showFeedback,
+    completionAction: focusMode.completion,
     progressChanged: () => { dashboards.clear(); answerCache.clear(); },
     setSession: id => {
       const params = new URLSearchParams(currentRoute.params); params.set('session', id);
@@ -154,12 +164,15 @@ export function initPortal(bridge) {
     return bank ? localHref(`/banks/${encode(bank)}`) : courseHomeHref();
   };
   const atomic = createAtomicView({...bridge, request: call, root, homeHref: topicHomeHref,
+    completionAction: focusMode.completion,
     resumeTopic: next => { root.hidden = true; void bridge.openTopic(next.topic_id, currentRoute?.subjectId); },
     homeLabel: () => t(currentRoute?.params?.has('bank') ? 'training.back' : 'nav.backHome'),
     reviewHref: () => subjectHref(currentRoute?.subjectId, '/reviews'), formatDate: value => apiDate(value, true),
     progressChanged: () => { dashboards.clear(); answerCache.clear(); }});
   const contextLibrary = createContextLibraryView({...bridge, request: call, root});
   const training = createTrainingView({...bridge, request: call, root, href: localHref,
+    readerHref: path => focusMode.readerHref(localHref(path)),
+    completionAction: focusMode.completion,
     formatDate: value => apiDate(value, true), courseSidebar, taskTree, taskVisibilityOptions, renderHistory,
     openGraph, progressChanged: () => { dashboards.clear(); answerCache.clear(); },
     completeGroup: (bank, group, rootId) => {
@@ -334,8 +347,8 @@ export function initPortal(bridge) {
     if (home) { root.querySelector('.subjectAccessNotice')?.remove(); root.querySelector('.subjectHomeHeading')?.append(notice); }
     else { document.title = pageTitle(subjectLabel(subject)); root.replaceChildren(node('h1', 'portalPageTitle', subjectLabel(subject)), notice); }
   }
-  async function dashboard(id, cursor = null, rootId = id === selectedCourse ? selectedRoot : null) {
-    const data = await call(`dashboard?${query({ course_id: id, cursor, limit: 25, root_id: rootId })}`);
+  async function dashboard(id, cursor = null, rootId = id === selectedCourse ? selectedRoot : null, options) {
+    const data = await call(`dashboard?${query({ course_id: id, cursor, limit: 25, root_id: rootId })}`, options);
     if (!data.course || !Array.isArray(data.tasks) || !Array.isArray(data.history)) throw new Error(t("portal.course.learning.records.are.temporarily.unavailable.18"));
     return data;
   }
@@ -372,6 +385,8 @@ export function initPortal(bridge) {
     }
     if (currentRoute.canonicalHash && currentRoute.canonicalHash !== location.hash) history.replaceState(null, "", currentRoute.canonicalHash);
     currentHash = routeKey();
+    focusMode.start(currentRoute);
+    let readerOpened = false;
     $('adminLearningNotice').querySelector('.adminAllBlocksLink')?.remove();
     const ticket = ++sequence;
     stopPageWork(); showMenu(false); collapseTasks();
@@ -464,7 +479,9 @@ export function initPortal(bridge) {
         if (ticket !== sequence) return;
         if (state.training_target) {
           const target = state.training_target;
-          navigate(`/banks/${encode(target.bank_id)}/${encode(target.group_id)}?${target.question_id ? 'question=' + encode(target.question_id) : 'introduction=' + encode(target.introduction_id)}`);
+          const search = query({question: target.question_id, introduction: target.question_id ? null : target.introduction_id,
+            root: params.get('bank') === target.bank_id ? params.get('root') : null});
+          navigate(focusMode.readerHref(`/banks/${encode(target.bank_id)}/${encode(target.group_id)}?${search}`));
           return;
         }
         if (state.training_mode === 'atomic_retrieval') await atomic.open(topicId, 'learn', state);
@@ -474,12 +491,16 @@ export function initPortal(bridge) {
         else await review.open(decodeURIComponent(path.split("/")[2]), decodeURIComponent(path.split("/")[3]), params.get("session"));
       } else root.replaceChildren(errorBox(t("portal.this.page.does.not.exist.24"), () => navigate("/"), t("portal.page.not.found.25")));
       if (ticket !== sequence) return;
+      readerOpened = focusReaderRoute(currentRoute);
       currentHash = routeKey(); currentRoute = parseRoute();
       rememberWorkspaceLocation(currentHash);
       updateSubjectContext(subject || null);
       const target = params.get("unitId") || params.get("topicId");
       requestAnimationFrame(() => {
         if (ticket !== sequence) return;
+        if (readerOpened && params.get('focus') === '1' && previousHash !== currentHash) {
+          document.querySelector('.appLayout:not([hidden]) .lesson, .atomicMain, .reviewMain')?.focus({preventScroll: true});
+        }
         const feedbackKind = ideaFeedbackKind(params);
         const guideSection = path === '/guide' && subjectId === 'cs' && params.get('section') === ideaSetupSection
           && $(feedbackKind ? ideaFeedbackId(feedbackKind) : ideaSetupSection);
@@ -509,7 +530,11 @@ export function initPortal(bridge) {
       const forbidden = error.status === 403 && ["feature_forbidden", "topic_forbidden", "course_forbidden"].includes(error.code);
       root.hidden = false; root.replaceChildren(errorBox(translateMessage(error.message), forbidden ? () => navigate("/courses") : () => location.reload(), forbidden ? t("portal.content.unavailable.26") : t("portal.service.unavailable.27")));
     } finally {
-      if (ticket === sequence) { root.inert = false; root.removeAttribute('aria-busy'); }
+      if (ticket === sequence) {
+        root.inert = false;
+        root.removeAttribute('aria-busy');
+        focusMode.show(readerOpened);
+      }
     }
   }
 
@@ -699,11 +724,20 @@ export function initPortal(bridge) {
     for (const item of root.querySelectorAll(".taskDetails")) item.hidden = true;
     for (const item of root.querySelectorAll(".taskToggle")) item.setAttribute("aria-expanded", "false");
   }
+  function taskStartTarget(task, view) {
+    if (view.target) return view.target(task);
+    if ((task.type === 'Lesson' || !task.type) && task.topic_id) return `#/topic/${encode(task.topic_id)}`;
+    const explicit = task.start_href || task.start_url;
+    return typeof explicit === 'string' && /^#\/(topic|review|learn|courses)\//.test(explicit) ? explicit : null;
+  }
+  function taskBlocked(task) {
+    return task.locked || task.status === 'paused' || task.dependency_ready === false;
+  }
   function incompleteTask(task, data, view = {}) {
     if (task.bank_id && !view.review) view = {...view, training: true, label: t('training.groups'),
       startLabel: t('training.start'), target: item => item.href};
     const paused = task.locked || task.status === 'paused';
-    const locked = paused || task.dependency_ready === false;
+    const locked = taskBlocked(task);
     const card = node("article", locked ? "portalTask taskLocked" : "portalTask taskUnlocked"); card.dataset.taskId = task.id;
     card.dataset.dependencyReady = String(task.dependency_ready !== false);
     if (task.type === 'Lesson') {
@@ -751,8 +785,7 @@ export function initPortal(bridge) {
     }
     if (!task.maintenance) {
       const actions = node("div", "taskStartRow");
-      const explicit = task.start_href || task.start_url;
-      const target = view.target ? view.target(task) : (task.type === "Lesson" || !task.type) && task.topic_id ? `#/topic/${encode(task.topic_id)}` : typeof explicit === "string" && /^#\/(topic|review|learn|courses)\//.test(explicit) ? explicit : null;
+      const target = taskStartTarget(task, view);
       if (paused) {
         const blocked = roundButton(t('portal.paused.5'), () => {}); blocked.disabled = true; actions.append(blocked);
       } else if (task.dependency_ready === false) {
@@ -837,7 +870,8 @@ export function initPortal(bridge) {
     renderTaskTree(pending, {...data,
       tasks: view.entries || (view.review ? data.tasks : data.tasks.filter(task => task.type === 'Lesson')),
       pending_hierarchy: view.hierarchy || data.pending_hierarchy}, {
-      renderTask: task => task.presentation === 'draft' ? draftTopicCard(task) : incompleteTask(task, data, view), expanded: expandedUnits,
+      renderTask: view.renderTask || (task => task.presentation === 'draft' ? draftTopicCard(task) : incompleteTask(task, data, view)),
+      expanded: view.renderTask ? null : expandedUnits,
       keyPrefix: `${bridge.getAccess()?.learner_id}:${view.review ? 'review' : view.training ? 'training' : ''}`,
       sourceOrder: view.sourceOrder || [],
       defaultOpen: Boolean(view.review),
@@ -901,6 +935,71 @@ export function initPortal(bridge) {
     queueMicrotask(() => { apply(); syncExpansion(); });
     return bar;
   }
+  function renderCoursePending(pending, data, customCard) {
+    const renderTask = customCard || (task => task.presentation === 'draft' ? draftTopicCard(task) : incompleteTask(task, data));
+    const display = courseDisplayEntries(data, catalog?.courses.find(course => course.id === data.course.id)?.outline || []);
+    if (data.course_hierarchy_enabled && allowed("course_hierarchy")) {
+      for (const task of display.entries.filter(task => task.type !== "Lesson" && task.presentation !== "draft")) pending.append(renderTask(task));
+      // Source order only applies to the chapter tree.
+      const chapters = document.createDocumentFragment();
+      taskTree(chapters, data, {entries: display.entries.filter(task => task.type === 'Lesson' || task.presentation === 'draft'),
+        hierarchy: display.hierarchy, sourceOrder: display.sourceOrder, renderTask: customCard});
+      pending.append(chapters);
+    } else {
+      const parents = new Map((data.units || []).flatMap(unit => unit.topic_ids.map(id => [id, unit.id])));
+      const entries = orderTopicSiblings(display.entries,
+        entry => entry.type === 'Lesson' || entry.presentation === 'draft' ? entry : null,
+        topic => parents.get(topic.topic_id));
+      for (const entry of entries) pending.append(renderTask(entry));
+    }
+    return display;
+  }
+  async function nextLearningHref() {
+    const reader = parseRoute(), ticket = sequence, learner = bridge.getAccess()?.learner_id;
+    if (!allowed('learn')) return null;
+    const [, kind, id, leaf] = reader.path.split('/').map(decodeURIComponent);
+    const pending = document.createDocumentFragment();
+    let target;
+    if (kind === 'banks') {
+      const key = JSON.stringify([learner, reader.subjectId, id]);
+      const read = readBankGroups.get(key) || new Set();
+      await training.renderPending(pending, id, reader.params.get('root'), (task, view) => {
+        // A bank can contain read-only groups with no server completion record.
+        if (task.id === leaf && task.question_count === 0) read.add(leaf);
+        return continuationEntry(task, view, task.id === leaf || read.has(task.id));
+      });
+      if (ticket === sequence && learner === bridge.getAccess()?.learner_id) readBankGroups.set(key, read);
+      target = pending.querySelector('[data-next-href]')?.dataset.nextHref;
+    } else {
+      const course = reader.params.get('course') || [catalog?.courses.find(item => item.id === selectedCourse), ...(catalog?.courses || [])]
+        .find(item => item?.outline?.some(unit => unit.topic_ids.includes(id)))?.id || selectedCourse;
+      if (!course) return null;
+      const rootId = course === selectedCourse ? selectedRoot : null;
+      const data = await dashboard(course, null, rootId, {fresh: true});
+      renderCoursePending(pending, data, task => continuationEntry(task, {}, task.topic_id === id && (kind === 'topic'
+        ? task.type === 'Lesson' : sameCompletedReview(task, reader))));
+      const href = pending.querySelector('[data-next-href]')?.dataset.nextHref;
+      if (href) target = localHref(href, course, rootId);
+    }
+    if (ticket !== sequence || learner !== bridge.getAccess()?.learner_id || !allowed('learn')) return null;
+    return target ? localHref(target) : null;
+  }
+  function sameCompletedReview(task, reader) {
+    const target = taskStartTarget(task, {});
+    if (!target) return false;
+    const route = parsePlatformRoute(target);
+    return route.path === reader.path && ['session', 'card'].every(key =>
+      !route.params.has(key) || route.params.get(key) === reader.params.get(key));
+  }
+  function continuationEntry(task, view, current) {
+    const entry = node('div');
+    entry.dataset.taskId = task.id;
+    if (!current && task.presentation !== 'draft' && !taskBlocked(task) && !task.maintenance && !task.cooldown_until) {
+      const href = taskStartTarget(task, view);
+      if (href) entry.dataset.nextHref = href;
+    }
+    return entry;
+  }
   function renderCourseWorkspace(data, taskId, ticket) {
     historyError = null;
     const {layout, tasks} = workspaceLayout(courseSidebar(data)); tasks.id = 'dashboardTasks';
@@ -908,21 +1007,7 @@ export function initPortal(bridge) {
     if (taskId) { renderAnswers(tasks, taskId, ticket); return; }
     tasks.append(taskVisibilityOptions(tasks, {hideUnavailableTopics: true}));
     const pending = node("section", "incompleteTasks"); pending.setAttribute("aria-label", t("portal.pending.tasks.64"));
-    const display = courseDisplayEntries(data, catalog?.courses.find(course => course.id === data.course.id)?.outline || []);
-    if (data.course_hierarchy_enabled && allowed("course_hierarchy")) {
-      for (const task of display.entries.filter(task => task.type !== "Lesson" && task.presentation !== "draft")) pending.append(incompleteTask(task, data));
-      // Source order only applies to the chapter tree.
-      const chapters = document.createDocumentFragment();
-      taskTree(chapters, data, {entries: display.entries.filter(task => task.type === 'Lesson' || task.presentation === 'draft'),
-        hierarchy: display.hierarchy, sourceOrder: display.sourceOrder});
-      pending.append(chapters);
-    } else {
-      const parents = new Map((data.units || []).flatMap(unit => unit.topic_ids.map(id => [id, unit.id])));
-      const entries = orderTopicSiblings(display.entries,
-        entry => entry.type === 'Lesson' || entry.presentation === 'draft' ? entry : null,
-        topic => parents.get(topic.topic_id));
-      for (const entry of entries) pending.append(entry.presentation === 'draft' ? draftTopicCard(entry) : incompleteTask(entry, data));
-    }
+    const display = renderCoursePending(pending, data);
     if (!data.tasks.length && !display.drafts.length) {
       const empty = emptyBox(percent(data.course.progress) === 100 ? t("portal.all.current.tasks.in.this.course.are.complete.65") : t("portal.no.tasks.are.available.to.start.we.will.check.again.shortly.66") );
       empty.append(control(t("portal.check.again.67"), "textButton", () => route())); pending.append(empty);
@@ -1946,6 +2031,7 @@ export function initPortal(bridge) {
       identity = next; updateUser();
     },
     suspendIdentity() {
+      focusMode.start(null);
       clearWorkspaceLocations();
       replyDrafts.clear(); showHelpSummary(null); helpSummaryAt = 0;
       catalogPicker.reset();
@@ -1960,6 +2046,7 @@ export function initPortal(bridge) {
     permissionsChanged() { catalogPicker.reset(); catalog = null; dashboards.clear(); answerCache.clear(); clearWorkspaceLocations(); },
     async identityChanged() { review.reset(); atomic.reset(); subjects = null; catalog = null; profile = null; dashboards.clear(); answerCache.clear(); scrolls.clear(); clearWorkspaceLocations(); await route(); },
     progressChanged() { dashboards.clear(); answerCache.clear(); },
+    completionAction: focusMode.completion,
     showFeedback,
   };
 }

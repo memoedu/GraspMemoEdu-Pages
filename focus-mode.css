@@ -1,0 +1,87 @@
+/* Hallmark · component: Focus Mode · existing learning palette
+ * Pre-emit critique: P5 H5 E4 S5 R5 V4. */
+.focusToolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+}
+
+.focusToggle {
+  min-block-size: 44px;
+  padding-inline: 10px;
+  color: var(--muted);
+}
+
+.focusCompletion { display: contents; }
+body:not(.learningFocus) .focusCompletionOnly { display: none; }
+
+body.learningFocus {
+  --focus-gutter: clamp(12px, 2.6vw, 48px);
+  --site-header-height: calc(44px + env(safe-area-inset-top));
+  padding-top: 0;
+}
+
+body.learningFocus.historyDrawerOpen:not(.portalModalOpen) { overflow: visible; }
+
+.learningFocus .focusToolbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 8;
+  padding-block-start: env(safe-area-inset-top);
+  background: Canvas;
+}
+
+.learningFocus :is(.topRibbon, .historySidebar, .historyDrawerToggle, .historyScrim,
+  .atomicHistory, .reviewHistory, .topicBreadcrumb, .lessonHeading, .lessonFooter,
+  .beginnerHint, .pauseHint),
+.learningFocus .atomicMain > :is(.subjectBack, .eyebrow, .lessonTitle, .topicProgress),
+.learningFocus .reviewMain > :is(.eyebrow, .lessonTitle, .reviewTopicTitle, .reviewProgress),
+.learningFocus .appLayout::before {
+  display: none;
+}
+
+.learningFocus :is(.appLayout, .portalShell, .atomicLayout, .reviewLayout) {
+  display: block;
+  max-inline-size: none;
+  margin: 0;
+}
+
+.learningFocus :is(.appLayout, .portalShell) {
+  min-block-size: calc(100dvh - var(--site-header-height));
+  padding-inline: max(var(--focus-gutter), env(safe-area-inset-left)) max(var(--focus-gutter), env(safe-area-inset-right));
+  padding-block-end: max(var(--focus-gutter), env(safe-area-inset-bottom));
+}
+
+.learningFocus .appLayout .pageShell,
+.learningFocus :is(.atomicLayout, .reviewLayout) > :is(.atomicMain, .reviewMain) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.learningFocus .appLayout .lesson { margin: 0; }
+.learningFocus .lessonToolbar { margin-block-end: 0; }
+.learningFocus .pauseControl { margin: 0; }
+.learningFocus .step {
+  padding: clamp(8px, 1.2vw, 20px) 0;
+  border: 0;
+  margin: 0;
+}
+
+.learningFocus[data-subject] :is(.step, .atomicMain) .courseContent {
+  --article-font-size: var(--focus-text-size);
+  --focus-text-size: clamp(17px, 1.1vw + .45rem, 23px);
+  font-size: var(--focus-text-size);
+}
+
+.learningFocus :is(.sourceReading, .courseContent.sourceBook, .answerContent, .readingSectionHeading, .readingFootnotes) {
+  max-width: min(100%, 76ch);
+}
+
+@media (min-width: 1001px) {
+  .learningFocus .passageWorkspace:has(> .passageQuestionPane) > :is(.passageQuestionPane, form, .questionInteraction) {
+    height: clamp(360px, calc(100dvh - var(--site-header-height) - 135px), 940px);
+  }
+}
+
+@media print { .focusToolbar { display: none; } }

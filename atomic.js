@@ -1,20 +1,20 @@
-import {t, translateMessage} from './i18n.js?v=38bdd9ea02fafb0e';
-import {attachFormulaEditing} from './formula-input.js?v=38bdd9ea02fafb0e';
-import {setQuestionTools} from './question-tools.js?v=38bdd9ea02fafb0e';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=38bdd9ea02fafb0e';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=38bdd9ea02fafb0e';
-import {mountAnswerConversion} from './answer-conversion.js?v=38bdd9ea02fafb0e';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=38bdd9ea02fafb0e';
-import {reportableContent} from './content-report.js?v=38bdd9ea02fafb0e';
-import {createLearningCache} from './learning-cache.js?v=38bdd9ea02fafb0e';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=38bdd9ea02fafb0e';
-import {enhanceSourceContent} from './topic-content.js?v=38bdd9ea02fafb0e';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=38bdd9ea02fafb0e';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=38bdd9ea02fafb0e';
-import {pointAssessment} from './point-assessment.js?v=38bdd9ea02fafb0e';
-import {trainingAudio} from './training-audio.js?v=38bdd9ea02fafb0e';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=38bdd9ea02fafb0e';
-import {learningHint} from './beginner-hints.js?v=38bdd9ea02fafb0e';
+import {t, translateMessage} from './i18n.js?v=6e954c2a910f29e5';
+import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
+import {setQuestionTools} from './question-tools.js?v=6e954c2a910f29e5';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6e954c2a910f29e5';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
+import {mountAnswerConversion} from './answer-conversion.js?v=6e954c2a910f29e5';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=6e954c2a910f29e5';
+import {reportableContent} from './content-report.js?v=6e954c2a910f29e5';
+import {createLearningCache} from './learning-cache.js?v=6e954c2a910f29e5';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=6e954c2a910f29e5';
+import {enhanceSourceContent} from './topic-content.js?v=6e954c2a910f29e5';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=6e954c2a910f29e5';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=6e954c2a910f29e5';
+import {pointAssessment} from './point-assessment.js?v=6e954c2a910f29e5';
+import {trainingAudio} from './training-audio.js?v=6e954c2a910f29e5';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=6e954c2a910f29e5';
+import {learningHint} from './beginner-hints.js?v=6e954c2a910f29e5';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -331,6 +331,7 @@ export function createAtomicView(bridge) {
     const style = document.getElementById('atomicMathStyle') || node('style'); style.id = 'atomicMathStyle';
     style.textContent = state.math_css || ''; if (!style.isConnected) document.head.append(style);
     const page = node('div', 'atomicLayout'), sidebar = node('aside', 'atomicHistory'), main = node('main', 'atomicMain');
+    main.tabIndex = -1;
     if (state.chunk && !selected) page.classList.add('atomicReadingLayout');
     if (state.current) {
       selected = null;
@@ -389,7 +390,8 @@ export function createAtomicView(bridge) {
       else if (state.current) appendQuestion(state.current);
       else if (state.phase === 'completed') {
         main.append(node('p', 'atomicComplete', t(state.mode === 'review' ? 'atomic.reviewCompleted' : 'atomic.completed')));
-        const review = node('a', 'primaryButton', t('atomic.reviewTitle')); review.href = bridge.reviewHref(); main.append(review);
+        const review = node('a', 'primaryButton', t('atomic.reviewTitle')); review.href = bridge.reviewHref();
+        main.append(!state.pause && bridge.completionAction ? bridge.completionAction(review) : review);
       } else main.append(node('p', 'atomicWaiting', t('atomic.waiting')),
         ...(state.next_available_at ? [node('p', '', t('atomic.availableAt', {time: bridge.formatDate(state.next_available_at)}))] : []),
         button(t('atomic.refresh'), () => mutate('continue')));

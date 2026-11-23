@@ -1,14 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=38bdd9ea02fafb0e';
-import {attachFormulaEditing} from './formula-input.js?v=38bdd9ea02fafb0e';
-import {setQuestionTools} from './question-tools.js?v=38bdd9ea02fafb0e';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=38bdd9ea02fafb0e';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=38bdd9ea02fafb0e';
-import {mountAnswerConversion} from './answer-conversion.js?v=38bdd9ea02fafb0e';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=38bdd9ea02fafb0e';
-import {reportableContent} from './content-report.js?v=38bdd9ea02fafb0e';
-import {createLearningCache} from './learning-cache.js?v=38bdd9ea02fafb0e';
-import {enhanceTopicContent} from './topic-content.js?v=38bdd9ea02fafb0e';
-import {practiceHint} from './beginner-hints.js?v=38bdd9ea02fafb0e';
+import { t, translateMessage, learningTitle } from './i18n.js?v=6e954c2a910f29e5';
+import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
+import {setQuestionTools} from './question-tools.js?v=6e954c2a910f29e5';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6e954c2a910f29e5';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
+import {mountAnswerConversion} from './answer-conversion.js?v=6e954c2a910f29e5';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6e954c2a910f29e5';
+import {reportableContent} from './content-report.js?v=6e954c2a910f29e5';
+import {createLearningCache} from './learning-cache.js?v=6e954c2a910f29e5';
+import {enhanceTopicContent} from './topic-content.js?v=6e954c2a910f29e5';
+import {practiceHint} from './beginner-hints.js?v=6e954c2a910f29e5';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -281,7 +281,10 @@ export function createReviewView(bridge) {
     else if (state.actions.includes('submit')) {
       const send = node('button', 'primaryButton', t('Submit')); send.id = 'reviewSubmitButton'; send.type = 'submit'; send.disabled = busy;
       send.setAttribute('form', 'reviewAnswerForm'); nav.append(send);
-    } else if (state.status !== 'in_progress') nav.append(home());
+    } else if (state.status !== 'in_progress') {
+      const finish = home();
+      nav.append(state.status === 'completed' && bridge.completionAction ? bridge.completionAction(finish) : finish);
+    }
     for (const item of nav.querySelectorAll('button')) if (busy) item.disabled = true;
     card.append(nav); main.append(card);
     setQuestionTools(card, question);

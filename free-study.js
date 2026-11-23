@@ -1,8 +1,8 @@
-import {t, translateMessage} from './i18n.js?v=38bdd9ea02fafb0e';
-import {subjectHref, subjectLabel} from './subjects.js?v=38bdd9ea02fafb0e';
-import {catalogPath, workspaceLayout} from './catalog-workspace.js?v=38bdd9ea02fafb0e';
-import {renderReviewSections} from './review-directory.js?v=38bdd9ea02fafb0e';
-import {createReviewTaskStarter} from './review-papers.js?v=38bdd9ea02fafb0e';
+import {t, translateMessage} from './i18n.js?v=6e954c2a910f29e5';
+import {subjectHref, subjectLabel} from './subjects.js?v=6e954c2a910f29e5';
+import {catalogPath, workspaceLayout} from './catalog-workspace.js?v=6e954c2a910f29e5';
+import {renderReviewSections} from './review-directory.js?v=6e954c2a910f29e5';
+import {createReviewTaskStarter} from './review-papers.js?v=6e954c2a910f29e5';
 
 const encode = encodeURIComponent;
 
