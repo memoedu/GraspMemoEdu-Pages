@@ -1,5 +1,5 @@
-import {clipText as tx} from './clipper.js?v=66386826c2fb02b5';
-import {renderPlainMath} from './math-presentation.js?v=66386826c2fb02b5';
+import {clipText as tx, openClipperPopup} from './clipper.js?v=74aee9db00491510';
+import {renderPlainMath} from './math-presentation.js?v=74aee9db00491510';
 
 const title = () => tx('零碎知识简藏', 'Knowledge Clipper');
 const toolName = {
@@ -42,10 +42,6 @@ function installStyles(doc) {
   doc.body.classList.add('clipperWindow');
 }
 
-function popupWindow() {
-  return window.open('', '_blank', 'popup,width=790,height=660');
-}
-
 export function createClipperWorkspace({request}) {
   let surface, host, controls, panels, current, types;
   let collapsed = false, expanded = false;
@@ -79,7 +75,7 @@ export function createClipperWorkspace({request}) {
       panels = create(doc, 'div', '', 'clipperPanels');
       host.append(controls, panels);
     }
-    if (host.matches(':popover-open')) host.hidePopover();
+    if (host.hasAttribute('popover')) host.hidePopover?.();
     host.removeAttribute('popover');
     if (!win && !host.hasAttribute('data-drag-enabled')) {
       host.dataset.dragEnabled = '';
@@ -100,7 +96,7 @@ export function createClipperWorkspace({request}) {
     collapsed = expanded = false;
     if (!win && typeof host.showPopover === 'function') {
       host.setAttribute('popover', 'manual');
-      host.showPopover();
+      try { host.showPopover(); } catch { host.removeAttribute('popover'); }
     }
     win?.addEventListener('pagehide', () => { if (surface === win) close(); }, {once: true});
     renderBar();
@@ -114,7 +110,7 @@ export function createClipperWorkspace({request}) {
     status.setAttribute('role', 'status');
     if (!surface) {
       actions.append(button(doc, tx('普通窗口', 'Regular window'), () => {
-        const win = popupWindow();
+        const win = openClipperPopup(true);
         if (win) { attach(win); win.focus(); }
         else status.textContent = tx('浏览器拦截了新窗口。', 'Your browser blocked the new window.');
       }, 'textButton'));
@@ -165,7 +161,7 @@ export function createClipperWorkspace({request}) {
 
   function open(kind, source, opened) {
     if (surface?.closed) close();
-    if (!host) attach(opened === undefined ? popupWindow() : opened);
+    if (!host) attach(opened === undefined ? openClipperPopup() : opened);
     else if (opened) {
       if (!surface) attach(opened);
       else opened.close();
