@@ -168,7 +168,7 @@ export const portalMessages = {
   'portal.beginnerMode': ['入门模式', 'Beginner mode'],
   'portal.answerCommandInput': ['显示文字答题框', 'Show the answer command box'],
   'portal.answerCommandInputHint': ['在题目下方输入文字并转换为答案。关闭后仍可用计算器或录音填写。', 'Type a command below a question to fill in your answer. Calculator and voice input also work with the box turned off.'],
-  'portal.beginnerModeHint': ['在学习、练习和复习中短暂显示机制提示。', 'Show brief tips about how lessons, practice and reviews work.'],
+  'portal.beginnerModeHint': ['显示学习页面中的操作说明、快捷键和机制提示。', 'Show instructions, keyboard shortcuts and tips about how learning works.'],
   'portal.courseHierarchyHint': ['复习任务保留在前列；层级中显示所有未完成的 Topic，包括暂停和前置受阻的内容。', 'Reviews stay first. Groups include every unfinished Topic, including paused and prerequisite-blocked lessons.'],
   'admin.identity': ['管理员', 'Administrator'],
   'account.advancedLearner': ['高阶学习者', 'Advanced learner'],

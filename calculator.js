@@ -1,5 +1,5 @@
-import {calculatorWorksheets} from './calculator-policy.js?v=ca08e18c2db32619';
-import {openCalculator} from './calculator-panel.js?v=ca08e18c2db32619';
+import {calculatorWorksheets} from './calculator-policy.js?v=6a7af7ba0045af91';
+import {openCalculator} from './calculator-panel.js?v=6a7af7ba0045af91';
 
 const icons = {
   expression: 'M5 3h14v18H5zM8 7h8M8 11h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1m-9 3h1m3 0h1m3 0h1',

@@ -403,6 +403,11 @@ mjx-container[jax="SVG"] text { font-family: "Microsoft YaHei", sans-serif; }
   font: 700 16px / 1 Arial, sans-serif;
 }
 .beginnerHint:empty { padding: 0; border: 0; box-shadow: none; }
+:root:not([data-beginner-mode]) .beginnerOnly { display: none !important; }
+/* Keep described-by targets present, with their optional text removed from the accessible description. */
+:root:not([data-beginner-mode]) .beginnerDescription { position: absolute; }
+:root:not([data-beginner-mode]) .answerBottom:has(> .beginnerDescription) { justify-content: flex-end; }
+:root:not([data-beginner-mode]) .answerBottom:has(> .beginnerDescription:only-child) { margin-top: 0; }
 @media print { .beginnerHint { display: none; } }
 .emptyState { padding: 49px 24px; border: 1px solid var(--ma-border); border-radius: 3px; text-align: center; margin-top: 25px; }
 .emptyState h2 { color: var(--ma-navy); font-weight: 400; font-size: 17px; margin: 14px 0 7px; }

@@ -1,14 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=ca08e18c2db32619';
-import {attachFormulaEditing} from './formula-input.js?v=ca08e18c2db32619';
-import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=ca08e18c2db32619';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca08e18c2db32619';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca08e18c2db32619';
-import {reportableContent} from './content-report.js?v=ca08e18c2db32619';
-import {createLearningCache} from './learning-cache.js?v=ca08e18c2db32619';
-import {enhanceTopicContent} from './topic-content.js?v=ca08e18c2db32619';
-import {practiceHint} from './beginner-hints.js?v=ca08e18c2db32619';
+import { t, translateMessage, learningTitle } from './i18n.js?v=6a7af7ba0045af91';
+import {attachFormulaEditing} from './formula-input.js?v=6a7af7ba0045af91';
+import {setQuestionTools} from './question-tools.js?v=6a7af7ba0045af91';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6a7af7ba0045af91';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6a7af7ba0045af91';
+import {mountAnswerConversion} from './answer-conversion.js?v=6a7af7ba0045af91';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6a7af7ba0045af91';
+import {reportableContent} from './content-report.js?v=6a7af7ba0045af91';
+import {createLearningCache} from './learning-cache.js?v=6a7af7ba0045af91';
+import {enhanceTopicContent} from './topic-content.js?v=6a7af7ba0045af91';
+import {practiceHint} from './beginner-hints.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -257,7 +257,7 @@ export function createReviewView(bridge) {
       form.append(label, control?.element || input);
       if (!structured && question.interaction?.grading !== 'exact') attachFormulaEditing(input, {group: 'answer'});
       mountAnswerConversion(form, input, question.interaction, {topic: isCurrent, question});
-      form.append(node('p', 'inputHint', t(question.interaction?.type === 'choice' ? 'question.choiceHint' : question.interaction?.grading === 'exact' ? 'question.exactHint'
+      form.append(node('p', 'inputHint beginnerOnly', t(question.interaction?.type === 'choice' ? 'question.choiceHint' : question.interaction?.grading === 'exact' ? 'question.exactHint'
         : question.interaction?.grading === 'semantic' ? 'question.semanticHint'
         : structured ? 'question.completeHint' : '只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。')));
       card.append(form);

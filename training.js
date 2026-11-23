@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=ca08e18c2db32619';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ca08e18c2db32619';
-import {answerReady, answerEmpty} from './question-input.js?v=ca08e18c2db32619';
-import {createLearningCache} from './learning-cache.js?v=ca08e18c2db32619';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=ca08e18c2db32619';
-import {helpableContent} from './content-report.js?v=ca08e18c2db32619';
-import {ratingChoices} from './self-assessment.js?v=ca08e18c2db32619';
-import {pointAssessment} from './point-assessment.js?v=ca08e18c2db32619';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ca08e18c2db32619';
-import {learningHint} from './beginner-hints.js?v=ca08e18c2db32619';
+import {t, translateMessage} from './i18n.js?v=6a7af7ba0045af91';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=6a7af7ba0045af91';
+import {answerReady, answerEmpty} from './question-input.js?v=6a7af7ba0045af91';
+import {createLearningCache} from './learning-cache.js?v=6a7af7ba0045af91';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=6a7af7ba0045af91';
+import {helpableContent} from './content-report.js?v=6a7af7ba0045af91';
+import {ratingChoices} from './self-assessment.js?v=6a7af7ba0045af91';
+import {pointAssessment} from './point-assessment.js?v=6a7af7ba0045af91';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=6a7af7ba0045af91';
+import {learningHint} from './beginner-hints.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=ca08e18c2db32619';
-import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
-import {voiceAnswerPending} from './voice-input.js?v=ca08e18c2db32619';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=6a7af7ba0045af91';
+import {setQuestionTools} from './question-tools.js?v=6a7af7ba0045af91';
+import {voiceAnswerPending} from './voice-input.js?v=6a7af7ba0045af91';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -748,7 +748,7 @@ export function createTrainingView(bridge) {
       } catch (failure) { if (alive(e, s)) { error(main, failure); open.disabled = !state.can_submit; } }
     });
     open.disabled = !state.can_submit;
-    main.append(ideaSetupLink(), node('p', 'inputHint', t('academy.reset')));
+    main.append(ideaSetupLink(), node('p', 'inputHint beginnerOnly', t('academy.reset')));
     const status = node('p', 'inputHint academyTrainingStatus', t(state.academy.checks ? 'academy.checks'
       : state.academy.opened ? 'academy.connected' : 'academy.waiting', {count: state.academy.checks}));
     status.setAttribute('role', 'status'); main.append(status);
@@ -763,7 +763,7 @@ export function createTrainingView(bridge) {
     if (state.academy.kind === 'manual') main.append(ratingChoices({
       labels: ratingKeys.slice(1, 5), disabled: !state.can_submit || !state.academy.opened, onRate: finish}));
     else {
-      main.append(node('p', 'inputHint', t('academy.scoring')));
+      main.append(node('p', 'inputHint beginnerOnly', t('academy.scoring')));
       const end = button(t('academy.finish'), 'secondaryButton academyTrainingFinish', () => finish());
       end.disabled = !state.can_submit || !state.academy.opened || !state.academy.checks; main.append(end);
     }

@@ -1,7 +1,7 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
-import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=ca08e18c2db32619';
-import {enhanceSourceContent} from './topic-content.js?v=ca08e18c2db32619';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca08e18c2db32619';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=6a7af7ba0045af91';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=6a7af7ba0045af91';
+import {enhanceSourceContent} from './topic-content.js?v=6a7af7ba0045af91';
+import {mountAnswerConversion} from './answer-conversion.js?v=6a7af7ba0045af91';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;
@@ -63,7 +63,7 @@ export function hyperskillInput(spec,{value='',disabled=false}={}) {
   } else if(['hyperskill_sorting','hyperskill_parsons'].includes(spec.type)) {
     const parsons=spec.type==='hyperskill_parsons';
     if(!Array.isArray(current)||current.length!==spec.items.length)current=spec.items.map((_,i)=>parsons?{line_number:i,level:0}:i);
-    const list=node('ol','hyperskillOrdering');element.append(node('p','inputHint',parsons?'调整代码行顺序与缩进。':'调整各项顺序。'),list);
+    const list=node('ol','hyperskillOrdering');element.append(node('p','inputHint beginnerOnly',parsons?'调整代码行顺序与缩进。':'调整各项顺序。'),list);
     const draw=()=>{
       list.replaceChildren();
       current.forEach((entry,index)=>{
@@ -166,7 +166,7 @@ export function hyperskillQuestion(box,{question,history,disabled,data,draft,onD
   if(history)return box;
   if(!data) {
     box.append(button('连接 Hyperskill 并加载练习',()=>action('open'),true));
-    box.append(node('p','inputHint','在此作答，由 Hyperskill 判题；结果同时记入本网站复习记录。'));
+    box.append(node('p','inputHint beginnerOnly','在此作答，由 Hyperskill 判题；结果同时记入本网站复习记录。'));
     return box;
   }
   if(data.connection) {

@@ -1,16 +1,16 @@
-import {t, learningTitle} from './i18n.js?v=ca08e18c2db32619';
-import {attachFormulaEditing} from './formula-input.js?v=ca08e18c2db32619';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=ca08e18c2db32619';
-import {enhanceTopicContent} from './topic-content.js?v=ca08e18c2db32619';
-import {prepareMathContent} from './math-presentation.js?v=ca08e18c2db32619';
-import {sourceAttributions} from './memory-chunk.js?v=ca08e18c2db32619';
-import {mountPassageBlanks} from './composite-input.js?v=ca08e18c2db32619';
-import {placeContentActions} from './content-report.js?v=ca08e18c2db32619';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=ca08e18c2db32619';
-import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
-import {enableVoiceAnswer} from './voice-input.js?v=ca08e18c2db32619';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca08e18c2db32619';
+import {t, learningTitle} from './i18n.js?v=6a7af7ba0045af91';
+import {attachFormulaEditing} from './formula-input.js?v=6a7af7ba0045af91';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6a7af7ba0045af91';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6a7af7ba0045af91';
+import {enhanceTopicContent} from './topic-content.js?v=6a7af7ba0045af91';
+import {prepareMathContent} from './math-presentation.js?v=6a7af7ba0045af91';
+import {sourceAttributions} from './memory-chunk.js?v=6a7af7ba0045af91';
+import {mountPassageBlanks} from './composite-input.js?v=6a7af7ba0045af91';
+import {placeContentActions} from './content-report.js?v=6a7af7ba0045af91';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=6a7af7ba0045af91';
+import {setQuestionTools} from './question-tools.js?v=6a7af7ba0045af91';
+import {enableVoiceAnswer} from './voice-input.js?v=6a7af7ba0045af91';
+import {mountAnswerConversion} from './answer-conversion.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -342,15 +342,17 @@ export function answerEditor(step, stem, value, {formId = 'answerForm', inputId 
   const input = control?.input || node('textarea', 'answerInput');
   input.id = inputId; input.name = 'answer'; input.rows = 3; input.maxLength = step.interaction?.version === 2 ? 16384 : 2000;
   input.spellcheck = false; input.autocomplete = 'off'; input.value = value;
-  const error = node('p', 'inputError', t(step.interaction?.type === 'choice' ? 'question.choiceHint' : structured ? 'question.completeHint' : '请先填写答案。'));
+  const error = node('p', 'inputError', t(step.interaction?.type === 'choice' ? 'question.choiceRequired' : structured ? 'question.itemsRequired' : '请先填写答案。'));
   error.id = inputId === 'answerInput' ? 'answerError' : `${inputId}Error`; error.hidden = true;
   const bottom = node('div', 'answerBottom');
-  const hint = node('p', 'inputHint', t(step.interaction?.type === 'choice' ? 'question.choiceHint' : step.interaction?.grading === 'exact' ? 'question.exactHint'
+  const hint = node('p', 'inputHint beginnerDescription');
+  const hintText = node('span', 'beginnerOnly', t(step.interaction?.type === 'choice' ? 'question.choiceHint' : step.interaction?.grading === 'exact' ? 'question.exactHint'
     : step.interaction?.grading === 'semantic' ? 'question.semanticHint'
     : structured && step.interaction.type !== 'fill_blank' ? 'question.completeHint'
     : '只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。'));
   hint.id = inputId === 'answerInput' ? 'answerHint' : `${inputId}Hint`;
-  if (canSelfRate) hint.append(document.createElement('br'), document.createTextNode(t('training.showHint')));
+  if (canSelfRate) hintText.append(document.createElement('br'), document.createTextNode(t('training.showHint')));
+  hint.append(hintText);
   input.setAttribute('aria-describedby', `${hint.id} ${error.id}`);
   const submit = node('button', 'primaryButton', t('Submit'));
   submit.id = submitId; submit.type = 'submit'; submit.setAttribute('form', formId); submit.disabled = !answerReady(input);

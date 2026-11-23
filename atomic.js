@@ -1,20 +1,20 @@
-import {t, translateMessage} from './i18n.js?v=ca08e18c2db32619';
-import {attachFormulaEditing} from './formula-input.js?v=ca08e18c2db32619';
-import {setQuestionTools} from './question-tools.js?v=ca08e18c2db32619';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=ca08e18c2db32619';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=ca08e18c2db32619';
-import {mountAnswerConversion} from './answer-conversion.js?v=ca08e18c2db32619';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=ca08e18c2db32619';
-import {reportableContent} from './content-report.js?v=ca08e18c2db32619';
-import {createLearningCache} from './learning-cache.js?v=ca08e18c2db32619';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=ca08e18c2db32619';
-import {enhanceSourceContent} from './topic-content.js?v=ca08e18c2db32619';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=ca08e18c2db32619';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=ca08e18c2db32619';
-import {pointAssessment} from './point-assessment.js?v=ca08e18c2db32619';
-import {trainingAudio} from './training-audio.js?v=ca08e18c2db32619';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=ca08e18c2db32619';
-import {learningHint} from './beginner-hints.js?v=ca08e18c2db32619';
+import {t, translateMessage} from './i18n.js?v=6a7af7ba0045af91';
+import {attachFormulaEditing} from './formula-input.js?v=6a7af7ba0045af91';
+import {setQuestionTools} from './question-tools.js?v=6a7af7ba0045af91';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6a7af7ba0045af91';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6a7af7ba0045af91';
+import {mountAnswerConversion} from './answer-conversion.js?v=6a7af7ba0045af91';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=6a7af7ba0045af91';
+import {reportableContent} from './content-report.js?v=6a7af7ba0045af91';
+import {createLearningCache} from './learning-cache.js?v=6a7af7ba0045af91';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=6a7af7ba0045af91';
+import {enhanceSourceContent} from './topic-content.js?v=6a7af7ba0045af91';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=6a7af7ba0045af91';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=6a7af7ba0045af91';
+import {pointAssessment} from './point-assessment.js?v=6a7af7ba0045af91';
+import {trainingAudio} from './training-audio.js?v=6a7af7ba0045af91';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=6a7af7ba0045af91';
+import {learningHint} from './beginner-hints.js?v=6a7af7ba0045af91';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -220,11 +220,11 @@ export function createAtomicView(bridge) {
       return box;
     }
     const open = button(t(busy ? 'academy.launching' : question.academy.round_id ? 'academy.resume' : 'academy.open'), launchAcademy, 'primaryButton');
-    open.disabled = disabled; box.append(open, ideaSetupLink(), node('p', 'inputHint', t('academy.reset')));
+    open.disabled = disabled; box.append(open, ideaSetupLink(), node('p', 'inputHint beginnerOnly', t('academy.reset')));
     if (academyLink && !history) {
       const link = node('a', 'secondaryButton', t('academy.retry'));
       link.href = academyLink; link.dataset.academyLink = ''; link.rel = 'noreferrer';
-      box.append(node('p', 'inputHint', t('academy.connection')), link);
+      box.append(node('p', 'inputHint beginnerOnly', t('academy.connection')), link);
     }
     const status = node('p', 'inputHint', t(question.academy.checks ? 'academy.checks'
       : question.academy.opened ? 'academy.connected' : 'academy.waiting', {count: question.academy.checks}));
@@ -296,10 +296,10 @@ export function createAtomicView(bridge) {
       if (question.revealed) { send.hidden = true; if (input.questionControl) input.questionControl.setDisabled(true); else input.disabled = true; }
     }
     if (!history && question.phase === 'answer' && question.interaction?.type === 'choice') {
-      box.append(node('p', 'inputHint', t('question.choiceHint')));
+      box.append(node('p', 'inputHint beginnerOnly', t('question.choiceHint')));
     }
     if (!history && question.phase === 'answer' && question.interaction?.grading) {
-      box.append(node('p', 'inputHint', t(question.interaction.grading === 'exact' ? 'question.exactHint' : 'question.semanticHint')));
+      box.append(node('p', 'inputHint beginnerOnly', t(question.interaction.grading === 'exact' ? 'question.exactHint' : 'question.semanticHint')));
     }
     if (question.phase === 'feedback') {
       const feedback = node('div', `feedback atomicFeedback ${question.correct ? 'correct' : 'incorrect'}`);
@@ -320,7 +320,7 @@ export function createAtomicView(bridge) {
   function renderChunk(chunk) {
     const box = memoryChunk(chunk, {topicId: topic, version: state.course_version});
     const footer = node('footer', 'atomicChunkFooter');
-    footer.append(node('p', 'inputHint', t('atomic.startCardsHint')),
+    footer.append(node('p', 'inputHint beginnerOnly', t('atomic.startCardsHint')),
       button(t('atomic.startCards'), () => mutate('continue'), 'primaryButton'));
     box.append(footer);
     return box;
