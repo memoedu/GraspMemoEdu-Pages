@@ -2,9 +2,9 @@
 export const microphoneIcon = 'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0zM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8';
 const formats = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus'];
 
-export async function recordMicrophone({prepare, maxDurationMs, signal, media, wholeRecording = false} = {}) {
+export async function recordMicrophone({prepare, maxDurationMs, signal, media, wholeRecording = false, keepStream = false} = {}) {
   const stream = media || await navigator.mediaDevices.getUserMedia({audio: true});
-  const release = () => stream.getTracks().forEach(track => track.stop());
+  const release = () => { if (!keepStream) stream.getTracks().forEach(track => track.stop()); };
   try {
     signal?.throwIfAborted();
     await prepare?.();

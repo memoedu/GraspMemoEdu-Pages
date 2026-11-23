@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=d3138b96ff00ccb8';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=d3138b96ff00ccb8';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=d3138b96ff00ccb8';
-import {streamMicrophone} from './voice-stream.js?v=d3138b96ff00ccb8';
-import {dictationContext, voiceContext} from './voice-context.js?v=d3138b96ff00ccb8';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=d3138b96ff00ccb8';
+import {getLanguage} from './i18n.js?v=993f9efe48c82717';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=993f9efe48c82717';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=993f9efe48c82717';
+import {segmentMicrophone} from './voice-stream.js?v=993f9efe48c82717';
+import {dictationContext, voiceContext} from './voice-context.js?v=993f9efe48c82717';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=993f9efe48c82717';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -11,7 +11,7 @@ const strings = (zh, en) => getLanguage() === 'en' ? en : zh;
 const changed = 'voiceinputchange';
 const audioLimitMinutes = 2;
 const audioLimitMs = audioLimitMinutes * 60000;
-let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe, streamRequest;
+let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe;
 let paint = () => {};
 let paintDuration = () => {};
 
@@ -150,47 +150,90 @@ function setPhase(job, phase, message) {
   update(message);
 }
 
-async function recordedResult(job) {
-  if (job.stream) {
-    const stream = job.stream;
-    job.stream = null;
-    const {reply, error} = await stream;
-    if (error) throw error;
-    return reply;
-  }
-  const bytes = new Uint8Array(await job.blob.arrayBuffer());
+async function recordedResult(job, blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
   let binary = '';
   for (let offset = 0; offset < bytes.length; offset += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
   }
-  return transcribe({mime_type: recordingMime(job.blob), data_base64: btoa(binary), profile: job.target.profile,
-    context: job.context, ...(!job.target.answer && {live: true})});
+  if (!active(job)) return null;
+  const before = ((job.context?.textbox?.before || '') + job.text).slice(-4096).replace(/^[\uDC00-\uDFFF]/, '');
+  const context = job.text && !job.target.answer ? {...job.context, textbox: {
+    ...job.context?.textbox, before,
+  }} : job.context;
+  return transcribe({mime_type: recordingMime(blob), data_base64: btoa(binary), profile: job.target.profile,
+    context, segmented: true, ...(!job.target.answer && {live: true})});
+}
+
+const active = job => current === job && job.identity === identity();
+
+function recordingMessage(job) {
+  if (job.failure) return job.failure;
+  if (job.phase === 'paused') return job.processing
+    ? strings('录音已暂停，正在转写…', 'Recording paused. Transcribing…')
+    : strings('录音已暂停', 'Recording paused');
+  return job.processing
+    ? strings('正在转写上一段，录音继续', 'Transcribing the previous segment. Still recording.')
+    : strings('正在录音', 'Recording');
+}
+
+function appendTranscript(job, text) {
+  if (!text) return;
+  const separator = !job.text ? '' : job.target.answer ? '\n' :
+    job.target.profile !== 'calculator' && /[a-z0-9]$/i.test(job.text) && /^[a-z0-9]/i.test(text) ? ' ' : '';
+  job.text += separator + text;
+  job.draft?.show(job.text);
+}
+
+function enqueue(job, audio) {
+  // Resolve the capture independently of any pending network request.
+  job.segments.push(audio.then(blob => ({blob}), error => ({error})));
+  void process(job);
 }
 
 async function process(job) {
-  setPhase(job, 'transcribing', job.submit
-    ? strings('已接收提交，转写完成后自动判题。', 'Submission queued. Grading starts after transcription.')
-    : strings('正在转写…', 'Transcribing…'));
+  if (!active(job) || job.processing || job.failure) return;
+  job.processing = true;
+  if (job.phase === 'recording' || job.phase === 'paused') update(recordingMessage(job));
   try {
-    const result = await recordedResult(job);
-    if (current !== job || job.identity !== identity()) return;
-    if (!result?.text?.trim()) throw Error(strings('未识别到文字。', 'No speech was recognized.'));
-    job.text = result.text;
-    if (job.target.answer) { await fillAnswer(job); return; }
-    job.draft?.close();
-    const {field} = job.target, form = field.form;
-    if (!job.draft?.interrupted && job.page === location.hash && job.target.context === voiceContext(field) && insert(job.target, job.text)) {
-      current = null;
-      update(strings('已插入转写文字。', 'Transcript inserted.'));
-      if (job.submit?.form === form && form?.isConnected && !job.submit.disabled) form.requestSubmit(job.submit);
-    } else {
-      job.submit = null;
-      setPhase(job, 'ready', strings('原输入已改变。请选择输入位置后插入转写。', 'The original input changed. Select a destination to insert the transcript.'));
+    while (active(job) && job.segments.length) {
+      const {blob, error} = await job.segments[0];
+      if (!active(job)) return;
+      if (error) { job.segments.shift(); throw error; }
+      const result = blob && await recordedResult(job, blob);
+      if (!active(job)) return;
+      appendTranscript(job, result?.text?.trim());
+      job.segments.shift();
     }
   } catch (error) {
-    if (current !== job || job.identity !== identity()) return;
+    if (active(job)) job.failure = error.message || strings('转写失败，请重试。', 'Transcription failed. Try again.');
+  } finally {
+    job.processing = false;
+  }
+  if (!active(job)) return;
+  if (!job.captureDone) {
+    if (job.phase === 'recording' || job.phase === 'paused') update(recordingMessage(job));
+    return;
+  }
+  if (job.failure) { setPhase(job, 'failed', job.failure); return; }
+  if (!job.text) {
     job.draft?.close();
-    setPhase(job, 'failed', error.message || strings('转写失败，请重试。', 'Transcription failed. Try again.'));
+    current = null;
+    update(job.captureError || strings('未识别到文字。', 'No speech was recognized.'));
+    return;
+  }
+  if (job.target.answer) { await fillAnswer(job); return; }
+  job.draft?.close();
+  const {field} = job.target, form = field.form;
+  if (!job.draft?.interrupted && job.page === location.hash && job.target.context === voiceContext(field) && insert(job.target, job.text)) {
+    current = null;
+    update(job.captureError
+      ? strings('录音中断，已插入此前完成的转写。', 'Recording interrupted. Earlier segments were inserted.')
+      : strings('已插入转写文字。', 'Transcript inserted.'));
+    if (job.submit?.form === form && form?.isConnected && !job.submit.disabled) form.requestSubmit(job.submit);
+  } else {
+    job.submit = null;
+    setPhase(job, 'ready', strings('原输入已改变。请选择输入位置后插入转写。', 'The original input changed. Select a destination to insert the transcript.'));
   }
 }
 
@@ -215,28 +258,39 @@ async function start() {
     update(strings('先把光标放在要输入的位置。', 'Place the cursor where you want to type.'));
     return;
   }
-  const job = {target, identity: identity(), page: location.hash, abort: new AbortController(), elapsed: 0};
+  const job = {target, identity: identity(), page: location.hash, abort: new AbortController(), elapsed: 0, segments: [], text: ''};
   current = job;
   if (target.profile === 'answer' && !['literal', 'code'].includes(target.context?.style)) prepareVoiceFormula();
   setPhase(job, 'opening', strings('正在打开麦克风…', 'Opening microphone…'));
   try {
     job.context = dictationContext(target);
     if (!target.answer) job.draft = previewAt(job);
-    job.recorder = await streamMicrophone({request: streamRequest, profile: target.profile, context: job.context,
-      onPreview: job.draft?.show,
-      sameIdentity: () => job.identity === identity(), maxDurationMs: audioLimitMs, signal: job.abort.signal});
-    job.stream = job.recorder.transcript;
-    if (current === job) {
+    job.recorder = await segmentMicrophone({maxDurationMs: audioLimitMs, signal: job.abort.signal});
+    if (active(job)) {
       job.startedAt = performance.now();
       setPhase(job, 'recording', strings('正在录音', 'Recording'));
       tickDuration(job);
     }
-    job.blob = await job.recorder.result;
+    const tail = await job.recorder.result;
     freezeDuration(job);
-    if (current === job && identity() === job.identity) await process(job);
+    if (active(job)) {
+      job.captureDone = true;
+      setPhase(job, 'transcribing', job.submit
+        ? strings('已接收提交，转写完成后自动判题。', 'Submission queued. Grading starts after transcription.')
+        : strings('正在转写…', 'Transcribing…'));
+      enqueue(job, Promise.resolve(tail));
+      if (job.failure) setPhase(job, 'failed', job.failure);
+    }
   } catch (error) {
     freezeDuration(job);
     if (current !== job) return;
+    if (job.recorder && (job.segments.length || job.text)) {
+      job.captureDone = true;
+      job.captureError = strings('录音设备中断，请重新录音。', 'The microphone stopped. Please record again.');
+      setPhase(job, job.failure ? 'failed' : 'transcribing', job.failure || job.captureError);
+      void process(job);
+      return;
+    }
     job.draft?.close();
     current = null;
     update(error.message === 'Recording is empty'
@@ -293,7 +347,6 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   available = canUse;
   identity = getIdentity;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
-  streamRequest = body => request('voice-input/stream', {method: 'POST', body, timeout: body.op === 'finish' ? 90000 : 30000});
   document.addEventListener('focusin', event => {
     if (editable(event.target) || activeFormulaField(event.target)) lastField = event.target;
     else if (!event.target.closest('.questionTools') && current?.phase !== 'ready') lastField = null;
@@ -368,18 +421,28 @@ function voiceControls(holdLayout) {
     if (job.phase === 'paused') {
       job.recorder.resume();
       job.startedAt = performance.now();
-      setPhase(job, 'recording', strings('正在录音', 'Recording'));
+      job.phase = 'recording';
+      update(recordingMessage(job));
       tickDuration(job);
     } else {
       job.recorder.pause();
       freezeDuration(job);
-      setPhase(job, 'paused', strings('录音已暂停', 'Recording paused'));
+      job.phase = 'paused';
+      update(recordingMessage(job));
     }
   });
   const end = button(() => strings('结束录音', 'Stop recording'), () => stop());
+  const cut = button(() => strings('转写', 'Transcribe'), () => {
+    const job = current;
+    enqueue(job, job.recorder.cut());
+  });
   const retry = button(() => strings('重试转写', 'Retry transcription'), () => {
     if (current.phase === 'conversion_failed') void fillAnswer(current);
-    else void process(current);
+    else {
+      current.failure = null;
+      if (current.captureDone) setPhase(current, 'transcribing', strings('正在转写…', 'Transcribing…'));
+      void process(current);
+    }
   });
   const use = button(() => strings('插入转写文字', 'Insert transcript'), () => {
     const target = destination(lastField);
@@ -392,7 +455,7 @@ function voiceControls(holdLayout) {
   const panel = document.createElement('div'); panel.className = 'voiceToolPanel';
   const message = document.createElement('span'); message.setAttribute('role', 'status');
   const duration = document.createElement('span'); duration.className = 'voiceDuration';
-  panel.append(message, duration, pause, end, retry, use, cancel); root.append(mic, panel);
+  panel.append(message, duration, pause, cut, end, retry, use, cancel); root.append(mic, panel);
   paintDuration = () => {
     duration.hidden = !current?.recorder || !['recording', 'paused', 'finishing', 'transcribing'].includes(current.phase);
     if (duration.hidden) return;
@@ -413,11 +476,13 @@ function voiceControls(holdLayout) {
     panel.hidden = !status;
     if (message.textContent !== status) message.textContent = status;
     paintDuration();
-    pause.hidden = end.hidden = !recording;
+    pause.hidden = cut.hidden = end.hidden = !recording;
+    cut.disabled = !recording;
     const pauseLabel = phase === 'paused' ? strings('继续录音', 'Resume recording') : strings('暂停录音', 'Pause recording');
     if (pause.textContent !== pauseLabel) pause.textContent = pauseLabel;
     pause.setAttribute('aria-label', pause.textContent);
-    retry.hidden = phase !== 'failed' && (phase !== 'conversion_failed' || !current.target.unchanged());
+    retry.hidden = !(current?.failure && !current.processing && (recording || phase === 'failed')) &&
+      (phase !== 'conversion_failed' || !current.target.unchanged());
     const retryLabel = phase === 'conversion_failed' ? strings('重试填入', 'Retry filling controls')
       : current?.submit ? strings('重试转写并提交', 'Retry transcription and submit') : strings('重试转写', 'Retry transcription');
     if (retry.textContent !== retryLabel) retry.textContent = retryLabel;
