@@ -1,14 +1,14 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=494edfbe780e6c86';
-import {attachFormulaEditing} from './formula-input.js?v=494edfbe780e6c86';
-import {setQuestionTools} from './question-tools.js?v=494edfbe780e6c86';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=494edfbe780e6c86';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=494edfbe780e6c86';
-import {mountAnswerConversion} from './answer-conversion.js?v=494edfbe780e6c86';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=494edfbe780e6c86';
-import {reportableContent} from './content-report.js?v=494edfbe780e6c86';
-import {createLearningCache} from './learning-cache.js?v=494edfbe780e6c86';
-import {enhanceTopicContent} from './topic-content.js?v=494edfbe780e6c86';
-import {practiceHint} from './beginner-hints.js?v=494edfbe780e6c86';
+import { t, translateMessage, learningTitle } from './i18n.js?v=35de3b2120782aa7';
+import {attachFormulaEditing} from './formula-input.js?v=35de3b2120782aa7';
+import {setQuestionTools} from './question-tools.js?v=35de3b2120782aa7';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=35de3b2120782aa7';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=35de3b2120782aa7';
+import {mountAnswerConversion} from './answer-conversion.js?v=35de3b2120782aa7';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=35de3b2120782aa7';
+import {reportableContent} from './content-report.js?v=35de3b2120782aa7';
+import {createLearningCache} from './learning-cache.js?v=35de3b2120782aa7';
+import {enhanceTopicContent} from './topic-content.js?v=35de3b2120782aa7';
+import {practiceHint} from './beginner-hints.js?v=35de3b2120782aa7';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
