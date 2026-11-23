@@ -1,4 +1,4 @@
-import {recordMicrophone} from './microphone-recorder.js?v=6adb8782a213fa5e';
+import {recordMicrophone} from './microphone-recorder.js?v=51fde18727f6d2c6';
 
 function wave(frames, size) {
   if (!size) return null;
@@ -46,12 +46,16 @@ function recognizeSegments(request, signal) {
         }
         const op = marker?.op || 'audio';
         const boundary = op === 'cut' || op === 'finish';
-        const answer = await send({op, offset, pcm: btoa(data), ...(boundary && {part})});
+        const answer = await send({op, offset, part, pcm: btoa(data)});
         if (answer.offset !== offset + size || boundary && typeof answer.text !== 'string') {
           throw Error('Invalid transcription response');
         }
         offset = answer.offset;
-        if (boundary) { part++; marker.done(retired ? undefined : answer.text); }
+        if (boundary) {
+          part++;
+          offset = 0;
+          marker.done(retired ? undefined : answer.text);
+        }
         if (op === 'finish') {
           opened = false;
           retire();
@@ -66,7 +70,7 @@ function recognizeSegments(request, signal) {
   }
 
   signal.addEventListener('abort', retire, {once: true});
-  void send({op: 'open', manual: true}).then(answer => {
+  void send({op: 'open', manual: true, independent: true}).then(answer => {
     opened = true;
     if (retired) { void send({op: 'cancel'}).catch(() => {}); return; }
     if (answer.offset !== 0) { retire(); return; }
@@ -96,6 +100,7 @@ async function containerSegments(media, signal, release) {
   };
   let current = await open(), paused = false, finishing = false;
   let boundary = Promise.resolve();
+  const events = new AbortController();
   let resolve, reject;
   const result = new Promise((ok, fail) => { resolve = ok; reject = fail; });
   function stop() {
@@ -104,10 +109,15 @@ async function containerSegments(media, signal, release) {
     void boundary.then(async () => {
       current.stop();
       return current.result;
-    }).then(resolve, reject).finally(release);
+    }).then(value => {
+      events.abort(); release(); resolve(value);
+    }, error => {
+      events.abort(); release(); reject(error);
+    });
   }
-  signal.addEventListener('abort', stop, {once: true});
-  media.getAudioTracks().forEach(track => track.addEventListener('ended', stop, {once: true}));
+  signal.addEventListener('abort', stop, {once: true, signal: events.signal});
+  media.getAudioTracks().forEach(track => track.addEventListener('ended', stop, {once: true, signal: events.signal}));
+  if (signal.aborted || !media.active) stop();
   return {
     result, stop,
     cut() {
@@ -128,56 +138,88 @@ async function containerSegments(media, signal, release) {
   };
 }
 
-export async function segmentMicrophone({signal, maxDurationMs, request}) {
-  let audio, node, source, setupTimer;
-  function releaseGraph() {
-    source?.disconnect();
-    node?.disconnect();
-    if (audio && audio.state !== 'closed') void audio.close().catch(() => {});
+let microphone;
+
+export function retainMicrophone(scope) {
+  if (!microphone || scope != null && microphone.scope === scope) return;
+  const old = microphone;
+  microphone = undefined;
+  old.media?.getTracks().forEach(track => track.stop());
+  if (old.audio && old.audio.state !== 'closed') void old.audio.close().catch(() => {});
+}
+
+async function prepareGraph(device) {
+  if (!globalThis.AudioWorkletNode || !globalThis.AudioContext) throw Error('AudioWorklet unavailable');
+  const options = {sampleRate: 16000, latencyHint: 'interactive'};
+  if ('setSinkId' in AudioContext.prototype) {
+    try { device.audio = new AudioContext({...options, sinkId: {type: 'none'}}); }
+    catch { /* Restricted output selection can still capture the microphone. */ }
   }
-  async function prepareGraph() {
-    if (!globalThis.AudioWorkletNode || !globalThis.AudioContext) throw Error('AudioWorklet unavailable');
-    const options = {sampleRate: 16000, latencyHint: 'interactive'};
-    if ('setSinkId' in AudioContext.prototype) {
-      try { audio = new AudioContext({...options, sinkId: {type: 'none'}}); }
-      catch { /* Restricted output selection can still capture the microphone. */ }
-    }
-    audio ||= new AudioContext(options);
-    if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
-    // Start both while the click still carries user activation, alongside the permission request.
-    await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=6adb8782a213fa5e', import.meta.url))]);
-  }
+  const audio = device.audio ||= new AudioContext(options);
+  if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
+  // Start both while the click still carries user activation, alongside the permission request.
+  await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=51fde18727f6d2c6', import.meta.url))]);
+}
+
+export async function segmentMicrophone({signal, scope, maxDurationMs, request}) {
   signal.throwIfAborted();
-  const microphone = navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, latency: {ideal: .02}}});
-  const graph = prepareGraph().then(() => true, () => false);
-  let media;
-  const release = () => media?.getTracks().forEach(track => track.stop());
+  retainMicrophone(scope);
+  if (!microphone?.media?.active) retainMicrophone();
+  const warm = Boolean(microphone);
+  const device = microphone ||= {scope};
+  const release = () => {
+    device.media?.getAudioTracks().forEach(track => { track.enabled = false; });
+    if (device.audio && device.audio.state !== 'closed') void device.audio.suspend().catch(() => {});
+  };
+  let node, setupTimer;
   let online;
   try {
-    media = await microphone;
-    signal.throwIfAborted();
-    const ready = await Promise.race([graph, new Promise(done => { setupTimer = setTimeout(() => done(false), 850); })]);
+    let graph;
+    if (warm) {
+      device.media.getAudioTracks().forEach(track => { track.enabled = true; });
+      graph = device.audio?.resume().then(() => true, () => false);
+    } else {
+      const permission = navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, latency: {ideal: .02}}});
+      graph = prepareGraph(device).then(() => true, () => false);
+      const media = await permission;
+      if (microphone !== device || signal.aborted) {
+        media.getTracks().forEach(track => track.stop());
+        throw signal.reason || DOMException('Microphone scope changed', 'AbortError');
+      }
+      device.media = media;
+      media.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
+        if (microphone === device) retainMicrophone();
+      }, {once: true}));
+    }
+    const ready = graph && await Promise.race([graph, new Promise(done => { setupTimer = setTimeout(() => done(false), 850); })]);
     if (!ready) throw Error('Capture graph unavailable');
     signal.throwIfAborted();
+    if (microphone !== device) throw DOMException('Microphone scope changed', 'AbortError');
+    const {audio, media} = device;
     node = new AudioWorkletNode(audio, 'voice-pcm', {channelCount: 1, channelCountMode: 'explicit'});
-    source = audio.createMediaStreamSource(media);
-    source.connect(node); node.connect(audio.destination);
+    device.source ||= audio.createMediaStreamSource(media);
+    device.source.connect(node); node.connect(audio.destination);
     if (request && crypto.randomUUID) online = recognizeSegments(request, signal);
   } catch (error) {
     clearTimeout(setupTimer);
-    releaseGraph();
-    if (media && !signal.aborted && globalThis.MediaRecorder) {
-      try { return await containerSegments(media, signal, release); }
-      catch (fallbackError) { release(); throw fallbackError; }
+    device.source?.disconnect();
+    node?.disconnect();
+    if (device.audio && device.audio.state !== 'closed') void device.audio.close().catch(() => {});
+    device.audio = device.source = undefined;
+    if (microphone === device && device.media?.active && !signal.aborted && globalThis.MediaRecorder) {
+      try { return await containerSegments(device.media, signal, release); }
+      catch (fallbackError) { if (microphone === device) retainMicrophone(); throw fallbackError; }
     }
-    release(); throw error;
+    if (microphone === device) retainMicrophone();
+    throw error;
   } finally {
     clearTimeout(setupTimer);
   }
 
   let resolve, reject;
   const result = new Promise((ok, fail) => { resolve = ok; reject = fail; });
-  let frames = [], size = 0, total = 0, finishTimer, finishing = false, closed = false;
+  let frames = [], size = 0, finishTimer, finishing = false, closed = false;
+  const events = new AbortController();
   const cuts = [], capacity = maxDurationMs * 32;
   function seal(op) {
     const blob = wave(frames, size);
@@ -188,8 +230,11 @@ export async function segmentMicrophone({signal, maxDurationMs, request}) {
     if (closed) return;
     closed = true;
     clearTimeout(finishTimer);
-    signal.removeEventListener('abort', abort);
-    release(); releaseGraph();
+    events.abort();
+    device.source?.disconnect();
+    node.disconnect();
+    node.port.close();
+    release();
     if (!complete) online?.retire();
     while (cuts.length) {
       const cut = cuts.shift();
@@ -211,22 +256,22 @@ export async function segmentMicrophone({signal, maxDurationMs, request}) {
   node.port.onmessage = ({data}) => {
     if (closed) return;
     if (data instanceof ArrayBuffer) {
-      const length = Math.min(data.byteLength, capacity - total);
+      const length = Math.min(data.byteLength, capacity - size);
       if (length > 0) {
         const frame = length === data.byteLength ? data : data.slice(0, length);
         frames.push(frame);
         online?.audio(frame);
-        size += length; total += length;
+        size += length;
       }
-      if (total >= capacity) stop();
+      if (size >= capacity) stop();
     } else if (data === 'cut') {
-      cuts.shift()?.resolve(seal(size ? 'cut' : undefined));
+      cuts.shift()?.resolve(seal('cut'));
     } else if (data === 'pause') {
       void online?.mark('pause');
     } else if (data === 'finish') close(null, true);
   };
-  signal.addEventListener('abort', abort, {once: true});
-  media.getAudioTracks().forEach(track => track.addEventListener('ended', stop, {once: true}));
+  signal.addEventListener('abort', abort, {once: true, signal: events.signal});
+  device.media.getAudioTracks().forEach(track => track.addEventListener('ended', stop, {once: true, signal: events.signal}));
   return {
     result, stop,
     cut() {

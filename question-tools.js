@@ -1,6 +1,6 @@
-import {setVoiceContext} from './voice-context.js?v=6adb8782a213fa5e';
-import {getLanguage} from './i18n.js?v=6adb8782a213fa5e';
-import {calculatorToolGroups} from './calculator.js?v=6adb8782a213fa5e';
+import {setVoiceContext} from './voice-context.js?v=51fde18727f6d2c6';
+import {getLanguage} from './i18n.js?v=51fde18727f6d2c6';
+import {calculatorToolGroups} from './calculator.js?v=51fde18727f6d2c6';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
