@@ -390,7 +390,7 @@ export const readerMessages = {
   ],
   "历史作答": [
     "历史作答",
-    "Previous attempt"
+    "Past answer"
   ],
   "阅读": [
     "阅读",
@@ -556,9 +556,9 @@ export const readerMessages = {
     "历史 · 第 {attempt} 轮",
     "History · Attempt {attempt}"
   ],
-  "reader.practiceCompleted": [
-    "已完成 {completed} / {total} 道练习",
-    "{completed} / {total} practice questions completed"
+  "reader.practicePosition": [
+    "当前是 {current}/{total} 道题",
+    "Question {current}/{total}"
   ],
   "reader.pageControlTitle": [
     "{label}：{title}",
