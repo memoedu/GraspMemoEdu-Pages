@@ -1,13 +1,13 @@
 // The AudioContext resamples the microphone to 16 kHz before this worklet.
 class VoicePcm extends AudioWorkletProcessor {
-  constructor(options) {
+  constructor() {
     super();
-    this.buffer = new Int16Array(options.processorOptions?.samples === 800 ? 800 : 1600);
+    this.buffer = new Int16Array(1600);
     this.count = 0;
     this.active = true;
     this.port.onmessage = ({data}) => {
       this.flush();
-      this.active = data === 'resume';
+      if (data !== 'cut') this.active = data === 'resume';
       this.port.postMessage(data);
     };
   }
