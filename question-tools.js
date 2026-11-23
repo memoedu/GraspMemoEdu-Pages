@@ -1,10 +1,17 @@
-import {setVoiceContext} from './voice-context.js?v=66386826c2fb02b5';
-import {getLanguage} from './i18n.js?v=66386826c2fb02b5';
-import {calculatorToolGroups} from './calculator.js?v=66386826c2fb02b5';
-import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=66386826c2fb02b5';
+import {setVoiceContext} from './voice-context.js?v=865006a6b8d8de41';
+import {getLanguage} from './i18n.js?v=865006a6b8d8de41';
+import {calculatorToolGroups} from './calculator.js?v=865006a6b8d8de41';
+import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=865006a6b8d8de41';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
+
+const modalSelector = globalThis.CSS?.supports?.('selector(dialog:modal)') ? 'dialog:modal' : 'dialog[open]';
+
+export function currentModal() {
+  const dialogs = document.querySelectorAll(modalSelector);
+  return dialogs[dialogs.length - 1];
+}
 
 function icon(path) {
   const svg = document.createElementNS(svgNamespace, 'svg');
@@ -63,7 +70,7 @@ export function installToolbars(host, voice, clipper) {
   host.append(pageToolbar);
   let modalToolbar;
   const sync = () => {
-    const modal = voice.hidden ? null : [...document.querySelectorAll('dialog:modal')].at(-1);
+    const modal = voice.hidden ? null : currentModal();
     if (modalToolbar && modalToolbar.parentElement !== modal) {
       modalToolbar.remove();
       modalToolbar = null;

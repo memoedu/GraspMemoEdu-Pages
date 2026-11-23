@@ -1,5 +1,5 @@
-import {ct, contextError} from './context-library-messages.js?v=66386826c2fb02b5';
-import {sourceAttributions} from './memory-chunk.js?v=66386826c2fb02b5';
+import {ct, contextError} from './context-library-messages.js?v=865006a6b8d8de41';
+import {sourceAttributions} from './memory-chunk.js?v=865006a6b8d8de41';
 /* Shared reading component. Content is rendered as text, including dictionary output. */
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
