@@ -1,17 +1,37 @@
-import {getLanguage} from './i18n.js?v=712f67980d6162a6';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=712f67980d6162a6';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=712f67980d6162a6';
-import {streamMicrophone} from './voice-stream.js?v=712f67980d6162a6';
-import {dictationContext, voiceContext} from './voice-context.js?v=712f67980d6162a6';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=712f67980d6162a6';
+import {getLanguage} from './i18n.js?v=d3138b96ff00ccb8';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=d3138b96ff00ccb8';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=d3138b96ff00ccb8';
+import {streamMicrophone} from './voice-stream.js?v=d3138b96ff00ccb8';
+import {dictationContext, voiceContext} from './voice-context.js?v=d3138b96ff00ccb8';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=d3138b96ff00ccb8';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
 const strings = (zh, en) => getLanguage() === 'en' ? en : zh;
 const changed = 'voiceinputchange';
-const audioLimitMs = 119000;
+const audioLimitMinutes = 2;
+const audioLimitMs = audioLimitMinutes * 60000;
 let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe, streamRequest;
 let paint = () => {};
+let paintDuration = () => {};
+
+function elapsed(job) {
+  return Math.min(audioLimitMs, job.elapsed + (job.startedAt == null ? 0 : performance.now() - job.startedAt));
+}
+
+function freezeDuration(job) {
+  job.elapsed = elapsed(job);
+  job.startedAt = null;
+  clearTimeout(job.durationTimer);
+}
+
+function tickDuration(job) {
+  if (current !== job || job.startedAt == null) return;
+  const ms = elapsed(job);
+  if (ms === audioLimitMs) { stop(true); return; }
+  paintDuration();
+  job.durationTimer = setTimeout(() => tickDuration(job), 1000 - (ms % 1000));
+}
 
 function editable(field) {
   return field?.isConnected && !field.closest('[hidden], [inert], [data-no-voice]') &&
@@ -195,7 +215,7 @@ async function start() {
     update(strings('先把光标放在要输入的位置。', 'Place the cursor where you want to type.'));
     return;
   }
-  const job = {target, identity: identity(), page: location.hash, abort: new AbortController()};
+  const job = {target, identity: identity(), page: location.hash, abort: new AbortController(), elapsed: 0};
   current = job;
   if (target.profile === 'answer' && !['literal', 'code'].includes(target.context?.style)) prepareVoiceFormula();
   setPhase(job, 'opening', strings('正在打开麦克风…', 'Opening microphone…'));
@@ -206,14 +226,22 @@ async function start() {
       onPreview: job.draft?.show,
       sameIdentity: () => job.identity === identity(), maxDurationMs: audioLimitMs, signal: job.abort.signal});
     job.stream = job.recorder.transcript;
-    if (current === job) setPhase(job, 'recording', strings('正在录音', 'Recording'));
+    if (current === job) {
+      job.startedAt = performance.now();
+      setPhase(job, 'recording', strings('正在录音', 'Recording'));
+      tickDuration(job);
+    }
     job.blob = await job.recorder.result;
+    freezeDuration(job);
     if (current === job && identity() === job.identity) await process(job);
-  } catch {
+  } catch (error) {
+    freezeDuration(job);
     if (current !== job) return;
     job.draft?.close();
     current = null;
-    update(strings('录音未完成。请检查麦克风权限后重试。', 'Recording failed. Check microphone permissions and try again.'));
+    update(error.message === 'Recording is empty'
+      ? strings('没有录到声音，请检查麦克风后重试。', 'No audio was captured. Check your microphone and try again.')
+      : strings('录音未完成。请检查麦克风权限后重试。', 'Recording failed. Check microphone permissions and try again.'));
   }
 }
 
@@ -237,8 +265,11 @@ export function enableVoiceAnswer(form, {defer = false} = {}) {
   }, true);
 }
 
-function stop() {
-  setPhase(current, 'finishing', strings('正在结束录音…', 'Finishing recording…'));
+function stop(atLimit = false) {
+  freezeDuration(current);
+  setPhase(current, 'finishing', atLimit
+    ? strings('已到录音上限，正在结束录音…', 'Recording limit reached. Finishing…')
+    : strings('正在结束录音…', 'Finishing recording…'));
   current.recorder.stop();
 }
 
@@ -246,6 +277,7 @@ export function resetVoiceInput() {
   if (current) {
     const job = current;
     current = null;
+    freezeDuration(job);
     job.draft?.close();
     job.abort.abort();
   }
@@ -332,11 +364,19 @@ function voiceControls(holdLayout) {
   };
   const mic = button(() => strings('录音输入', 'Voice input'), () => void start(), microphoneIcon);
   const pause = button(() => '', () => {
-    const paused = current.phase === 'paused';
-    current.recorder[paused ? 'resume' : 'pause']();
-    setPhase(current, paused ? 'recording' : 'paused', paused ? strings('正在录音', 'Recording') : strings('录音已暂停', 'Recording paused'));
+    const job = current;
+    if (job.phase === 'paused') {
+      job.recorder.resume();
+      job.startedAt = performance.now();
+      setPhase(job, 'recording', strings('正在录音', 'Recording'));
+      tickDuration(job);
+    } else {
+      job.recorder.pause();
+      freezeDuration(job);
+      setPhase(job, 'paused', strings('录音已暂停', 'Recording paused'));
+    }
   });
-  const end = button(() => strings('结束录音', 'Stop recording'), stop);
+  const end = button(() => strings('结束录音', 'Stop recording'), () => stop());
   const retry = button(() => strings('重试转写', 'Retry transcription'), () => {
     if (current.phase === 'conversion_failed') void fillAnswer(current);
     else void process(current);
@@ -351,7 +391,17 @@ function voiceControls(holdLayout) {
   const cancel = button(() => strings('取消', 'Cancel'), resetVoiceInput);
   const panel = document.createElement('div'); panel.className = 'voiceToolPanel';
   const message = document.createElement('span'); message.setAttribute('role', 'status');
-  panel.append(message, pause, end, retry, use, cancel); root.append(mic, panel);
+  const duration = document.createElement('span'); duration.className = 'voiceDuration';
+  panel.append(message, duration, pause, end, retry, use, cancel); root.append(mic, panel);
+  paintDuration = () => {
+    duration.hidden = !current?.recorder || !['recording', 'paused', 'finishing', 'transcribing'].includes(current.phase);
+    if (duration.hidden) return;
+    const seconds = Math.floor(elapsed(current) / 1000);
+    const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const ss = String(seconds % 60).padStart(2, '0');
+    duration.textContent = strings(
+      mm + ' 分钟: ' + ss + ' 秒 / ' + audioLimitMinutes + ' 分钟', mm + ':' + ss + ' / ' + audioLimitMinutes + ' min');
+  };
   paint = () => {
     const phase = current?.phase;
     const recording = phase === 'recording' || phase === 'paused';
@@ -362,6 +412,7 @@ function voiceControls(holdLayout) {
     const label = strings('录音输入', 'Voice input'); mic.title = label; mic.setAttribute('aria-label', label);
     panel.hidden = !status;
     if (message.textContent !== status) message.textContent = status;
+    paintDuration();
     pause.hidden = end.hidden = !recording;
     const pauseLabel = phase === 'paused' ? strings('继续录音', 'Resume recording') : strings('暂停录音', 'Pause recording');
     if (pause.textContent !== pauseLabel) pause.textContent = pauseLabel;
