@@ -1,5 +1,5 @@
-import {clipText as tx} from './clipper.js?v=433aee787fec0675';
-import {renderPlainMath} from './math-presentation.js?v=433aee787fec0675';
+import {clipText as tx} from './clipper.js?v=66386826c2fb02b5';
+import {renderPlainMath} from './math-presentation.js?v=66386826c2fb02b5';
 
 const title = () => tx('零碎知识简藏', 'Knowledge Clipper');
 const toolName = {

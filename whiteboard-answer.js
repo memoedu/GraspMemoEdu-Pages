@@ -8,14 +8,19 @@ export function whiteboardText(value) {
   return fromWhiteboard(value) ? value.slice(prefix.length) : value;
 }
 
-export function questionWhiteboard({key, editable, current, submit, request, question, language}) {
+export function questionWhiteboard({key, editable, current, submit, request, question, language, activePart}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const content = document.createElement('template');
-  content.innerHTML = question.html || '';
-  for (const element of content.content.querySelectorAll('script,style,template,[hidden]')) element.remove();
+  content.innerHTML = [question.html, activePart?.html].filter(Boolean).join('<br>');
+  for (const element of content.content.querySelectorAll('script,style,template,[hidden],[inert],[aria-hidden="true"]')) element.remove();
+  for (const element of content.content.querySelectorAll('[style]')) {
+    if (element.style.display === 'none' || element.style.visibility === 'hidden') element.remove();
+  }
+  for (const details of content.content.querySelectorAll('details:not([open])')) details.replaceWith(details.querySelector('summary')?.textContent || '');
   for (const formula of content.content.querySelectorAll('[data-tex],[data-math-source]')) {
     formula.replaceWith(formula.getAttribute('data-tex') || formula.getAttribute('data-math-source') || '');
   }
+  for (const image of content.content.querySelectorAll('img')) image.replaceWith(image.alt || '');
   for (const element of content.content.querySelectorAll('p,li,br,tr,div')) element.after('\n');
   const text = [...[content.content.textContent || question.question || '', question.constraints || ''].join('\n').trim()]
     .slice(0, 7000).join('').toWellFormed();
