@@ -202,6 +202,28 @@ body { padding-top: 50px; }
 .portalInfoRow { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; font-size: 14px; padding: 5px 0; }
 .portalInfoRow > :last-child { color: #818181; text-align: right; }
 .dashboardTasks { width: 100%; min-width: 0; }
+
+/* Hallmark · component: free-study workspace · existing portal tokens */
+.freeStudyHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.freeStudyHeader :is(h1, h2) { margin: 0; }
+.freeStudyHeader h2 { color: var(--ma-navy); font-size: 18px; }
+.freeStudyLayout.freeStudyEmpty { display: block; }
+.freeStudySidebar { display: flex; flex-wrap: wrap; gap: 6px 16px; align-content: flex-start; padding-block: 8px 18px; }
+.freeStudySidebar[hidden] { display: none; }
+@media (min-width: 821px) {
+  .freeStudySidebar { flex-direction: column; align-items: flex-start; }
+}
+.freeStudySubject { padding: 20px 0; border-top: 1px solid var(--ma-border); }
+.freeStudySubject h2 { scroll-margin-top: 84px; }
+.freeStudyLinks { display: grid; gap: 8px; padding-inline-start: 20px; margin: 0 0 18px; overflow-wrap: anywhere; }
+.freeStudyLinks a { color: var(--ma-navy); }
+.freeStudyReviews { margin-top: 20px; }
+.freeStudyMarket select { display: block; width: 100%; min-height: 36px; font: inherit; }
+.freeStudyMarket fieldset { min-width: 0; max-height: 35dvh; overflow: auto; border: 1px solid var(--ma-border); margin: 14px 0 0; }
+.freeStudyMarket .freeStudyOption { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 7px 0; font-weight: 400; overflow-wrap: anywhere; }
+.freeStudyMarket .freeStudyOption input { flex: none; width: auto; margin: 3px 0 0; }
+.freeStudyMarket .freeStudyOption span { min-width: 0; }
+.freeStudyMarket .fieldError:empty { display: none; }
 .taskListOptions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin: 0 0 16px; }
 .taskTreeControls { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .taskTreeExpansion:disabled { opacity: .5; cursor: default; }

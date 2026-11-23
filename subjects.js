@@ -1,4 +1,4 @@
-import { getLanguage, t } from './i18n.js?v=299527f404a0b784';
+import { getLanguage, t } from './i18n.js?v=6e954c2a910f29e5';
 
 const element = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -153,7 +153,11 @@ export function renderSubjectHome(subjects, { onRestricted } = {}) {
       : t('platform.noCourses')));
     grid.append(card);
   }
-  section.append(heading, grid);
+  const freeStudy = link(t('freeStudy.title'), '#/free-study', 'subjectFreeStudy');
+  const arrow = element('span', 'subjectCardArrow', '→');
+  arrow.setAttribute('aria-hidden', 'true');
+  freeStudy.append(arrow);
+  section.append(heading, grid, freeStudy);
   return section;
 }
 
@@ -189,7 +193,7 @@ export function applySubjectTheme(subject, { home = false } = {}) {
 }
 
 export function subjectLogo(subject) {
-  if (!subject) return './favicon.svg?v=299527f404a0b784';
+  if (!subject) return './favicon.svg?v=6e954c2a910f29e5';
   const color = subjectPalette(subject.id)[subjectMarks[subject.id] ? '--link-color' : '--ma-navy'];
   const mark = subjectMarks[subject.id]
     ? '<g stroke="' + color + '" color="' + color + '" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + subjectMarks[subject.id] + '</g>'

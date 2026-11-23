@@ -1,4 +1,4 @@
-import {t, getLanguage} from './i18n.js?v=299527f404a0b784';
+import {t, getLanguage} from './i18n.js?v=6e954c2a910f29e5';
 
 export function paperNumber(number) {
   if (getLanguage() !== 'zh-CN') return t('paper.number', {number});
@@ -21,7 +21,12 @@ export function renderReviewDirectory(root, data, {courseSidebar, taskTree, star
   layout.append(courseSidebar(summary, {training: true, review: true, allMaterials: data.all_materials, href: '/reviews', questionCount: data.due_count,
     onProgress: () => body.scrollIntoView({block: 'start'})}), body);
   root.replaceChildren(layout);
-  function render(data, container, label) {
+  return renderReviewSections(body, data, {taskTree, start});
+}
+
+export function renderReviewSections(body, data, {taskTree, start}) {
+  const element = (tag, cls, text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
+  function render(data, container) {
     const tasks = data.tasks.map(item => ({...item, entry: item, topic_id: item.id, type: 'Review',
       title: item.kind === 'paper' ? paperNumber(item.paper_number || 1) : item.title,
       question_count: item.count, time_limit_minutes: item.time_limit_minutes || item.timing?.limit_minutes,
@@ -34,7 +39,7 @@ export function renderReviewDirectory(root, data, {courseSidebar, taskTree, star
   const cards = element('section', 'incompleteTasks'); cards.dataset.reviewKind = 'atomic';
   cards.append(element('h2', 'trainingSectionTitle', t('paper.atomicCards'))); body.append(cards);
   for (const tree of data.trees || []) {
-    const container = element('div', 'courseTree'); cards.append(container); render(tree, container, t('paper.atomicCards'));
+    const container = element('div', 'courseTree'); cards.append(container); render(tree, container);
   }
   if (!data.trees?.length) cards.append(element('p', 'portalEmpty', t('paper.none')));
   if (data.all_materials) return body;
@@ -52,7 +57,7 @@ export function renderReviewDirectory(root, data, {courseSidebar, taskTree, star
     const items = group.items.sort((a, b) => (a.paper_number || 1) - (b.paper_number || 1));
     const container = element('div', 'courseTree'); papers.append(container);
     render({course: {id: 'paper:' + id}, tasks: items,
-      pending_hierarchy: [{id: 'paper:' + id, title: group.title, parent_id: null, topic_ids: items.map(i => i.id)}]}, container, t('paper.papers'));
+      pending_hierarchy: [{id: 'paper:' + id, title: group.title, parent_id: null, topic_ids: items.map(i => i.id)}]}, container);
   }
   if (!groups.size) papers.append(element('p', 'portalEmpty', t(data.due_count ? 'paper.noPaper' : 'paper.none')));
   return body;
