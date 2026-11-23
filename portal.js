@@ -1,28 +1,29 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=a9d56b88c5ca1fa2";
-import {attachFormulaEditing} from './formula-input.js?v=a9d56b88c5ca1fa2';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=a9d56b88c5ca1fa2';
-import { createReviewView } from "./review.js?v=a9d56b88c5ca1fa2";
-import { renderCourseGraph } from "./course-graph.js?v=a9d56b88c5ca1fa2";
-import {questionInput, choiceTypeField} from './question-input.js?v=a9d56b88c5ca1fa2';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=a9d56b88c5ca1fa2';
-import {enhanceTopicContent} from './topic-content.js?v=a9d56b88c5ca1fa2';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=a9d56b88c5ca1fa2';
-import {createCatalogPicker} from './catalog-picker.js?v=a9d56b88c5ca1fa2';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=a9d56b88c5ca1fa2';
-import {createAtomicView} from './atomic.js?v=a9d56b88c5ca1fa2';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=a9d56b88c5ca1fa2';
-import {sourceAttributions} from './memory-chunk.js?v=a9d56b88c5ca1fa2';
-import {createTrainingView} from './training.js?v=a9d56b88c5ca1fa2';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=a9d56b88c5ca1fa2";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=38bdd9ea02fafb0e";
+import {attachFormulaEditing} from './formula-input.js?v=38bdd9ea02fafb0e';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=38bdd9ea02fafb0e';
+import { createReviewView } from "./review.js?v=38bdd9ea02fafb0e";
+import { renderCourseGraph } from "./course-graph.js?v=38bdd9ea02fafb0e";
+import {questionInput, choiceTypeField} from './question-input.js?v=38bdd9ea02fafb0e';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=38bdd9ea02fafb0e';
+import {enhanceTopicContent} from './topic-content.js?v=38bdd9ea02fafb0e';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=38bdd9ea02fafb0e';
+import {createCatalogPicker} from './catalog-picker.js?v=38bdd9ea02fafb0e';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=38bdd9ea02fafb0e';
+import {createAtomicView} from './atomic.js?v=38bdd9ea02fafb0e';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=38bdd9ea02fafb0e';
+import {sourceAttributions} from './memory-chunk.js?v=38bdd9ea02fafb0e';
+import {createTrainingView} from './training.js?v=38bdd9ea02fafb0e';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=38bdd9ea02fafb0e";
 
-import {createPaperView} from './review-papers.js?v=a9d56b88c5ca1fa2';
-import {createContextLibraryView} from './context-library.js?v=a9d56b88c5ca1fa2';
+import {createPaperView} from './review-papers.js?v=38bdd9ea02fafb0e';
+import {createFreeStudyView} from './free-study.js?v=38bdd9ea02fafb0e';
+import {createContextLibraryView} from './context-library.js?v=38bdd9ea02fafb0e';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=a9d56b88c5ca1fa2';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a9d56b88c5ca1fa2';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=a9d56b88c5ca1fa2';
-import {createStudentDashboard} from './student-dashboard.js?v=a9d56b88c5ca1fa2';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=a9d56b88c5ca1fa2';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=38bdd9ea02fafb0e';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=38bdd9ea02fafb0e';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=38bdd9ea02fafb0e';
+import {createStudentDashboard} from './student-dashboard.js?v=38bdd9ea02fafb0e';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=38bdd9ea02fafb0e';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -42,7 +43,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=a9d56b88c5ca1fa2').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=38bdd9ea02fafb0e').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -168,6 +169,8 @@ export function initPortal(bridge) {
   const papers = createPaperView({...bridge, request: call, root, href: localHref,
     formatDate: value => apiDate(value, true), courseSidebar, taskTree,
     progressChanged: () => { dashboards.clear(); answerCache.clear(); }});
+  const freeStudy = createFreeStudyView({root, request: bridge.request, scopedRequest, savedCourseRoot,
+    taskTree, node, control, link, loading});
 
   function navigate(path, replace = false) {
     const hash = localHref(path);
@@ -349,7 +352,7 @@ export function initPortal(bridge) {
     dashboards.set(id, merged); return merged;
   }
   function releaseGuideAssets() { for (const url of guideObjectUrls) URL.revokeObjectURL(url); guideObjectUrls = []; }
-  function stopPageWork() { pruneChatEditors(true); clearTimeout(refreshTimer); clearTimeout(pageTimer); releaseGuideAssets(); review.stop(); atomic.stop(); training.stop(); papers.stop(); contextLibrary.stop(); hidePopovers(); helpFeedRefresh = null; helpReadObserver?.disconnect(); helpReadObserver = null; }
+  function stopPageWork() { pruneChatEditors(true); clearTimeout(refreshTimer); clearTimeout(pageTimer); releaseGuideAssets(); review.stop(); atomic.stop(); training.stop(); papers.stop(); freeStudy.stop(); contextLibrary.stop(); hidePopovers(); helpFeedRefresh = null; helpReadObserver?.disconnect(); helpReadObserver = null; }
   async function route(event) {
     // A reader can replace the hash while selecting a question without firing
     // hashchange. Its actual departure URL is the authoritative location.
@@ -393,6 +396,10 @@ export function initPortal(bridge) {
       if (subjectRestricted(subject)) { restrictedNotice(subject); return; }
       if (path === "/" && !subjectId) {
         document.title = "GraspMemoEdu"; root.replaceChildren(renderSubjectHome(subjects.map(item => ({...item, available: subjectRestricted(item) ? false : item.available})), {onRestricted: item => restrictedNotice(item, true)}));
+      } else if (path === '/free-study' && !subjectId) {
+        document.title = pageTitle(t('freeStudy.title'));
+        await freeStudy.open({subjects: subjects.filter(item => !subjectRestricted(item)),
+          canReview: allowed('learn'), isCurrent: () => ticket === sequence});
       } else if (path === "/learn") {
         // Compatibility only: the selected course now owns its task page.
         let viewedCourse = selectedCourse;

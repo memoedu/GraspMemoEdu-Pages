@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=a9d56b88c5ca1fa2';
-import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=a9d56b88c5ca1fa2';
-import {setOptionContent} from './math-presentation.js?v=a9d56b88c5ca1fa2';
-import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=a9d56b88c5ca1fa2';
-import {enhanceSourceContent} from './topic-content.js?v=a9d56b88c5ca1fa2';
+import {t} from './i18n.js?v=38bdd9ea02fafb0e';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=38bdd9ea02fafb0e';
+import {setOptionContent} from './math-presentation.js?v=38bdd9ea02fafb0e';
+import {compositeInput, mountPassageBlanks, passageSelect, answerShortcut, passagePresentation, centerPassageControl, preparePassageWorkspace, syncPassageField, passageTextField} from './composite-input.js?v=38bdd9ea02fafb0e';
+import {enhanceSourceContent} from './topic-content.js?v=38bdd9ea02fafb0e';
 
 const node = (tag, cls, text) => {
   const element = document.createElement(tag); element.className = cls;

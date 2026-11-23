@@ -31,6 +31,9 @@ body.platformTheme { background: var(--platform-paper); }
 .subjectBrand { margin: 0; font: 400 clamp(34px, 5vw, 58px)/1.18 var(--platform-serif); letter-spacing: -1.8px; overflow-wrap: anywhere; }
 .subjectWelcome { margin: 18px 0 0; color: var(--platform-muted); font: 16px/1.8 var(--platform-serif); }
 .subjectGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.subjectFreeStudy { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px; padding: 16px 20px; border-block: 1px solid var(--platform-rule); color: var(--platform-ink); font-size: 18px; line-height: 1.4; text-decoration: none; }
+.subjectFreeStudy:hover { background: var(--subject-accent-soft); }
+.subjectFreeStudy:focus-visible { outline: 2px solid var(--subject-accent); outline-offset: 3px; }
 .subjectCard { display: flex; flex-direction: column; min-width: 0; min-height: 254px; padding: 27px 27px 22px; background: #fdfcf8; border: 1px solid var(--platform-rule); border-top: 2px solid var(--card-accent, var(--subject-accent)); border-radius: 2px; color: var(--platform-ink); text-decoration: none; transition: background .16s ease, border-color .16s ease; }
 .subjectCard:hover { background: #fffefa; border-color: var(--card-accent, var(--subject-accent)); }
 .subjectCard:focus-visible, .subjectEmpty a:focus-visible, .platformTheme #subjectContext:focus-visible { outline: 2px solid var(--card-accent, var(--subject-accent)); outline-offset: 4px; }

@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=a9d56b88c5ca1fa2';
+import {escapedAt, mathSpans} from './math-syntax.js?v=38bdd9ea02fafb0e';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -79,7 +79,7 @@ const mountedSvg = new WeakSet();
 let fragmentNumber = 0, renderer;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=a9d56b88c5ca1fa2').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=38bdd9ea02fafb0e').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
