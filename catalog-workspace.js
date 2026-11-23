@@ -1,4 +1,4 @@
-import {appendCatalogOutline} from './catalog-outline.js?v=2a04bc1c131b654f';
+import {appendCatalogOutline} from './catalog-outline.js?v=17a5c57bb9bc8d86';
 
 const node = (tag, className) => {
   const element = document.createElement(tag); element.className = className; return element;
@@ -63,11 +63,13 @@ export function workspaceLayout(sidebar) {
 // Draft cards are navigation entries only. Keep the server's learning tasks,
 // progress and dependency state intact while placing drafts in the same outline.
 export function courseDisplayEntries(data, outline = []) {
+  // Review priority applies to the course view even when prerequisites affect API order.
+  const tasks = [...data.tasks].sort((a, b) => Number(b.type === 'Review') - Number(a.type === 'Review'));
   const drafts = (data.topics || []).filter(topic => topic.status === 'read_only').map(topic => ({
     id: `draft:${topic.id}`, topic_id: topic.id, title: topic.title, presentation: 'draft',
     prerequisites: topic.prerequisites, prerequisite_details: topic.prerequisite_details,
   }));
-  if (!drafts.length) return {entries: data.tasks, drafts, hierarchy: data.pending_hierarchy, sourceOrder: []};
+  if (!drafts.length) return {entries: tasks, drafts, hierarchy: data.pending_hierarchy, sourceOrder: []};
   const units = outline.length ? outline : data.units || [];
   const root = data.course.root_id;
   const visible = new Set((data.topics || []).map(topic => topic.id));
@@ -75,10 +77,10 @@ export function courseDisplayEntries(data, outline = []) {
     ...unit, parent_id: unit.parent_id === root ? null : unit.parent_id,
     topic_ids: (unit.topic_ids || []).filter(id => visible.has(id)),
   }));
-  const lessons = [...data.tasks.filter(task => task.type === 'Lesson'), ...drafts];
+  const lessons = [...tasks.filter(task => task.type === 'Lesson'), ...drafts];
   const byTopic = new Map(lessons.map(task => [task.topic_id, task]));
   const sourceOrder = units.flatMap(unit => [unit.id, ...(unit.topic_ids || []).map(id => byTopic.get(id)?.id || id)]);
   const positions = new Map(sourceOrder.map((id, index) => [id, index]));
   lessons.sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
-  return {entries: [...data.tasks.filter(task => task.type !== 'Lesson'), ...lessons], drafts, hierarchy, sourceOrder};
+  return {entries: [...tasks.filter(task => task.type !== 'Lesson'), ...lessons], drafts, hierarchy, sourceOrder};
 }
