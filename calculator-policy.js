@@ -1,5 +1,21 @@
 export const levels = ['none', 'basic', 'scientific', 'advanced', 'cas'];
 export const memoryRegisters = ['A', 'B', 'C', 'D', 'E', 'F'];
+const subscripts = '₀₁₂₃₄₅₆₇₈₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ';
+const plainSubscripts = '0123456789aehijklmnoprstuvx';
+const superscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const reserved = new Set(['Ans', 'ans', 'answer', 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined', 'logBase']);
+
+export function normalizeVariableName(name) {
+  return name.trim().normalize('NFC')
+    .replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1')
+    .replace(/[₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ]+/gu, value => '_' + [...value].map(char => plainSubscripts[subscripts.indexOf(char)]).join(''))
+    .replace(/\^(?:\{(\d+)\}|(\d+))$/u, (_, grouped, digits) => [...(grouped || digits)].map(digit => superscripts[digit]).join(''));
+}
+
+export function assignableVariable(name) {
+  return /^[\p{L}][\p{L}\p{M}\p{Nd}_⁰¹²³⁴⁵⁶⁷⁸⁹]{0,23}$/u.test(name) && name !== 'π'
+    && !reserved.has(name) && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
+}
 
 const baseModules = ['expression'];
 const scientificModules = ['constants'];

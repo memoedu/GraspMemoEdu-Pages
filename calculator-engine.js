@@ -1,6 +1,6 @@
-import {constants, expressionExtensions, functions, memoryRegisters, operators, permitsConstant, permitsExtension,
-  permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=a3cb9e57123710a9';
+import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
+  permitsExtension, permitsKey, permitsModule, toolOperation}
+  from './calculator-policy.js?v=00bd9a5a1ae1838b';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,9 +13,15 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=a3cb9e57123710a9');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=a3cb9e57123710a9');
-const applied = () => import('./vendor/calculator/applied.mjs?v=a3cb9e57123710a9');
+const core = () => import('./vendor/calculator/core.mjs?v=00bd9a5a1ae1838b');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=00bd9a5a1ae1838b');
+const applied = () => import('./vendor/calculator/applied.mjs?v=00bd9a5a1ae1838b');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=00bd9a5a1ae1838b');
+const moduleLoaders = {
+  integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
+  symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
+  astronomy: applied, geography: applied, finance: applied, optimization: applied,
+};
 
 function inputText(value, limit = 4096) {
   ensure(typeof value === 'string' && value.trim() && value.length <= limit);
@@ -23,7 +29,7 @@ function inputText(value, limit = 4096) {
 }
 
 function checkNotation(source, config) {
-  const tokens = source.matchAll(/[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|[(),]/g);
+  const tokens = source.matchAll(/[\p{L}_][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|[(),]/gu);
   for (const [token] of tokens) {
     if (token === '(' || token === ')' || token === ',') {
       checkKey(config, {'(': 'open', ')': 'close', ',': 'comma'}[token]);
@@ -35,13 +41,114 @@ function checkNotation(source, config) {
   }
 }
 
-const commonNotation = value => inputText(value, 1024).replaceAll('π', 'pi').replaceAll('×', '*')
+const commonNotation = value => inputText(value, 1024).replaceAll('×', '*')
   .replaceAll('÷', '/').replaceAll('−', '-');
 
+function storageExpression(input, config) {
+  const text = commonNotation(input);
+  const separator = text.indexOf('=');
+  if (separator < 0) return {expression: text};
+  checkKey(config, 'memory_registers');
+  const register = normalizeVariableName(text.slice(0, separator));
+  const expression = text.slice(separator + 1).trim();
+  ensure(assignableVariable(register) && expression && !expression.includes('='), 'restricted');
+  return {expression, register};
+}
+
+// Small arithmetic expressions are evaluated before the worker or math bundle is needed.
+// Token, depth and permission limits mirror the existing expression engine.
+export function calculateImmediate(input, config, memory = {}, answer) {
+  if (!permitsModule(config, 'expression') || !permitsKey(config, 'evaluate')) return null;
+  const {expression, register} = storageExpression(input, config);
+  const tokens = [];
+  const lexer = /\s*(?:(\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|([\p{L}][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*)|([+*/^()-]))\s*/guy;
+  while (lexer.lastIndex < expression.length) {
+    const next = lexer.exec(expression);
+    if (!next || tokens.length >= 30) return null;
+    if (next[2]) {
+      const name = normalizeVariableName(next[2]);
+      if (answerSymbols.has(name) && permitsKey(config, 'ans') && Number.isFinite(answer)) tokens.push(answer);
+      else {
+        if (!permitsKey(config, 'memory_registers') || !assignableVariable(name)
+            || !Object.hasOwn(memory ?? {}, name) || !Number.isFinite(memory[name])) return null;
+        tokens.push(memory[name]);
+      }
+    } else tokens.push(next[1] === undefined ? next[3] : Number(next[0]));
+  }
+  let cursor = 0, invalid = false;
+  const used = new Set();
+  function term() {
+    const token = tokens[cursor++];
+    let value;
+    if (typeof token === 'number') {
+      if (!Number.isFinite(token)) invalid = true;
+      value = token;
+    } else {
+      used.add(token);
+      if (token === '+') return term();
+      if (token === '-') return -term();
+      if (token !== '(') { invalid = true; return NaN; }
+      value = sum();
+      if (tokens[cursor++] !== ')') invalid = true;
+    }
+    if (tokens[cursor] === '^') {
+      cursor++;
+      used.add('^');
+      const exponent = term();
+      if (value < 0 && !Number.isInteger(exponent)) invalid = true;
+      return value ** exponent;
+    }
+    return value;
+  }
+  function product() {
+    let value = term();
+    while (tokens[cursor] === '*' || tokens[cursor] === '/') {
+      const operator = tokens[cursor++];
+      used.add(operator);
+      const right = term();
+      value = operator === '*' ? value * right : value / right;
+    }
+    return value;
+  }
+  function sum() {
+    let value = product();
+    while (tokens[cursor] === '+' || tokens[cursor] === '-') {
+      const operator = tokens[cursor++];
+      used.add(operator);
+      const right = product();
+      value = operator === '+' ? value + right : value - right;
+    }
+    return value;
+  }
+  const numeric = sum();
+  if (invalid || cursor !== tokens.length) return null;
+  checkNotation(expression, config);
+  for (const operator of used) if (operator !== '(') checkKey(config, operators[operator]);
+  ensure(Number.isFinite(numeric), 'domain');
+  // Math.js rounds the shortest decimal representation at 14 significant digits.
+  const [mantissa, exponent] = Math.abs(numeric).toExponential().split('e');
+  const digits = mantissa.replace('.', '');
+  const significant = Number(digits.slice(0, 14)) + Number(digits[14] >= '5');
+  const rounded = digits.length <= 14 ? numeric
+    : Math.sign(numeric) * Number(significant + 'e' + (Number(exponent) - 13));
+  if (!Number.isFinite(rounded)) return null;
+  const magnitude = Math.abs(rounded);
+  const text = magnitude && (magnitude < 0.001 || magnitude >= 1e5) ? rounded.toExponential() : String(rounded);
+  return {text, numeric, ...(register ? {register} : {})};
+}
+
+export function warmCalculator(module, expression = '') {
+  const loaders = new Set([core]);
+  if (Object.hasOwn(moduleLoaders, module)) loaders.add(moduleLoaders[module]);
+  if (module === 'expression') {
+    for (const [, functionName] of expression.matchAll(/\b([a-z][a-z_0-9]*)\s*\(/gi)) {
+      const relatedModule = expressionExtensions.get(functionName)?.[0];
+      if (Object.hasOwn(moduleLoaders, relatedModule)) loaders.add(moduleLoaders[relatedModule]);
+    }
+  }
+  return Promise.all([...loaders].map(load => load()));
+}
 const answerSymbols = new Set(['Ans', 'ans', 'answer']);
-const reservedSymbols = new Set([...answerSymbols, 'i', 'Infinity', 'NaN', 'true', 'false', 'null', 'undefined']);
-const assignable = name => /^[A-Za-z][A-Za-z0-9_]{0,23}$/.test(name) && !reservedSymbols.has(name)
-  && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
 
 function storedValue(math, value, config, extensions) {
   if (Number.isFinite(value)) return value;
@@ -57,9 +164,10 @@ function storedValue(math, value, config, extensions) {
 function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false,
   extensions = false, names, bindings, memory = {}} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
-  const original = commonNotation(value);
+  const original = commonNotation(value).normalize('NFC').replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1');
+  ensure(!original.includes('__gmeVar'), 'restricted');
   checkNotation(original, config);
-  const source = original.replace(
+  const rewritten = original.replace(
     /(?<![A-Za-z_])log(?:_(?:\{([^{}]+)\}|([A-Za-z][A-Za-z0-9_]*|\d+(?:\.\d+)?))|([₀-₉]+))\s*\(/g,
     (match, expression, simple, digits) => {
       if (extensions && simple && expressionExtensions.has('log_' + simple)) return match;
@@ -68,6 +176,17 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       return 'logBase((' + base + '),';
     },
   );
+  const aliases = new Map();
+  const source = rewritten.replace(/(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|[\p{L}_][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*(?:_\{[\p{L}\p{Nd}]+\})?/gu, token => {
+    if (token === 'π') return 'pi';
+    if (/^[\d.]|^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) return token;
+    const name = normalizeVariableName(token);
+    if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) return name;
+    if (symbolic) return token;
+    const alias = '__gmeVar' + aliases.size;
+    aliases.set(alias, name);
+    return alias;
+  });
   let remaining = 180;
   const compose = (args, apply) => extensions
     ? x => Promise.all(args.map(async read => read(x))).then(apply)
@@ -80,35 +199,36 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       return () => node.value;
     }
     if (node.isSymbolNode) {
-      if (node.name === variable) return x => x;
-      if (answerSymbols.has(node.name) && !symbolic) {
+      const name = aliases.get(node.name) ?? node.name;
+      if (name === variable) return x => x;
+      if (answerSymbols.has(name) && !symbolic) {
         checkKey(config, 'ans');
         ensure(answer != null);
         const value = storedValue(math, answer, config, extensions);
         return () => value;
       }
-      if (node.name === 'i') {
+      if (name === 'i') {
         checkKey(config, 'complex', 2);
         return () => math.complex(0, 1);
       }
-      if (!symbolic && permitsKey(config, 'memory_registers') && memoryRegisters.includes(node.name)
-          && Object.hasOwn(memory ?? {}, node.name)) {
-        const value = storedValue(math, memory[node.name], config, extensions);
+      if (!symbolic && permitsKey(config, 'memory_registers') && assignableVariable(name)
+          && Object.hasOwn(memory ?? {}, name)) {
+        const value = storedValue(math, memory[name], config, extensions);
         return () => value;
       }
-      if (freeSymbols && assignable(node.name)) return () => undefined;
-      if (names && assignable(node.name)) {
+      if (freeSymbols && assignableVariable(name)) return () => undefined;
+      if (names && assignableVariable(name)) {
         checkKey(config, 'assign_variables', 2);
-        names.add(node.name);
+        names.add(name);
         ensure(names.size <= 12, 'limit');
         return () => {
-          ensure(bindings?.has(node.name), 'unassigned');
-          return bindings.get(node.name);
+          ensure(bindings?.has(name), 'unassigned');
+          return bindings.get(name);
         };
       }
-      ensure(permitsConstant(config, node.name), 'restricted');
-      ensure(!symbolic || ['pi', 'e'].includes(node.name), 'restricted');
-      return () => constants[node.name][3];
+      ensure(permitsConstant(config, name), 'restricted');
+      ensure(!symbolic || ['pi', 'e'].includes(name), 'restricted');
+      return () => constants[name][3];
     }
     if (node.isArrayNode && extensions && levelsAllowArrays(config)) {
       ensure(node.items.length > 0, 'domain');
@@ -323,16 +443,22 @@ export async function calculate({config, module, operation, input = {}, degrees 
     checkKey(config, 'evaluate');
     checkKey(config, operation, 2);
     const names = new Set();
-    expressionPlan(await core(), input.expression, config, {degrees, answer, names, memory, extensions: true});
+    const {expression} = storageExpression(input.expression, config);
+    expressionPlan(await core(), expression, config, {degrees, answer, names, memory, extensions: true});
     return {variables: [...names]};
   }
   ensure(module === 'expression' && operation === 'evaluate' || toolOperation(module, operation), 'restricted');
   checkKey(config, operation);
-  const math = await core();
+  const storage = operation === 'evaluate' ? storageExpression(input.expression, config) : null;
+  if (storage) {
+    const immediate = calculateImmediate(input.expression, config, memory, answer);
+    if (immediate) return immediate;
+  }
+  const [math] = await warmCalculator(module, input.expression);
   const context = {degrees, answer, memory};
   if (operation === 'evaluate') {
     const names = new Set(), bindings = new Map();
-    const expression = expressionPlan(math, input.expression, config, {...context, names, bindings, extensions: true});
+    const expression = expressionPlan(math, storage.expression, config, {...context, names, bindings, extensions: true});
     const supplied = input.assignments ?? {};
     ensure(typeof supplied === 'object' && !Array.isArray(supplied) && Object.keys(supplied).length <= 12);
     for (const name of names) {
@@ -345,9 +471,10 @@ export async function calculate({config, module, operation, input = {}, degrees 
     const value = await expression.evaluate();
     if (value?.isComplex) checkKey(config, 'complex', 2);
     const text = formatted(math, value);
-    if (value?.isComplex) return {text, complex: {re: value.re, im: value.im}};
-    if (Array.isArray(value)) return {text, array: value};
-    return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
+    const metadata = storage.register ? {register: storage.register} : {};
+    if (value?.isComplex) return {text, complex: {re: value.re, im: value.im}, ...metadata};
+    if (Array.isArray(value)) return {text, array: value, ...metadata};
+    return {text, ...(Number.isFinite(value) ? {numeric: value} : {}), ...metadata};
   }
   const value = await runOperation(math, operation, input, config, context);
   if (value?.plot) return value;
@@ -423,14 +550,13 @@ async function runOperation(math, operation, input, config, context) {
     case 'differentiate':
     case 'simplify': {
       const variable = input.variable === undefined ? 'x' : inputText(input.variable, 12);
-      ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && !Object.hasOwn(constants, variable)
-        && !reservedSymbols.has(variable));
+      ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && assignableVariable(variable));
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
       const text = pieces.map(piece => expressionPlan(math, piece, config, {
         variable, symbolic: true, freeSymbols: operation === 'simplify',
       }).source).join('=');
-      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=a3cb9e57123710a9');
+      const {nerdamer} = await symbolicEngine();
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
         : operation === 'differentiate' ? nerdamer.diff(text, variable)
         : operation === 'solve' ? nerdamer.solve(text, variable) : nerdamer.simplify(text);
