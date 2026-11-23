@@ -298,10 +298,6 @@
   letter-spacing: -.035em;
   min-block-size: 1.2em;
 }
-.calculatorDisplay .calculatorResultLine:has(.calculatorFormat[aria-pressed="true"]) .calculatorResult {
-  font-size: clamp(1.05rem, 3.2vw, 1.45rem);
-  letter-spacing: 0;
-}
 .calculatorResult:empty { display: none; }
 .calculatorResult[data-state="error"] { color: var(--calculator-error); border-color: currentColor; }
 .calculatorResult[data-state="busy"] { color: var(--calculator-muted); }

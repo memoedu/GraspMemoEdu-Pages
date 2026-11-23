@@ -1,5 +1,5 @@
 import {constants, functions, memoryRegisters, operators, permitsConstant, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=be75941661fbbd0a';
+  from './calculator-policy.js?v=0ce6a54ba2b5b0b6';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -12,9 +12,9 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=be75941661fbbd0a');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=be75941661fbbd0a');
-const applied = () => import('./vendor/calculator/applied.mjs?v=be75941661fbbd0a');
+const core = () => import('./vendor/calculator/core.mjs?v=0ce6a54ba2b5b0b6');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=0ce6a54ba2b5b0b6');
+const applied = () => import('./vendor/calculator/applied.mjs?v=0ce6a54ba2b5b0b6');
 
 function inputText(value, limit = 4096) {
   ensure(typeof value === 'string' && value.trim() && value.length <= limit);
@@ -372,7 +372,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
       const text = pieces.map(piece => expressionPlan(math, piece, config, {variable, symbolic: true}).source).join('=');
-      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=be75941661fbbd0a');
+      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=0ce6a54ba2b5b0b6');
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
         : operation === 'differentiate' ? nerdamer.diff(text, variable)
         : operation === 'solve' ? nerdamer.solve(text, variable) : nerdamer.simplify(text);
