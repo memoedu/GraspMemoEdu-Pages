@@ -1,5 +1,5 @@
-import {clipText as tx} from './clipper.js?v=66386826c2fb02b5';
-import {renderPlainMath} from './math-presentation.js?v=66386826c2fb02b5';
+import {clipText as tx} from './clipper.js?v=00bfa9192e515f94';
+import {renderPlainMath} from './math-presentation.js?v=00bfa9192e515f94';
 
 export function mountClipperLibrary({root, request, node, control, link, isCurrent}) {
   const active = () => isCurrent() && root.isConnected;
@@ -85,18 +85,20 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
         days.set(dayKey, dated);
         groups.get(key).append(dated);
       }
-      const clip = node('details', 'clipperLibraryItem');
-      const summary = node('summary');
-      summary.append(clipText(item.front));
-      clip.append(summary);
-      bibliography(item, clip);
       if (mode === 'excerpt') {
         const excerpt = node('article', 'clipperLibraryItem');
         excerpt.append(clipText(item.front));
         const source = itemSource(item);
         if (source) excerpt.append(source);
         days.get(dayKey).append(excerpt);
-      } else days.get(dayKey).append(clip);
+      } else {
+        const clip = node('details', 'clipperLibraryItem');
+        const summary = node('summary');
+        summary.append(clipText(item.front));
+        clip.append(summary);
+        bibliography(item, clip);
+        days.get(dayKey).append(clip);
+      }
     }
 
     function review(card) {
@@ -132,13 +134,16 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
     async function load(offset) {
       pager.replaceChildren();
       try {
-        if (mode !== 'excerpt' && !labels) {
-          const {types} = await request('clipper/types');
-          labels = new Map(types.map(type => [type.id, type.label]));
-        }
-        const {items, next} = await request('clipper/items?' + new URLSearchParams({
+        const parameters = new URLSearchParams({
           kind: mode === 'excerpt' ? mode : 'card', due: mode === 'review', offset,
-        }));
+          limit: mode === 'review' ? 1 : 30, compact: true,
+        });
+        const [{items, next}] = await Promise.all([
+          request('clipper/items?' + parameters),
+          mode !== 'excerpt' && !labels ? request('clipper/types').then(({types}) => {
+            labels = new Map(types.map(type => [type.id, type.label]));
+          }) : null,
+        ]);
         if (!current()) return;
         status.textContent = '';
         if (mode === 'review' && items.length) review(items[0]);
