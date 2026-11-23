@@ -1,6 +1,7 @@
-import {getLanguage} from './i18n.js?v=66386826c2fb02b5';
-import {learningSelectionBlock} from './content-report.js?v=66386826c2fb02b5';
-import {presentationMathSource} from './math-presentation.js?v=66386826c2fb02b5';
+import {getLanguage} from './i18n.js?v=865006a6b8d8de41';
+import {learningSelectionBlock} from './content-report.js?v=865006a6b8d8de41';
+import {presentationMathSource} from './math-presentation.js?v=865006a6b8d8de41';
+import {currentModal} from './question-tools.js?v=865006a6b8d8de41';
 
 const FORMULA = '[data-math-source],[data-tex],.katex,math,mjx-container';
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -10,6 +11,17 @@ const TEXT_BLOCK = 'p,li,td,th,pre,blockquote,h1,h2,h3,h4,.courseContent,.answer
 const limit = (text, length) => [...text].slice(0, length).join('');
 const elementOf = node => node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
 export const clipText = (zh, en) => getLanguage() === 'en' ? en : zh;
+const touchLayout = () => window.matchMedia?.('(pointer: coarse) and (max-width: 800px)').matches;
+export function openClipperPopup(explicit = false) {
+  if (!explicit && touchLayout()) return null;
+  let popup;
+  try {
+    popup = window.open('', '_blank', 'popup,width=790,height=660');
+    if (popup && !popup.closed && popup.document.head && popup.document.body) return popup;
+  } catch {}
+  try { popup?.close(); } catch {}
+  return null;
+}
 
 function formulaOf(node) {
   let math = elementOf(node)?.closest(FORMULA);
@@ -28,10 +40,10 @@ function mathText(node) {
 }
 
 function expandedRange(selection) {
-  const raw = selection.getRangeAt(0);
+  const raw = selection.getRangeAt(0).cloneRange();
   const start = formulaOf(raw.startContainer), end = formulaOf(raw.endContainer);
   if (!start && !end) return raw;
-  const range = raw.cloneRange();
+  const range = raw;
   if (start) range.setStartBefore(start);
   if (end) range.setEndAfter(end);
   return range;
@@ -92,10 +104,18 @@ function clipRoute() {
 function capture() {
   const selection = getSelection();
   if (!selection?.rangeCount || selection.isCollapsed) return null;
-  const range = expandedRange(selection);
+  return captureRange(expandedRange(selection));
+}
+
+function captureRange(range) {
   const common = elementOf(range.commonAncestorContainer);
   const root = common?.closest(CONTENT);
   if (!root || !usable(range.startContainer) || !usable(range.endContainer)) return null;
+  return {range, common, root};
+}
+
+function captureSource({range, common, root}) {
+  if (!root.isConnected || !root.contains(common)) return null;
   const text = snapshot(common, range);
   if (!text) return null;
   const a = learningSelectionBlock(range.startContainer);
@@ -103,8 +123,8 @@ function capture() {
   const block = a && a === b ? a : common.closest(TEXT_BLOCK);
   const context = block ? snapshot(block) : text;
   const title = [...root.querySelectorAll('h1')].find(node => node.getClientRects().length)?.textContent || document.title;
-  return {source: {text: limit(text, 18000), context: limit(context, 18000),
-    title: limit(title.trim(), 400), route: clipRoute()}, rect: range.getBoundingClientRect()};
+  return {text: limit(text, 18000), context: limit(context, 18000),
+    title: limit(title.trim(), 400), route: clipRoute()};
 }
 
 function select(node) {
@@ -113,6 +133,7 @@ function select(node) {
   else range.selectNodeContents(node);
   getSelection().removeAllRanges();
   getSelection().addRange(range);
+  return range;
 }
 
 export function installClipper({request, identity}) {
@@ -133,7 +154,7 @@ export function installClipper({request, identity}) {
   actions.hidden = true;
   document.body.append(actions);
   const definitions = [['card', '卡', 'Card'], ['excerpt', '摘', 'Excerpt'], ['ask', '问', 'Ask'], ['read', '读', 'Read']];
-  let owner, enabled = false, selection, app, hover, downOnMath, loading = false;
+  let owner, enabled = false, selection, app, hover, downOnMath, touch, loading = false, frame = 0;
   const storageKey = () => 'graspmemoedu:clipper:enabled:' + owner;
 
   function guardedRequest(...args) {
@@ -159,11 +180,10 @@ export function installClipper({request, identity}) {
     }
   }
 
-  function showSelection() {
-    selection = enabled && owner && !document.querySelector('dialog:modal') ? capture() : null;
-    actions.hidden = !selection;
-    if (!selection) return;
-    const rect = selection.rect;
+  function positionSelection() {
+    const rect = selection && !currentModal() && selection.range.getBoundingClientRect();
+    actions.hidden = !rect || rect.bottom <= 0 || rect.top >= innerHeight || (!rect.width && !rect.height);
+    if (actions.hidden) return;
     const left = Math.max(8, Math.min(rect.left, innerWidth - actions.offsetWidth - 8));
     const bottom = rect.bottom + actions.offsetHeight + 12;
     const top = Math.max(6, Math.min(innerHeight - actions.offsetHeight - 6,
@@ -171,8 +191,27 @@ export function installClipper({request, identity}) {
     Object.assign(actions.style, {left: left + 'px', top: top + 'px'});
   }
 
+  function showSelection() {
+    if (!enabled || !owner || currentModal()) selection = null;
+    else {
+      const next = capture() || touch?.selection;
+      if (next || !actions.contains(document.activeElement)) selection = next;
+    }
+    positionSelection();
+  }
+
+  function clearTouch() {
+    touch?.formula.classList.remove('clipperTouchedFormula');
+    touch = null;
+  }
+
+  function queueSelection() {
+    if (!enabled || frame) return;
+    frame = requestAnimationFrame(() => { frame = 0; showSelection(); });
+  }
+
   function preload() {
-    return import('./clipper-workspace.js?v=66386826c2fb02b5').then(module => {
+    return import('./clipper-workspace.js?v=865006a6b8d8de41').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest});
       return app;
     });
@@ -183,14 +222,15 @@ export function installClipper({request, identity}) {
     button.type = 'button';
     button.addEventListener('click', async () => {
       if (!selection || loading || !enabled || !owner) return;
-      const {source} = selection;
+      const source = captureSource(selection);
+      if (!source) { actions.hidden = true; return; }
       const scope = owner;
       if (app) {
         app.open(id, source);
         return;
       }
       // Acquire the browser window during the action's trusted activation.
-      const popup = window.open('', '_blank', 'popup,width=790,height=660');
+      const popup = openClipperPopup();
       loading = true;
       try {
         const workspace = await preload();
@@ -207,6 +247,7 @@ export function installClipper({request, identity}) {
     const next = identity();
     if (owner !== next) {
       app?.close();
+      clearTouch();
       owner = next;
       enabled = false;
       if (owner) {
@@ -221,22 +262,41 @@ export function installClipper({request, identity}) {
     if (!owner) return;
     enabled = !enabled;
     try { localStorage.setItem(storageKey(), enabled ? 'yes' : 'no'); } catch {}
-    if (!enabled) app?.close();
+    if (!enabled) { app?.close(); clearTouch(); }
     refresh();
   });
   actions.addEventListener('pointerdown', event => event.preventDefault());
-  document.addEventListener('selectionchange', showSelection);
+  actions.addEventListener('focusout', queueSelection);
+  document.addEventListener('selectionchange', queueSelection);
   document.addEventListener('pointerover', event => { hover = event.target; }, true);
   document.addEventListener('pointerdown', event => {
+    if (touch && !actions.contains(event.target)) { clearTouch(); queueSelection(); }
     downOnMath = enabled && event.button === 0 && usable(event.target) ? formulaOf(event.target) : null;
   }, true);
   document.addEventListener('pointerup', event => {
     if (downOnMath && formulaOf(event.target) === downOnMath && getSelection()?.isCollapsed) select(downOnMath);
     downOnMath = null;
   }, true);
+  document.addEventListener('click', event => {
+    if (!enabled || (!touchLayout() && event.pointerType !== 'touch') || !usable(event.target) ||
+        elementOf(event.target)?.closest('a,label')) return;
+    const formula = formulaOf(event.target);
+    if (formula) {
+      event.preventDefault();
+      clearTouch();
+      // Some mobile engines remove the native selection after the tap dispatch.
+      const range = select(formula).cloneRange();
+      const captured = captureRange(range);
+      if (captured) {
+        touch = {formula, selection: captured};
+        formula.classList.add('clipperTouchedFormula');
+      }
+      showSelection();
+    }
+  }, true);
   document.addEventListener('keydown', event => {
     if (!enabled || !owner || !event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey ||
-        event.isComposing || elementOf(event.target)?.closest(EDITING) || document.querySelector('dialog:modal')) return;
+        event.isComposing || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
     if (event.code === 'KeyS') {
       const at = [getSelection()?.anchorNode, event.target, hover].find(usable);
       const fallback = [...document.querySelectorAll('#lessonContent [data-help-block],#portalContent [data-help-block]')]
@@ -248,9 +308,9 @@ export function installClipper({request, identity}) {
       if (!actions.hidden) { event.preventDefault(); actions.firstElementChild.focus({preventScroll: true}); }
     }
   }, true);
-  window.addEventListener('hashchange', () => { selection = null; actions.hidden = true; });
-  window.addEventListener('resize', showSelection);
-  window.addEventListener('scroll', showSelection, {capture: true, passive: true});
+  window.addEventListener('hashchange', () => { clearTouch(); selection = null; actions.hidden = true; });
+  window.addEventListener('resize', positionSelection);
+  window.addEventListener('scroll', positionSelection, {capture: true, passive: true});
   refresh();
   return {toggle, refresh};
 }

@@ -6,8 +6,10 @@
 }
 
 .clipperSelectionEnabled :is(#portalContent, #lessonContent) :is([data-math-source], [data-tex], mjx-container, math, .katex) {
+  -webkit-user-select: all;
   user-select: all;
 }
+.clipperTouchedFormula { outline: 2px solid var(--selection-border, #98c6e9); }
 
 .clipperActions, .clipperWorkspace, .clipperLibrary {
   --clipper-ink: var(--text, #192c26);
@@ -48,8 +50,6 @@ body.clipperWindow { margin: 0; padding: 0; min-width: 0; overflow: hidden; }
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100dvh;
   min-width: 0;
   padding: 0;
   overflow: hidden;
@@ -60,6 +60,7 @@ body.clipperWindow { margin: 0; padding: 0; min-width: 0; overflow: hidden; }
   z-index: 75;
   inset: 56px 12px auto auto;
   max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 70px);
   max-height: calc(100dvh - 70px);
   margin: 0;
   width: min(790px, calc(100vw - 24px));
@@ -70,11 +71,15 @@ body.clipperWindow { margin: 0; padding: 0; min-width: 0; overflow: hidden; }
   resize: both;
 }
 .clipperDock::backdrop { background: transparent; pointer-events: none; }
-.clipperDock.clipperCollapsed { width: max-content; height: auto; resize: none; }
+/* Keep native inline dimensions for the normal dock only. */
+.clipperDock.clipperCollapsed { width: max-content !important; height: auto !important; resize: none; }
+body.clipperWindow > .clipperWorkspace, .clipperDock.clipperExpanded {
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+}
 .clipperDock.clipperExpanded {
   inset: 0 !important;
-  width: 100%;
-  height: 100dvh;
   max-width: none;
   max-height: none;
   resize: none;
