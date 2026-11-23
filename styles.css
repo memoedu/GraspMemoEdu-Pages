@@ -215,7 +215,7 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 }
 .voiceToolPanel > [role="status"] { flex-basis: 100%; }
 .voiceDuration { flex-basis: 100%; font-variant-numeric: tabular-nums; }
-.voiceToolPanel button { min-block-size: 36px; }
+.voiceToolPanel button { min-block-size: 44px; }
 @media (hover: hover) {
   .questionToolButton:hover { border-color: var(--muted-accent-border); }
 }
