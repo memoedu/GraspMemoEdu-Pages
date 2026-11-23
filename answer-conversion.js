@@ -1,5 +1,5 @@
-import {getLanguage} from './i18n.js?v=494edfbe780e6c86';
-import {attachLiteralAnswer} from './formula-input.js?v=494edfbe780e6c86';
+import {getLanguage} from './i18n.js?v=35de3b2120782aa7';
+import {attachLiteralAnswer} from './formula-input.js?v=35de3b2120782aa7';
 
 const targets = new WeakMap();
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;

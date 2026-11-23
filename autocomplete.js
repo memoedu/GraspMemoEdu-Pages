@@ -1,6 +1,6 @@
-import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=494edfbe780e6c86';
-import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=494edfbe780e6c86';
-import previews from './vendor/formula/previews.mjs?v=494edfbe780e6c86';
+import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=35de3b2120782aa7';
+import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=35de3b2120782aa7';
+import previews from './vendor/formula/previews.mjs?v=35de3b2120782aa7';
 
 export const autocompleteGroups = ['calculator', 'answer', 'other'];
 const preferenceKey = 'graspmemoedu:autocomplete';

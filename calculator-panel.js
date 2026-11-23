@@ -1,7 +1,7 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=494edfbe780e6c86';
-import {toolInputs} from './calculator-inputs.js?v=494edfbe780e6c86';
-import {setInputCompletions} from './autocomplete.js?v=494edfbe780e6c86';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=494edfbe780e6c86';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=35de3b2120782aa7';
+import {toolInputs} from './calculator-inputs.js?v=35de3b2120782aa7';
+import {setInputCompletions} from './autocomplete.js?v=35de3b2120782aa7';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=35de3b2120782aa7';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -100,6 +100,20 @@ const renderValue = value => Array.isArray(value) ? '[' + value.map(renderValue)
   : value == null || typeof value === 'number' && !Number.isFinite(value) ? '—'
   : typeof value === 'number' ? Number(value.toPrecision(13)).toString() : String(value);
 
+// Move the decimal point in the displayed digits, preserving their precision.
+export function expandScientificNotation(text) {
+  const match = /^(-?)(\d+)(?:\.(\d+))?e([+-]?\d{1,3})$/i.exec(text);
+  if (!match) return null;
+  const [, sign, whole, fraction = '', power] = match;
+  const exponent = Number(power);
+  if (exponent < -324 || exponent > 308) return null;
+  const digits = whole + fraction;
+  const point = whole.length + exponent;
+  if (point <= 0) return sign + '0.' + '0'.repeat(-point) + digits;
+  if (point >= digits.length) return sign + digits.padEnd(point, '0');
+  return sign + digits.slice(0, point) + '.' + digits.slice(point);
+}
+
 export function openCalculator(launch, config, [module, zh, en, operations], english, session) {
   if (active?.launch === launch) return;
   active?.close(false);
@@ -118,7 +132,28 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const output = create('div', 'calculatorResult');
   output.setAttribute('role', 'status');
   output.setAttribute('aria-live', 'polite');
-  dialog.append(content, output);
+  const resultLine = create('div', 'calculatorResultLine');
+  const resultFormatAllowed = permitsKey(config, 'result_notation');
+  let originalResult, decimalResult;
+  const format = button('↻', () => {
+    const decimal = format.getAttribute('aria-pressed') === 'false';
+    format.setAttribute('aria-pressed', String(decimal));
+    output.textContent = decimal ? decimalResult : originalResult;
+  }, 'button', 'calculatorControl calculatorFormat');
+  format.setAttribute('aria-label', local('切换结果格式', 'Toggle result format'));
+  format.title = local('切换科学计数法和普通十进制', 'Switch between scientific and plain decimal notation');
+  format.dataset.calculatorKey = 'result_notation';
+  format.hidden = true;
+  resultLine.append(format, output);
+  dialog.append(content, resultLine);
+
+  function showText(text, result = false) {
+    output.textContent = text;
+    originalResult = text;
+    decimalResult = result && resultFormatAllowed ? expandScientificNotation(text) : null;
+    format.hidden = !decimalResult;
+    format.setAttribute('aria-pressed', 'false');
+  }
 
   let worker, timer, working = false, closed = false;
   const {saved, history} = session;
@@ -212,7 +247,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     setAnswer(null);
     const error = errors[code] || errors.invalid;
     output.dataset.state = 'error';
-    output.textContent = local(...error);
+    showText(local(...error));
   };
   function show(result) {
     output.dataset.state = 'success';
@@ -224,7 +259,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           create('dd', '', renderValue(value)));
       }
       output.replaceChildren(data);
-    } else output.textContent = result.text;
+    } else showText(result.text, true);
     const values = result.entries?.map(([, value]) => renderValue(value));
     setAnswer(result.text || (values?.length === 1 ? values[0] : values?.join('\n')) || null);
   }
@@ -233,14 +268,14 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     const version = edit;
     working = true; control.disabled = true;
     setAnswer(null);
-    output.dataset.state = 'busy'; output.textContent = local('计算中…', 'Calculating…');
+    output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=494edfbe780e6c86', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=35de3b2120782aa7', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
-        if (version !== edit) { output.textContent = ''; refreshTransfer(); return; }
+        if (version !== edit) { showText(''); refreshTransfer(); return; }
         if (data.error) { showError(data.error); return; }
         if (receive) { receive(data.result); return; }
         if (module === 'expression') {
@@ -273,8 +308,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       label(display, local('表达式', 'Expression'), input);
       const variableFields = create('div', 'calculatorAssignments');
       variableFields.id = 'calculatorAssignments';
-      output.textContent = history.at(-1)?.result || '0';
-      display.append(variableFields, output); form.append(display);
+      showText(history.at(-1)?.result || '0', true);
+      display.append(variableFields, resultLine); form.append(display);
       const currentAssignments = () => session.assignmentDraft?.expression === input.value
         ? session.assignmentDraft.values : null;
       function renderAssignments() {
@@ -344,15 +379,16 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         assign = button(local('赋值', 'Assign'), () => {
           const expression = input.value;
           run(module, 'assign_variables', {expression}, assign, ({variables}) => {
-            output.textContent = history.at(-1)?.result || '0';
             delete output.dataset.state;
             setAnswer(null);
             if (expression !== input.value) return;
             const previous = session.assignmentDraft?.values;
             session.assignmentDraft = {expression, values: new Map(variables.map(name => [name, previous?.get(name) || '']))};
             renderAssignments();
-            if (variables.length) variableFields.querySelector('input').focus();
-            else output.textContent = local('表达式没有待赋值的变量。', 'The expression has no variables to assign.');
+            if (variables.length) {
+              showText(history.at(-1)?.result || '0', true);
+              variableFields.querySelector('input').focus();
+            } else showText(local('表达式没有待赋值的变量。', 'The expression has no variables to assign.'));
           });
         });
         assign.dataset.calculatorKey = 'assign_variables';
@@ -373,7 +409,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
             const field = focused.isConnected ? focused : input;
             if (field === input) session.assignmentDraft = null;
             field.value = ''; field.dispatchEvent(new Event('input'));
-            output.textContent = '0'; delete output.dataset.state; field.focus(); return;
+            showText('0'); delete output.dataset.state; field.focus(); return;
           }
           if (key === 'backspace') {
             const field = focused.isConnected ? focused : input;
@@ -444,7 +480,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       const fields = create('div', 'calculatorToolFields');
       form.append(fields);
       function renderFields() {
-        stop(); output.replaceChildren(); delete output.dataset.state;
+        stop(); showText(''); delete output.dataset.state;
         invalidate();
         saved.set(module, method.value);
         fields.replaceChildren();
