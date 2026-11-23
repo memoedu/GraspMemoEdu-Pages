@@ -1,6 +1,6 @@
-import {calculate, storedExpression} from './calculator-engine.js?v=b733c23b452c82d3';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=b733c23b452c82d3';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=b733c23b452c82d3';
+import {calculate, storedExpression} from './calculator-engine.js?v=e65614ed86a4941d';
+import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=e65614ed86a4941d';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=e65614ed86a4941d';
 
 const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v1/whiteboard.html';
 const boards = new WeakMap();
