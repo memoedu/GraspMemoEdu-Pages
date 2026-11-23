@@ -1,4 +1,5 @@
 export const levels = ['none', 'basic', 'scientific', 'advanced', 'cas'];
+export const memoryRegisters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const baseModules = ['expression'];
 const scientificModules = ['constants'];
