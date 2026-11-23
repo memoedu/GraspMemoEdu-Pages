@@ -1,8 +1,8 @@
-import {inheritVoiceContext} from './voice-context.js?v=deee336ea10b0e6d';
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=deee336ea10b0e6d';
-import {toolInputs} from './calculator-inputs.js?v=deee336ea10b0e6d';
-import {setInputCompletions} from './autocomplete.js?v=deee336ea10b0e6d';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=deee336ea10b0e6d';
+import {inheritVoiceContext} from './voice-context.js?v=22e2759c697fc994';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=22e2759c697fc994';
+import {toolInputs} from './calculator-inputs.js?v=22e2759c697fc994';
+import {setInputCompletions} from './autocomplete.js?v=22e2759c697fc994';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=22e2759c697fc994';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -273,7 +273,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=deee336ea10b0e6d', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=22e2759c697fc994', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
