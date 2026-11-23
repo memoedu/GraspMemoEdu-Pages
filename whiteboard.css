@@ -19,6 +19,7 @@
 .whiteboardDivider::after { content: ''; width: 4px; height: 80px; margin-top: 20px; border-radius: 4px; background: var(--line, #d3daea); }
 .whiteboardDivider:is(:hover, :focus-visible)::after { background: var(--accent, #4167a5); }
 .whiteboardPanel { display: grid; min-width: 0; border: 1px solid var(--control-border, #d3daea); border-radius: 10px; overflow: clip; }
+.whiteboardPanel[hidden], .whiteboardDivider[hidden] { display: none; }
 .whiteboardPanel > :is(header, .whiteboardMath) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 9px; }
 .whiteboardPanel button { font: inherit; }
 .whiteboardPanel > header strong { margin-inline-end: auto; }

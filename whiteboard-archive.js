@@ -24,16 +24,20 @@ export async function chooseWhiteboardFolder() {
   return root;
 }
 
-export async function whiteboardFolder() {
+export async function whiteboardFolder({readOnly = false, ask = false} = {}) {
   const root = await directoryHandle();
-  if (!root || await root.queryPermission({mode: 'readwrite'}) !== 'granted') return null;
-  return root.getDirectoryHandle('GraspMemoEdu-Whiteboards', {create: true});
+  if (!root) return null;
+  const descriptor = {mode: readOnly ? 'read' : 'readwrite'};
+  let permission = await root.queryPermission(descriptor);
+  if (ask && permission === 'prompt') permission = await root.requestPermission(descriptor);
+  return permission === 'granted' ? root : null;
 }
 
 async function questionFolder(root, key, create) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key));
   const id = Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, '0')).join('');
-  return root.getDirectoryHandle(id, {create});
+  const archive = await root.getDirectoryHandle('GraspMemoEdu-Whiteboards', {create});
+  return archive.getDirectoryHandle(id, {create});
 }
 
 async function write(root, name, data) {
@@ -62,8 +66,13 @@ export async function restoreWhiteboard(root, key) {
     if (file.size > 24_000_000) throw Error('archive_too_large');
     const saved = JSON.parse(await file.text());
     if (!/^[0-9TZ.-]+-[\da-f-]{36}\.png$/i.test(saved.image || '')) throw Error('invalid_archive');
-    await (await question.getFileHandle(saved.image)).getFile();
-    return saved;
+    try {
+      await (await question.getFileHandle(saved.image)).getFile();
+      return saved;
+    } catch (error) {
+      if (error.name === 'NotFoundError') return {...saved, imageMissing: true};
+      throw error;
+    }
   } catch (error) {
     if (error.name === 'NotFoundError') return null;
     throw error;
