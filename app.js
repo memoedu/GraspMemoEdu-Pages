@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=22e2759c697fc994";
-import {answerReady} from './question-input.js?v=22e2759c697fc994';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=22e2759c697fc994';
-import {startPresence} from './presence.js?v=22e2759c697fc994';
-import {createLearningCache} from './learning-cache.js?v=22e2759c697fc994';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=22e2759c697fc994';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=26d89c4df5a14ebc";
+import {answerReady} from './question-input.js?v=26d89c4df5a14ebc';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=26d89c4df5a14ebc';
+import {startPresence} from './presence.js?v=26d89c4df5a14ebc';
+import {createLearningCache} from './learning-cache.js?v=26d89c4df5a14ebc';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=26d89c4df5a14ebc';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=22e2759c697fc994';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=22e2759c697fc994';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=22e2759c697fc994';
-import {renderSourceReader} from './learning-ui.js?v=22e2759c697fc994';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=22e2759c697fc994';
-import {createTrainingView} from './training.js?v=22e2759c697fc994';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=22e2759c697fc994';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=22e2759c697fc994';
-import {installAutocomplete} from './autocomplete.js?v=22e2759c697fc994';
-import {expressionCompletions} from './calculator-policy.js?v=22e2759c697fc994';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=22e2759c697fc994';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=22e2759c697fc994';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=26d89c4df5a14ebc';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=26d89c4df5a14ebc';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=26d89c4df5a14ebc';
+import {renderSourceReader} from './learning-ui.js?v=26d89c4df5a14ebc';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=26d89c4df5a14ebc';
+import {createTrainingView} from './training.js?v=26d89c4df5a14ebc';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=26d89c4df5a14ebc';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=26d89c4df5a14ebc';
+import {installAutocomplete} from './autocomplete.js?v=26d89c4df5a14ebc';
+import {expressionCompletions} from './calculator-policy.js?v=26d89c4df5a14ebc';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=26d89c4df5a14ebc';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=26d89c4df5a14ebc';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1139,11 +1139,20 @@ function renderProgress() {
     readerProgress(refs, {hidden: true, label: '', percent: 0}); return;
   }
   const active = stepById(state, state.active_step_id);
-  // A score can be settled while the learner is still on the module's feedback page.
+  const settledModules = state.modules.filter(module => module.status === 'completed');
+  let pendingModule = null;
+  if (state.status !== 'completed') {
+    if (active?.phase === 'feedback') {
+      pendingModule = settledModules.find(module => active.module_id === module.id && active.attempt_id === module.attempt_id);
+    }
+    // Scoring can finish before the last reading or learning page has been passed.
+    if (!pendingModule && settledModules.length === state.modules.length) {
+      pendingModule = settledModules.reduce((last, module) =>
+        !last || (module.completed_at || '') >= (last.completed_at || '') ? module : last, null);
+    }
+  }
   const segments = state.modules.map(module => ({
-    status: module.status === 'completed' && state.status === 'in_progress'
-      && active?.phase === 'feedback' && active.module_id === module.id && active.attempt_id === module.attempt_id
-      ? 'in_progress' : module.status,
+    status: module === pendingModule ? 'in_progress' : module.status,
     title: learningTitle(module.title),
   }));
   const completed = segments.filter(segment => segment.status === 'completed').length;
@@ -1748,7 +1757,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=22e2759c697fc994");
+const { initPortal } = await import("./portal.js?v=26d89c4df5a14ebc");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
