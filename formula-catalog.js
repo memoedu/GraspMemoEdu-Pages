@@ -1,4 +1,4 @@
-import {expressionCompletions} from './calculator-policy.js?v=35de3b2120782aa7';
+import {expressionCompletions} from './calculator-policy.js?v=66e03cbc581f24aa';
 
 export const formulaToken = /(\\?[a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
 
@@ -93,7 +93,23 @@ export function bareMathRuns(value) {
     const token = pieces.exec(value)?.[0];
     if (!token || /^[A-Za-z]{2,}$/.test(token) && !mathWords.has(token.toLowerCase())) {
       finish(); end += token?.length || 1; start = end;
-    } else end += token.length;
+    } else {
+      end += token.length;
+      // Prose inside \text{...}, \operatorname{...} and nested TeX arguments
+      // belongs to the control word. Preserve its exact extent for replacement.
+      if (token.startsWith('\\')) {
+        while (value[end] === '{' || value[end] === '[') {
+          const open = value[end], close = open === '{' ? '}' : ']';
+          let depth = 1, cursor = end + 1;
+          for (; cursor < value.length && depth; cursor++) {
+            if (value[cursor] === '\\') cursor++;
+            else if (value[cursor] === open) depth++;
+            else if (value[cursor] === close) depth--;
+          }
+          end = cursor;
+        }
+      }
+    }
   }
   finish();
   return runs;
