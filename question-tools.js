@@ -1,7 +1,7 @@
-import {setVoiceContext} from './voice-context.js?v=e65614ed86a4941d';
-import {getLanguage} from './i18n.js?v=e65614ed86a4941d';
-import {calculatorToolGroups} from './calculator.js?v=e65614ed86a4941d';
-import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=e65614ed86a4941d';
+import {setVoiceContext} from './voice-context.js?v=433aee787fec0675';
+import {getLanguage} from './i18n.js?v=433aee787fec0675';
+import {calculatorToolGroups} from './calculator.js?v=433aee787fec0675';
+import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=433aee787fec0675';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -57,7 +57,7 @@ function createToolbar(label, orientation) {
   return toolbar;
 }
 
-export function installToolbars(host, voice) {
+export function installToolbars(host, voice, clipper) {
   const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
   const pageToolbar = createToolbar(label(), 'horizontal');
   host.append(pageToolbar);
@@ -73,14 +73,16 @@ export function installToolbars(host, voice) {
       modalToolbar.classList.add('dialogTools');
       modal.prepend(modalToolbar);
     }
-    const questionToolbar = voice.hidden ? null :
+    const hasPageTools = !voice.hidden || Boolean(clipper && !clipper.hidden);
+    const questionToolbar = !hasPageTools ? null :
       [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
     const toolbar = modalToolbar || questionToolbar || pageToolbar;
-    const hidePageTools = voice.hidden || toolbar !== pageToolbar;
+    const hidePageTools = !hasPageTools || toolbar !== pageToolbar;
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
-    if (voice.parentElement !== toolbar) {
-      const previous = voice.parentElement;
-      toolbar.append(voice);
+    for (const button of [voice, clipper].filter(Boolean)) {
+      if (button.parentElement === toolbar) continue;
+      const previous = button.parentElement;
+      toolbar.append(button);
       if (previous) setTabStop(previous);
       setTabStop(toolbar);
     }

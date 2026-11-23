@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=e65614ed86a4941d';
+import {t} from './i18n.js?v=433aee787fec0675';
 
 const blocks = new WeakMap();
 const helpBlocks = new WeakMap();
@@ -70,6 +70,10 @@ export function reportableContent(element, context, contentBlockId, contentVersi
   element.dataset.reportBlock = contentBlockId;
   blocks.set(element, {...context, correction: {content_block_id: contentBlockId, content_version: contentVersion}});
   return helpableContent(element, context, contentBlockId, contentVersion);
+}
+
+export function learningSelectionBlock(node) {
+  return (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)?.closest('[data-help-block]');
 }
 
 // Blanks replace author markers in the live DOM. Restore the markers in a
