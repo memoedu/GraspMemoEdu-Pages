@@ -1,22 +1,22 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=deee336ea10b0e6d";
-import {answerReady} from './question-input.js?v=deee336ea10b0e6d';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=deee336ea10b0e6d';
-import {startPresence} from './presence.js?v=deee336ea10b0e6d';
-import {createLearningCache} from './learning-cache.js?v=deee336ea10b0e6d';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=deee336ea10b0e6d';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=22e2759c697fc994";
+import {answerReady} from './question-input.js?v=22e2759c697fc994';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=22e2759c697fc994';
+import {startPresence} from './presence.js?v=22e2759c697fc994';
+import {createLearningCache} from './learning-cache.js?v=22e2759c697fc994';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=22e2759c697fc994';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=deee336ea10b0e6d';
-import {selfAssessment, showAnswerButton} from './self-assessment.js?v=deee336ea10b0e6d';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=deee336ea10b0e6d';
-import {renderSourceReader} from './learning-ui.js?v=deee336ea10b0e6d';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=deee336ea10b0e6d';
-import {createTrainingView} from './training.js?v=deee336ea10b0e6d';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=deee336ea10b0e6d';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=deee336ea10b0e6d';
-import {installAutocomplete} from './autocomplete.js?v=deee336ea10b0e6d';
-import {expressionCompletions} from './calculator-policy.js?v=deee336ea10b0e6d';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=deee336ea10b0e6d';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=deee336ea10b0e6d';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=22e2759c697fc994';
+import {selfAssessment, showAnswerButton} from './self-assessment.js?v=22e2759c697fc994';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=22e2759c697fc994';
+import {renderSourceReader} from './learning-ui.js?v=22e2759c697fc994';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=22e2759c697fc994';
+import {createTrainingView} from './training.js?v=22e2759c697fc994';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=22e2759c697fc994';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=22e2759c697fc994';
+import {installAutocomplete} from './autocomplete.js?v=22e2759c697fc994';
+import {expressionCompletions} from './calculator-policy.js?v=22e2759c697fc994';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=22e2759c697fc994';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=22e2759c697fc994';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1135,14 +1135,22 @@ function renderProgress() {
       status: status === 'paused' ? t('已暂停') : status === 'completed' ? t('学习完成') : t(state.has_practice ? '学习中' : '阅读中')});
     return;
   }
-  const completed = state.modules.filter((module) => module.status === "completed").length;
   if (!state.modules.length && state.unified_topic) {
     readerProgress(refs, {hidden: true, label: '', percent: 0}); return;
   }
+  const active = stepById(state, state.active_step_id);
+  // A score can be settled while the learner is still on the module's feedback page.
+  const segments = state.modules.map(module => ({
+    status: module.status === 'completed' && state.status === 'in_progress'
+      && active?.phase === 'feedback' && active.module_id === module.id && active.attempt_id === module.attempt_id
+      ? 'in_progress' : module.status,
+    title: learningTitle(module.title),
+  }));
+  const completed = segments.filter(segment => segment.status === 'completed').length;
   readerProgress(refs, {label: t('reader.modulesCompleted', {completed, total: state.modules.length}),
     status: state.status === 'paused' ? t('已暂停') : state.status === 'completed' ? state.skipped_modules?.length ? t('reader.roundEnded') : t('学习完成') : t('学习中'),
     percent: Math.round(100 * completed / (state.modules.length || 1)),
-    segments: state.modules.map(module => ({status: module.status, title: learningTitle(module.title)}))});
+    segments});
 }
 
 function renderPause() {
@@ -1740,7 +1748,7 @@ void ensureDeployment().catch(() => {});
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, request}));
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=deee336ea10b0e6d");
+const { initPortal } = await import("./portal.js?v=22e2759c697fc994");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
