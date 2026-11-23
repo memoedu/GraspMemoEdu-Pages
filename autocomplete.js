@@ -1,6 +1,6 @@
-import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=993f9efe48c82717';
-import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=993f9efe48c82717';
-import previews from './vendor/formula/previews.mjs?v=993f9efe48c82717';
+import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=3f4192d65a1ad037';
+import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=3f4192d65a1ad037';
+import previews from './vendor/formula/previews.mjs?v=3f4192d65a1ad037';
 
 export const autocompleteGroups = ['calculator', 'answer', 'other'];
 const preferenceKey = 'graspmemoedu:autocomplete';
@@ -93,7 +93,7 @@ export function installAutocomplete(defaultCandidates) {
     match: text => (source?.match || token).exec(text),
     search(term, receive) {
       if (snapshot) { receive(snapshot.candidates); return; }
-      const candidates = source ? source.provider() : defaultCandidates;
+      const candidates = source ? source.provider(term) : defaultCandidates;
       receive(candidates.map(candidate => typeof candidate === 'string' ? {label: candidate, value: candidate} : candidate)
         .filter(item => (item.preview || term === '!' || item.value !== term || field.selectionEnd !== field.value.length)
           && matchesCompletion(item, term)));

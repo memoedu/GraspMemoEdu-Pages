@@ -1,5 +1,5 @@
-import {constants, functions, operators, permitsConstant, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=993f9efe48c82717';
+import {constants, functions, memoryRegisters, operators, permitsConstant, permitsKey, permitsModule, toolOperation}
+  from './calculator-policy.js?v=3f4192d65a1ad037';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -12,9 +12,9 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=993f9efe48c82717');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=993f9efe48c82717');
-const applied = () => import('./vendor/calculator/applied.mjs?v=993f9efe48c82717');
+const core = () => import('./vendor/calculator/core.mjs?v=3f4192d65a1ad037');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=3f4192d65a1ad037');
+const applied = () => import('./vendor/calculator/applied.mjs?v=3f4192d65a1ad037');
 
 function inputText(value, limit = 4096) {
   ensure(typeof value === 'string' && value.trim() && value.length <= limit);
@@ -41,7 +41,7 @@ const reservedSymbols = new Set(['ans', 'answer', 'i', 'Infinity', 'NaN', 'true'
 const assignable = name => /^[A-Za-z][A-Za-z0-9_]{0,23}$/.test(name) && !reservedSymbols.has(name)
   && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
 
-function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, names, bindings} = {}) {
+function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, names, bindings, memory = {}} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
   const original = commonNotation(value);
   checkNotation(original, config);
@@ -71,6 +71,15 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       if (node.name === 'i') {
         checkKey(config, 'complex', 2);
         return () => math.complex(0, 1);
+      }
+      if (!symbolic && permitsKey(config, 'memory_registers') && memoryRegisters.includes(node.name)
+          && Object.hasOwn(memory ?? {}, node.name)) {
+        const stored = memory[node.name];
+        if (Number.isFinite(stored)) return () => stored;
+        checkKey(config, 'complex', 2);
+        ensure(Number.isFinite(stored?.re) && Number.isFinite(stored?.im), 'domain');
+        const value = math.complex(stored.re, stored.im);
+        return () => value;
       }
       if (names && assignable(node.name)) {
         checkKey(config, 'assign_variables', 2);
@@ -267,13 +276,13 @@ function definiteIntegral(integrate, evaluate, lower, upper) {
   }
 }
 
-export async function calculate({config, module, operation, input = {}, degrees = false, answer}) {
+export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory}) {
   ensure(permitsModule(config, module), 'restricted');
   if (module === 'expression' && operation === 'assign_variables') {
     checkKey(config, 'evaluate');
     checkKey(config, operation, 2);
     const names = new Set();
-    expressionPlan(await core(), input.expression, config, {degrees, answer, names});
+    expressionPlan(await core(), input.expression, config, {degrees, answer, names, memory});
     return {variables: [...names]};
   }
   ensure(module === 'expression' && operation === 'evaluate' || toolOperation(module, operation), 'restricted');
@@ -281,7 +290,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
   const math = await core();
   const n = name => numericText(input[name]);
   const numbers = () => list(input.x);
-  const plan = flags => expressionPlan(math, input.expression, config, {degrees, answer, ...flags});
+  const plan = flags => expressionPlan(math, input.expression, config, {degrees, answer, memory, ...flags});
   let value;
   switch (operation) {
     case 'evaluate': {
@@ -291,14 +300,16 @@ export async function calculate({config, module, operation, input = {}, degrees 
       ensure(typeof supplied === 'object' && !Array.isArray(supplied) && Object.keys(supplied).length <= 12);
       for (const name of names) {
         ensure(Object.hasOwn(supplied, name) && typeof supplied[name] === 'string' && supplied[name].trim(), 'unassigned');
-        const assigned = expressionPlan(math, supplied[name], config, {degrees, answer}).evaluate();
+        const assigned = expressionPlan(math, supplied[name], config, {degrees, answer, memory}).evaluate();
         ensure(Number.isFinite(assigned) || assigned?.isComplex && Number.isFinite(assigned.re) && Number.isFinite(assigned.im), 'domain');
         if (assigned?.isComplex) checkKey(config, 'complex', 2);
         bindings.set(name, assigned);
       }
       value = expression.evaluate();
       if (value?.isComplex) checkKey(config, 'complex', 2);
-      return {text: formatted(math, value), ...(Number.isFinite(value) ? {numeric: value} : {})};
+      const text = formatted(math, value);
+      if (value?.isComplex) return {text, complex: {re: value.re, im: value.im}};
+      return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
     }
     case 'plot': {
       const lower = n('lower'), upper = n('upper');
@@ -361,7 +372,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
       const text = pieces.map(piece => expressionPlan(math, piece, config, {variable, symbolic: true}).source).join('=');
-      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=993f9efe48c82717');
+      const {nerdamer} = await import('./vendor/calculator/symbolic.mjs?v=3f4192d65a1ad037');
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
         : operation === 'differentiate' ? nerdamer.diff(text, variable)
         : operation === 'solve' ? nerdamer.solve(text, variable) : nerdamer.simplify(text);

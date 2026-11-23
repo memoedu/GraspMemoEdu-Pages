@@ -1,8 +1,8 @@
-import {inheritVoiceContext} from './voice-context.js?v=993f9efe48c82717';
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=993f9efe48c82717';
-import {toolInputs} from './calculator-inputs.js?v=993f9efe48c82717';
-import {setInputCompletions} from './autocomplete.js?v=993f9efe48c82717';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=993f9efe48c82717';
+import {inheritVoiceContext} from './voice-context.js?v=3f4192d65a1ad037';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, memoryRegisters, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=3f4192d65a1ad037';
+import {toolInputs} from './calculator-inputs.js?v=3f4192d65a1ad037';
+import {setInputCompletions} from './autocomplete.js?v=3f4192d65a1ad037';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=3f4192d65a1ad037';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -159,6 +159,9 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   let worker, timer, working = false, closed = false;
   const {saved, history} = session;
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
+  let registerCandidate = answer ? session.expressionRegisterCandidate : null;
+  const memory = new Map();
+  let refreshMemory = () => {}, cancelMemory = () => false;
   const workspace = launch.closest('.questionWorkspace');
   inheritVoiceContext(dialog, workspace);
   const target = () => workspace && answerTarget(workspace);
@@ -211,9 +214,14 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     transfer.disabled = unavailable || (count && records.length + size > remaining);
     transfer.textContent = transferring ? local('转换中…', 'Converting…') : local('转换', 'Convert');
   }
-  function setAnswer(value) {
+  function setAnswer(value, candidate = null) {
     answer = value;
-    if (module === 'expression') session.expressionAnswer = value;
+    registerCandidate = candidate;
+    if (module === 'expression') {
+      session.expressionAnswer = value;
+      session.expressionRegisterCandidate = candidate;
+    }
+    refreshMemory();
     transferStatus.textContent = '';
     refreshTransfer();
   }
@@ -263,7 +271,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       output.replaceChildren(data);
     } else showText(result.text, true);
     const values = result.entries?.map(([, value]) => renderValue(value));
-    setAnswer(result.text || (values?.length === 1 ? values[0] : values?.join('\n')) || null);
+    setAnswer(result.text || (values?.length === 1 ? values[0] : values?.join('\n')) || null,
+      result.numeric ?? result.complex ?? null);
   }
   function run(module, operation, input, control, receive) {
     if (working || control.disabled) return;
@@ -273,7 +282,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=993f9efe48c82717', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=3f4192d65a1ad037', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;
@@ -290,7 +299,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       };
       worker.onerror = event => { event.preventDefault(); stop(); finish(); showError('invalid'); };
       timer = setTimeout(() => { stop(); finish(); showError('timeout'); }, 8000);
-      worker.postMessage({config, module, operation, input, degrees: session.degrees, answer: session.previousAnswer});
+      worker.postMessage({config, module, operation, input, degrees: session.degrees, answer: session.previousAnswer,
+        memory: Object.fromEntries([...memory].map(([letter, entry]) => [letter, entry.value]))});
     } catch { stop(); finish(); showError('invalid'); }
   }
 
@@ -303,7 +313,9 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       input.type = 'text'; input.maxLength = 1024; input.spellcheck = false; input.autocomplete = 'off';
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
-      const candidates = () => expressionCompletions(config, {previousAnswer: Number.isFinite(session.previousAnswer)});
+      const memoryAllowed = permitsKey(config, 'memory_registers');
+      const candidates = term => memoryAllowed && memoryRegisters.includes(term) ? []
+        : expressionCompletions(config, {previousAnswer: Number.isFinite(session.previousAnswer)});
       setInputCompletions(input, candidates);
       let focused = input, assign;
       const display = create('div', 'calculatorDisplay');
@@ -316,11 +328,11 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         ? session.assignmentDraft.values : null;
       function renderAssignments() {
         const values = currentAssignments();
+        const unstored = [...(values ?? [])].filter(([name]) => !memory.has(name));
         variableFields.replaceChildren();
-        variableFields.hidden = !values?.size;
+        variableFields.hidden = !unstored.length;
         assign?.setAttribute('aria-expanded', String(!variableFields.hidden));
-        if (!values) return;
-        for (const [name, value] of values) {
+        for (const [name, value] of unstored) {
           const field = create('input', 'calculatorAssignmentValue');
           field.type = 'text'; field.maxLength = 1024; field.spellcheck = false; field.autocomplete = 'off';
           field.value = value;
@@ -398,7 +410,9 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         options.append(assign);
       }
       renderAssignments();
-      form.append(options);
+      const numericPad = create('div', 'calculatorNumericPad');
+      numericPad.append(options);
+      form.append(numericPad);
       const keys = create('div', 'calculatorKeys');
       let equals;
       for (const [key, name, insertion, minimum = 1] of keypad) {
@@ -432,7 +446,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         if (key === 'clear') keyButton.setAttribute('aria-label', local('清空当前输入', 'Clear current input'));
         keys.append(keyButton);
       }
-      form.append(keys);
+      numericPad.append(keys);
       if (levels.indexOf(config.level) >= 2) {
         const extra = create('details', 'calculatorMore');
         extra.append(create('summary', '', local('更多科学函数', 'More scientific functions')));
@@ -444,7 +458,91 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           extraKey.dataset.calculatorKey = key;
           functions.append(extraKey);
         }
-        extra.append(functions); form.append(extra);
+        extra.append(functions); numericPad.append(extra);
+      }
+      if (memoryAllowed) {
+        const memoryPad = create('div', 'calculatorRegisterPad');
+        const legend = create('span');
+        const status = create('div', 'srOnly');
+        status.setAttribute('role', 'status');
+        const notice = create('div', 'calculatorInputNotice');
+        notice.setAttribute('role', 'status');
+        const letters = create('div', 'calculatorKeys calculatorRegisterKeys');
+        const heading = create('div', 'calculatorRegisterHeading');
+        const back = button(local('返回', 'Back'), () => cancelMemory());
+        heading.append(legend, back);
+        memoryPad.id = 'calculatorRegisterPad';
+        memoryPad.hidden = true;
+        memoryPad.append(heading, letters, notice);
+        form.append(memoryPad, status);
+        let mode = '', pending;
+        const copy = button(local('复制', 'Copy'), async () => {
+          if (registerCandidate == null) return;
+          const snapshot = {value: registerCandidate, text: output.textContent};
+          pending = snapshot;
+          openPad('store');
+          try { await navigator.clipboard.writeText(snapshot.text); }
+          catch {
+            if (pending === snapshot) notice.textContent = local('剪贴板不可用，仍可储值。', 'Clipboard unavailable. You can still store the result.');
+          }
+        });
+        const recall = button('RCL', () => openPad('recall'));
+        copy.title = local('复制结果', 'Copy result');
+        recall.title = local('调用储值', 'Recall stored value');
+        copy.setAttribute('aria-label', copy.title);
+        recall.setAttribute('aria-label', recall.title);
+        const headerTools = create('div', 'calculatorHeaderTools');
+        headerTools.append(copy, recall, closeButton);
+        headline.append(headerTools);
+        for (const key of [copy, recall]) key.setAttribute('aria-controls', memoryPad.id);
+        refreshMemory = () => {
+          copy.disabled = registerCandidate == null || working;
+          recall.disabled = !memory.size || working;
+          copy.setAttribute('aria-expanded', String(mode === 'store'));
+          recall.setAttribute('aria-expanded', String(mode === 'recall'));
+        };
+        cancelMemory = () => {
+          if (!mode) return false;
+          const trigger = mode === 'store' ? copy : recall;
+          mode = ''; pending = null;
+          memoryPad.hidden = true;
+          numericPad.hidden = false;
+          refreshMemory();
+          (trigger.disabled ? input : trigger).focus();
+          return true;
+        };
+        function openPad(nextMode) {
+          mode = nextMode;
+          notice.textContent = '';
+          if (mode === 'recall') pending = null;
+          legend.textContent = mode === 'store' ? local('将结果存入字母', 'Store result in a letter') : local('调用已存字母', 'Recall a stored letter');
+          letters.replaceChildren(...memoryRegisters.map(letter => {
+            const entry = memory.get(letter);
+            const key = button(letter, () => {
+              if (mode === 'store') {
+                memory.set(letter, pending);
+                renderAssignments();
+                status.textContent = local('已存入 ', 'Stored in ') + letter;
+                cancelMemory();
+              } else {
+                cancelMemory();
+                insert(letter);
+              }
+            }, 'button', 'calculatorKey');
+            key.disabled = mode === 'recall' && !entry;
+            key.setAttribute('aria-label', (mode === 'store' ? local('存入 ', 'Store in ') : local('调用 ', 'Recall ')) + letter);
+            if (entry) {
+              key.append(create('span', 'calculatorRegisterValue', entry.text));
+              key.setAttribute('aria-description', entry.text);
+            }
+            return key;
+          }));
+          numericPad.hidden = true;
+          memoryPad.hidden = false;
+          refreshMemory();
+          (letters.querySelector('button:not(:disabled)') || back).focus();
+        }
+        refreshMemory();
       }
       // Adapted from Calc's renderHistory (Matt, MIT), scoped to the current question.
       const historyPane = create('details', 'calculatorHistory');
@@ -468,6 +566,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       renderHistory(); form.append(historyPane);
       form.addEventListener('submit', event => {
         event.preventDefault();
+        if (numericPad.hidden) return;
         run(module, 'evaluate', {expression: input.value, assignments: Object.fromEntries(currentAssignments() || [])}, equals);
       });
     } else {
@@ -506,7 +605,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   }
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(true); });
   dialog.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); close(true); }
+    if (event.key === 'Escape') { event.preventDefault(); if (!cancelMemory()) close(true); }
   });
   worksheet();
   refreshTransfer();
