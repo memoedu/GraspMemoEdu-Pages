@@ -1,16 +1,17 @@
-import {t, learningTitle} from './i18n.js?v=6e954c2a910f29e5';
-import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6e954c2a910f29e5';
-import {enhanceTopicContent} from './topic-content.js?v=6e954c2a910f29e5';
-import {prepareMathContent} from './math-presentation.js?v=6e954c2a910f29e5';
-import {sourceAttributions} from './memory-chunk.js?v=6e954c2a910f29e5';
-import {mountPassageBlanks} from './composite-input.js?v=6e954c2a910f29e5';
-import {placeContentActions} from './content-report.js?v=6e954c2a910f29e5';
-import {answerAssessment, pointAssessment} from './point-assessment.js?v=6e954c2a910f29e5';
-import {setQuestionTools} from './question-tools.js?v=6e954c2a910f29e5';
-import {enableVoiceAnswer} from './voice-input.js?v=6e954c2a910f29e5';
-import {mountAnswerConversion} from './answer-conversion.js?v=6e954c2a910f29e5';
+import {t, learningTitle} from './i18n.js?v=b733c23b452c82d3';
+import {attachFormulaEditing} from './formula-input.js?v=b733c23b452c82d3';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b733c23b452c82d3';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b733c23b452c82d3';
+import {enhanceTopicContent} from './topic-content.js?v=b733c23b452c82d3';
+import {prepareMathContent} from './math-presentation.js?v=b733c23b452c82d3';
+import {sourceAttributions} from './memory-chunk.js?v=b733c23b452c82d3';
+import {mountPassageBlanks} from './composite-input.js?v=b733c23b452c82d3';
+import {placeContentActions} from './content-report.js?v=b733c23b452c82d3';
+import {answerAssessment, pointAssessment} from './point-assessment.js?v=b733c23b452c82d3';
+import {setQuestionTools} from './question-tools.js?v=b733c23b452c82d3';
+import {enableVoiceAnswer} from './voice-input.js?v=b733c23b452c82d3';
+import {mountAnswerConversion} from './answer-conversion.js?v=b733c23b452c82d3';
+import {fromWhiteboard} from './whiteboard-answer.js?v=b733c23b452c82d3';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -169,8 +170,8 @@ export function renderReaderStep(target, step, {titleId = 'stepTitle', title = r
   showSubmittedInteraction = !step.actions?.includes('submit'), submittedValue = step.answer || '',
   showAnswer = step.answer !== null && step.answer !== undefined && step.answer !== '',
   feedback = step.feedback, feedbackClass = '', referenceSource = step,
-  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice, editInteraction = null, toolAnchor = target} = {}) {
-  setQuestionTools(toolAnchor, step);
+  showExplanation = !(step.revealed && step.actions?.includes('submit')), notice, editInteraction = null, toolAnchor = target, whiteboard} = {}) {
+  setQuestionTools(toolAnchor, step, whiteboard);
   const heading = node('div', 'stepHeader'), titleNode = node('h2', 'stepTitle', title);
   titleNode.id = titleId; titleNode.tabIndex = -1; heading.append(titleNode);
   if (counter) heading.append(node('span', 'stepCounter', counter));
@@ -188,7 +189,7 @@ export function renderReaderStep(target, step, {titleId = 'stepTitle', title = r
   const showingStepAnswer = step.multi_step && !step.multi_step.finished && showExplanation && step.explanation_html;
   const assessment = answerAssessment(referenceSource);
   if (showingStepAnswer) staticStepBlanks(stem, step.interaction);
-  else if (showSubmittedInteraction && step.interaction && step.interaction.type !== 'text') {
+  else if (showSubmittedInteraction && step.interaction && step.interaction.type !== 'text' && !fromWhiteboard(submittedValue)) {
     const editable = Boolean(editInteraction);
     const {element, input} = questionInput(step.interaction, {id: submittedId, stem,
       value: editable ? editInteraction.value : submittedValue, disabled: !editable,

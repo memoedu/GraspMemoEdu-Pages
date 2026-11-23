@@ -1,20 +1,21 @@
-import {t, translateMessage} from './i18n.js?v=6e954c2a910f29e5';
-import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
-import {setQuestionTools} from './question-tools.js?v=6e954c2a910f29e5';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6e954c2a910f29e5';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
-import {mountAnswerConversion} from './answer-conversion.js?v=6e954c2a910f29e5';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=6e954c2a910f29e5';
-import {reportableContent} from './content-report.js?v=6e954c2a910f29e5';
-import {createLearningCache} from './learning-cache.js?v=6e954c2a910f29e5';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=6e954c2a910f29e5';
-import {enhanceSourceContent} from './topic-content.js?v=6e954c2a910f29e5';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=6e954c2a910f29e5';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=6e954c2a910f29e5';
-import {pointAssessment} from './point-assessment.js?v=6e954c2a910f29e5';
-import {trainingAudio} from './training-audio.js?v=6e954c2a910f29e5';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=6e954c2a910f29e5';
-import {learningHint} from './beginner-hints.js?v=6e954c2a910f29e5';
+import {t, translateMessage, getLanguage} from './i18n.js?v=b733c23b452c82d3';
+import {attachFormulaEditing} from './formula-input.js?v=b733c23b452c82d3';
+import {setQuestionTools} from './question-tools.js?v=b733c23b452c82d3';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=b733c23b452c82d3';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b733c23b452c82d3';
+import {mountAnswerConversion} from './answer-conversion.js?v=b733c23b452c82d3';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=b733c23b452c82d3';
+import {reportableContent} from './content-report.js?v=b733c23b452c82d3';
+import {createLearningCache} from './learning-cache.js?v=b733c23b452c82d3';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=b733c23b452c82d3';
+import {enhanceSourceContent} from './topic-content.js?v=b733c23b452c82d3';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=b733c23b452c82d3';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=b733c23b452c82d3';
+import {pointAssessment} from './point-assessment.js?v=b733c23b452c82d3';
+import {trainingAudio} from './training-audio.js?v=b733c23b452c82d3';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=b733c23b452c82d3';
+import {learningHint} from './beginner-hints.js?v=b733c23b452c82d3';
+import {questionWhiteboard, whiteboardText} from './whiteboard-answer.js?v=b733c23b452c82d3';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -131,12 +132,12 @@ export function createAtomicView(bridge) {
       if (active(ticket)) { busy = false; render(); notice(translateMessage(error.message)); }
     } finally { if (active(ticket)) { busy = false; schedule(); } }
   }
-  async function submit(input, rating = null) {
-    if (busy || rating === null && !answerReady(input)) return;
+  async function submit(input, rating = null, whiteboard = '') {
+    if (busy || rating === null && !whiteboard && !answerReady(input)) return;
     const ticket = epoch;
     const saved = savedSubmission();
     const body = saved?.step_id === state.active_step_id ? saved : {...payload(),
-      answer: rating === null ? input.value : `自主评分：${rating}`, ...(rating === null ? {} : {self_rating: rating})};
+      answer: whiteboard || (rating === null ? input.value : `自主评分：${rating}`), ...(rating === null ? {} : {self_rating: rating})};
     write(submissionKey(), JSON.stringify(body)); busy = true; failure = null; render();
     try {
       const result = await call('submit', {method: 'POST', body});
@@ -258,7 +259,7 @@ export function createAtomicView(bridge) {
     enableVoiceAnswer(form, {defer: (!question.interaction || question.interaction.type === 'text') && question.interaction?.grading !== 'exact'});
     const disabled = history || question.phase !== 'answer' || busy || Boolean(state.pause || state.pending_submission_id) || !state.can_submit;
     let input;
-    const value = history || question.phase === 'feedback' ? question.answer || '' : read(draftKey()) || '';
+    const value = history || question.phase === 'feedback' ? whiteboardText(question.answer || '') : read(draftKey()) || '';
     if (question.interaction && question.interaction.type !== 'text') {
       const widget = questionInput(question.interaction, {id: 'atomicAnswer', value, stem, disabled, formId: form.id, feedback: question.choice_feedback});
       input = widget.input; form.append(widget.element);
@@ -368,7 +369,16 @@ export function createAtomicView(bridge) {
     const appendQuestion = (question, history) => {
       const card = renderQuestion(question, history);
       main.append(card);
-      setQuestionTools(card, question);
+      const ticket = epoch, revision = state.revision, stepId = state.active_step_id;
+      const current = () => active(ticket) && !selected && !busy && !state.pending_submission_id && state.revision === revision &&
+        state.active_step_id === stepId && state.current?.phase === 'answer' && state.can_submit;
+      const questionId = question.question_id || question.id;
+      setQuestionTools(card, question, questionWhiteboard({
+        key: questionId ? JSON.stringify([bridge.getApiOrigin(), learner, topic, questionId]) : null, question,
+        editable: !history && !question.revealed && current(),
+        current, language: getLanguage(), request: bridge.request,
+        submit: answer => submit(null, null, answer),
+      }));
     };
     if (selected) {
       const previous = selected === 'introduction' ? null : state.history.find(r => r.id === selected && r.viewable);

@@ -1,11 +1,11 @@
-import {inheritVoiceContext} from './voice-context.js?v=6e954c2a910f29e5';
+import {inheritVoiceContext} from './voice-context.js?v=b733c23b452c82d3';
 import {assignableVariable, basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
   normalizeVariableName, permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule,
-  scientificCategories} from './calculator-policy.js?v=6e954c2a910f29e5';
-import {calculateImmediate} from './calculator-engine.js?v=6e954c2a910f29e5';
-import {toolInputs} from './calculator-inputs.js?v=6e954c2a910f29e5';
-import {setInputCompletions} from './autocomplete.js?v=6e954c2a910f29e5';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=6e954c2a910f29e5';
+  scientificCategories} from './calculator-policy.js?v=b733c23b452c82d3';
+import {calculateImmediate} from './calculator-engine.js?v=b733c23b452c82d3';
+import {toolInputs} from './calculator-inputs.js?v=b733c23b452c82d3';
+import {setInputCompletions} from './autocomplete.js?v=b733c23b452c82d3';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=b733c23b452c82d3';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -163,7 +163,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const {saved, history} = session;
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   let registerCandidate = answer ? session.expressionRegisterCandidate : null;
-  const memory = new Map();
+  const memory = session.memory;
   let refreshMemory = () => {}, cancelMemory = () => false, remember = () => {};
   const workspace = launch.closest('.questionWorkspace');
   inheritVoiceContext(dialog, workspace);
@@ -249,7 +249,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     working = false;
   }
   function startWorker() {
-    return worker ||= new Worker(new URL('./calculator-worker.js?v=6e954c2a910f29e5', import.meta.url), {type: 'module'});
+    return worker ||= new Worker(new URL('./calculator-worker.js?v=b733c23b452c82d3', import.meta.url), {type: 'module'});
   }
   function warmOnInput(event, sourceModule) {
     if (warming || event.target.matches('.calculatorStorageName')) return;

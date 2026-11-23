@@ -1,0 +1,36 @@
+.pageShell:has(.questionWorkspace.whiteboardOpen) { max-width: min(1750px, 100%); }
+.questionWorkspace.whiteboardOpen:has(> .questionToolRail) {
+  grid-template-columns: minmax(0, var(--question-share, 55%)) 14px minmax(0, 1fr);
+  column-gap: 0;
+  align-items: start;
+}
+.whiteboardOpen > :first-child { grid-column: 1; grid-row: 2; min-width: 0; }
+.whiteboardOpen > .questionToolRail { grid-column: 1; grid-row: 1; inline-size: 100%; min-width: 0; position: static; }
+.whiteboardOpen > .questionToolRail .questionTools { inline-size: auto; max-width: 100%; align-items: center; }
+.whiteboardOpen > .questionToolRail :is(.questionTools, .questionToolGroups, .questionToolGroup) { flex-direction: row; }
+.whiteboardOpen > .questionToolRail .questionToolGroups { min-width: 0; overflow: auto hidden; scrollbar-gutter: auto; }
+.whiteboardOpen > .questionToolRail .questionToolGroup { flex-shrink: 0; }
+.whiteboardOpen > .whiteboardDivider { grid-column: 2; grid-row: 1 / span 2; }
+.whiteboardOpen > .whiteboardPanel { grid-column: 3; grid-row: 1 / span 2; }
+.whiteboardOpen.whiteboardFirst > :is(:first-child, .questionToolRail) { grid-column: 3; }
+.whiteboardOpen.whiteboardFirst > .whiteboardPanel { grid-column: 1; }
+.whiteboardDivider { align-self: stretch; display: grid; place-items: start center; min-height: 40px; cursor: col-resize; touch-action: none; }
+.whiteboardDivider::after { content: ''; width: 4px; height: 80px; margin-top: 20px; border-radius: 4px; background: var(--line, #d3daea); }
+.whiteboardDivider:is(:hover, :focus-visible)::after { background: var(--accent, #4167a5); }
+.whiteboardPanel { display: grid; min-width: 0; border: 1px solid var(--control-border, #d3daea); border-radius: 10px; overflow: clip; }
+.whiteboardPanel > :is(header, .whiteboardMath) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 9px; }
+.whiteboardPanel button { font: inherit; }
+.whiteboardPanel > header strong { margin-inline-end: auto; }
+.whiteboardPanel iframe { border: 0; width: 100%; height: clamp(330px, 66dvh, 850px); display: block; background: #f5f7fa; }
+.whiteboardMath input { flex: 1 1 12em; min-width: 0; }
+.whiteboardMath input[data-whiteboard-variable] { flex: 0 1 7em; }
+.whiteboardMath output, .whiteboardStatus { flex: 1 0 100%; overflow-wrap: anywhere; }
+.whiteboardStatus { margin: 0; padding: 0 9px 8px; }
+.whiteboardStatus:empty { padding: 0; }
+@media (max-width: 760px) {
+  .questionWorkspace.whiteboardOpen:has(> .questionToolRail) { grid-template-columns: minmax(0, 1fr); }
+  .whiteboardOpen > :is(.whiteboardDivider) { display: none; }
+  .whiteboardOpen > :is(:first-child, .questionToolRail, .whiteboardPanel) { grid-column: 1; grid-row: auto; }
+  .whiteboardOpen.whiteboardFirst > .whiteboardPanel { grid-row: 1; }
+  .whiteboardOpen.whiteboardFirst > :is(:first-child, .questionToolRail) { grid-column: 1; }
+}

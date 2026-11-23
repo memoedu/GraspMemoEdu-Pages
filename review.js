@@ -1,14 +1,15 @@
-import { t, translateMessage, learningTitle } from './i18n.js?v=6e954c2a910f29e5';
-import {attachFormulaEditing} from './formula-input.js?v=6e954c2a910f29e5';
-import {setQuestionTools} from './question-tools.js?v=6e954c2a910f29e5';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=6e954c2a910f29e5';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=6e954c2a910f29e5';
-import {mountAnswerConversion} from './answer-conversion.js?v=6e954c2a910f29e5';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6e954c2a910f29e5';
-import {reportableContent} from './content-report.js?v=6e954c2a910f29e5';
-import {createLearningCache} from './learning-cache.js?v=6e954c2a910f29e5';
-import {enhanceTopicContent} from './topic-content.js?v=6e954c2a910f29e5';
-import {practiceHint} from './beginner-hints.js?v=6e954c2a910f29e5';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=b733c23b452c82d3';
+import {attachFormulaEditing} from './formula-input.js?v=b733c23b452c82d3';
+import {setQuestionTools} from './question-tools.js?v=b733c23b452c82d3';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=b733c23b452c82d3';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=b733c23b452c82d3';
+import {mountAnswerConversion} from './answer-conversion.js?v=b733c23b452c82d3';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b733c23b452c82d3';
+import {reportableContent} from './content-report.js?v=b733c23b452c82d3';
+import {createLearningCache} from './learning-cache.js?v=b733c23b452c82d3';
+import {enhanceTopicContent} from './topic-content.js?v=b733c23b452c82d3';
+import {practiceHint} from './beginner-hints.js?v=b733c23b452c82d3';
+import {questionWhiteboard} from './whiteboard-answer.js?v=b733c23b452c82d3';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -287,7 +288,15 @@ export function createReviewView(bridge) {
     }
     for (const item of nav.querySelectorAll('button')) if (busy) item.disabled = true;
     card.append(nav); main.append(card);
-    setQuestionTools(card, question);
+    const ticket = epoch, revision = state.revision;
+    const currentBoard = () => active(ticket) && current() && state.practice.id === questionId &&
+      state.revision === revision && !busy && !state.pending_submission_id && can('submit_answer');
+    setQuestionTools(card, question, questionWhiteboard({
+      key: JSON.stringify([bridge.getApiOrigin(), learner, topic, questionId]), question,
+      editable: editable && !state.practice.revealed && currentBoard(),
+      current: currentBoard, language: getLanguage(), request: bridge.request,
+      submit: answer => mutate('submit', {...payload(), answer, elapsed_ms: tick(true)}),
+    }));
     layout.append(renderHistory(), main); root.replaceChildren(layout);
     const input = root.querySelector('#reviewAnswerInput'), send = root.querySelector('#reviewSubmitButton');
     if (send) send.disabled = busy || !answerReady(input) || !can('submit_answer');
