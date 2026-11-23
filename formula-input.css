@@ -1,6 +1,8 @@
 .formulaSourceHidden {
   display: none !important;
 }
+.formulaInput .voiceRangeOriginal { display: none; }
+.formulaInput .voiceMathOriginal { position: absolute; opacity: 0; pointer-events: none; }
 .formulaInput {
   min-inline-size: 0;
   max-inline-size: 100%;

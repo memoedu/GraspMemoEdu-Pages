@@ -1,4 +1,4 @@
-import {recordMicrophone} from './microphone-recorder.js?v=d5737a77ee4f0ad2';
+import {recordMicrophone} from './microphone-recorder.js?v=deee336ea10b0e6d';
 
 function wave(frames, size) {
   const header = new ArrayBuffer(44), view = new DataView(header);
@@ -16,11 +16,11 @@ function encoded(frames) {
   return btoa(bytes);
 }
 
-export async function streamMicrophone({request, profile, context, signal, maxDurationMs, sameIdentity}) {
+export async function streamMicrophone({request, profile, context, signal, maxDurationMs, sameIdentity, onPreview}) {
   if (!globalThis.AudioWorkletNode || !globalThis.AudioContext || !crypto.randomUUID) {
     return recordMicrophone({signal, maxDurationMs});
   }
-  const media = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1}});
+  const media = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, latency: {ideal: .02}}});
   let audio, node, timer;
   const release = () => {
     clearTimeout(timer);
@@ -30,12 +30,19 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
   };
   try {
     signal.throwIfAborted();
-    audio = new AudioContext({sampleRate: 16000});
+    // A capture graph needs a clock, not a speaker. Avoid the output device's playout buffer.
+    const options = {sampleRate: 16000, latencyHint: 'interactive'};
+    if ('setSinkId' in AudioContext.prototype) {
+      try { audio = new AudioContext({...options, sinkId: {type: 'none'}}); }
+      catch { /* Browsers with restricted output selection can still capture the input. */ }
+    }
+    audio ||= new AudioContext(options);
     if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
-    await audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=d5737a77ee4f0ad2', import.meta.url));
+    await audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=deee336ea10b0e6d', import.meta.url));
     await audio.resume();
     signal.throwIfAborted();
-    node = new AudioWorkletNode(audio, 'voice-pcm', {channelCount: 1, channelCountMode: 'explicit'});
+    node = new AudioWorkletNode(audio, 'voice-pcm', {channelCount: 1, channelCountMode: 'explicit',
+      processorOptions: {samples: onPreview ? 800 : 1600}});
     const source = audio.createMediaStreamSource(media);
     const take = crypto.randomUUID();
     const send = body => {
@@ -75,6 +82,7 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
           const reply = await send({op, offset, pcm: encoded(frames)});
           if (reply.offset !== offset + size) throw Error('录音片段未完整接收。');
           offset = reply.offset;
+          if (!signal.aborted && sameIdentity() && typeof reply.preview === 'string') onPreview?.(reply.preview);
           if (op === 'finish') {
             retired = true;
             resolveTranscript({reply});
@@ -119,7 +127,7 @@ export async function streamMicrophone({request, profile, context, signal, maxDu
     transcript.then(() => { if (captureDone) signal.removeEventListener('abort', abort); });
     source.connect(node); node.connect(audio.destination);
     timer = setTimeout(stop, remaining);
-    void send({op: 'open', profile, context}).then(() => {
+    void send({op: 'open', profile, context, ...(onPreview && {live: true})}).then(() => {
       ready = true;
       if (signal.aborted || failed) cancelTake(); else void pump();
     }).catch(failure);

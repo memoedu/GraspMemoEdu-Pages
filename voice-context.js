@@ -1,4 +1,4 @@
-// Only the learner-visible statement and question parts are sources of context.
+// Keep the visible question separate from the focused field's original text.
 const contexts = new WeakMap();
 const domains = {
   coordinates: /坐标|有序(?:数)?对|coordinate|ordered pair/i,
@@ -51,6 +51,24 @@ export function setVoiceContext(element, question, style = 'mixed') {
 export function voiceContext(element) {
   const owner = element?.form || element?.closest('form, .questionCalculator, .questionWorkspace');
   return contexts.get(owner) || contexts.get(element) || contexts.get(element?.closest('.questionCalculator'));
+}
+
+export function dictationContext(target) {
+  if (target.answer) return target.context;
+  const value = target.value ?? target.field.value;
+  const {from, to} = target;
+  const range = target.readText ? target.readText() :
+    {before: value.slice(0, from), selected: value.slice(from, to), after: value.slice(to)};
+  const limit = 4096;
+  // Keep the text nearest the cursor and both ends of a long replacement.
+  const textbox = {before: range.before.slice(-limit), after: range.after.slice(0, limit),
+    selected: range.selected.length <= limit ? range.selected :
+      range.selected.slice(0, 2047) + '…' + range.selected.slice(-2048)};
+  for (const key of Object.keys(textbox)) {
+    textbox[key] = textbox[key].replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '�');
+  }
+  return {...target.context, ...(target.math && {style: 'math'}),
+    ...(Object.values(textbox).some(Boolean) && {textbox})};
 }
 
 export function inheritVoiceContext(element, owner) {
