@@ -1,14 +1,16 @@
-import {getLanguage} from './i18n.js?v=9bd76c894704be76';
-import {activeFormulaField} from './formula-input.js?v=9bd76c894704be76';
-import {microphoneIcon, recordMicrophone, recordingMime} from './microphone-recorder.js?v=9bd76c894704be76';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=9bd76c894704be76';
+import {getLanguage} from './i18n.js?v=ca08e18c2db32619';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=ca08e18c2db32619';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=ca08e18c2db32619';
+import {streamMicrophone} from './voice-stream.js?v=ca08e18c2db32619';
+import {voiceContext} from './voice-context.js?v=ca08e18c2db32619';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca08e18c2db32619';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
 const strings = (zh, en) => getLanguage() === 'en' ? en : zh;
 const changed = 'voiceinputchange';
 const audioLimitMs = 119000;
-let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe;
+let lastField, current, statusTimer, status = '', available = () => false, identity = () => null, transcribe, streamRequest;
 let paint = () => {};
 
 function editable(field) {
@@ -20,9 +22,10 @@ function editable(field) {
 
 function destination(field) {
   const formula = activeFormulaField(field);
-  if (formula) return {...formula, profile: formula.field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
+  if (formula) return {...formula, context: voiceContext(formula.field), math: field.localName === 'math-field',
+    profile: formula.field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
   if (!editable(field)) return null;
-  return {field, value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
+  return {field, context: voiceContext(field), value: field.value, from: field.selectionStart ?? (field.type === 'number' ? 0 : field.value.length),
     to: field.selectionEnd ?? field.value.length,
     profile: field.closest('.questionCalculator') ? 'calculator' : field.form?.dataset.voiceAnswer ? 'answer' : 'general'};
 }
@@ -33,7 +36,7 @@ function currentDestination() {
   const modal = currentModal();
   if (target && (!modal || modal.contains(target.field))) return target;
   const answer = !modal && answerTarget(document, {topic: true});
-  return answer ? {answer, unchanged: answer.pin(), profile: answer.voiceProfile} : null;
+  return answer ? {answer, context: answer.context, unchanged: answer.pin(), profile: answer.voiceProfile} : null;
 }
 
 function insert(target, text) {
@@ -65,23 +68,34 @@ function setPhase(job, phase, message) {
   update(message);
 }
 
+async function recordedResult(job) {
+  if (job.stream) {
+    const stream = job.stream;
+    job.stream = null;
+    const {reply, error} = await stream;
+    if (error) throw error;
+    return reply;
+  }
+  const bytes = new Uint8Array(await job.blob.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return transcribe({mime_type: recordingMime(job.blob), data_base64: btoa(binary), profile: job.target.profile, context: job.context});
+}
+
 async function process(job) {
   setPhase(job, 'transcribing', job.submit
     ? strings('已接收提交，转写完成后自动判题。', 'Submission queued. Grading starts after transcription.')
     : strings('正在转写…', 'Transcribing…'));
   try {
-    const bytes = new Uint8Array(await job.blob.arrayBuffer());
-    let binary = '';
-    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-      binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
-    }
-    const result = await transcribe({mime_type: recordingMime(job.blob), data_base64: btoa(binary), profile: job.target.profile});
+    const result = await recordedResult(job);
     if (current !== job || job.identity !== identity()) return;
     if (!result?.text?.trim()) throw Error(strings('未识别到文字。', 'No speech was recognized.'));
     job.text = result.text;
     if (job.target.answer) { await fillAnswer(job); return; }
     const {field} = job.target, form = field.form;
-    if (insert(job.target, job.text)) {
+    if (job.page === location.hash && job.target.context === voiceContext(field) && insert(job.target, job.text)) {
       current = null;
       update(strings('已插入转写文字。', 'Transcript inserted.'));
       if (job.submit?.form === form && form?.isConnected && !job.submit.disabled) form.requestSubmit(job.submit);
@@ -118,9 +132,13 @@ async function start() {
   }
   const job = {target, identity: identity(), page: location.hash, abort: new AbortController()};
   current = job;
+  if (target.profile === 'answer' && !['literal', 'code'].includes(target.context?.style)) prepareVoiceFormula();
   setPhase(job, 'opening', strings('正在打开麦克风…', 'Opening microphone…'));
   try {
-    job.recorder = await recordMicrophone({maxDurationMs: audioLimitMs, signal: job.abort.signal});
+    job.context = target.math ? {...target.context, style: 'math'} : target.context;
+    job.recorder = await streamMicrophone({request: streamRequest, profile: target.profile, context: job.context,
+      sameIdentity: () => job.identity === identity(), maxDurationMs: audioLimitMs, signal: job.abort.signal});
+    job.stream = job.recorder.transcript;
     if (current === job) setPhase(job, 'recording', strings('正在录音', 'Recording'));
     job.blob = await job.recorder.result;
     if (current === job && identity() === job.identity) await process(job);
@@ -174,6 +192,7 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   available = canUse;
   identity = getIdentity;
   transcribe = body => request('voice-input/transcribe', {method: 'POST', body, timeout: 180000});
+  streamRequest = body => request('voice-input/stream', {method: 'POST', body, timeout: body.op === 'finish' ? 90000 : 30000});
   document.addEventListener('focusin', event => {
     if (editable(event.target) || activeFormulaField(event.target)) lastField = event.target;
     else if (!event.target.closest('.questionTools') && current?.phase !== 'ready') lastField = null;
@@ -207,7 +226,7 @@ export function installVoiceInput({canUse, getIdentity, request}) {
   }).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden']});
   addEventListener('pagehide', resetVoiceInput);
   addEventListener('hashchange', () => {
-    if (current?.target.answer && current.page !== location.hash) resetVoiceInput();
+    if ((current?.target.answer || current?.target.context) && current.page !== location.hash) resetVoiceInput();
     else paint();
   });
   return voice;

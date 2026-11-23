@@ -1,7 +1,8 @@
-import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=9bd76c894704be76';
-import {toolInputs} from './calculator-inputs.js?v=9bd76c894704be76';
-import {setInputCompletions} from './autocomplete.js?v=9bd76c894704be76';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=9bd76c894704be76';
+import {inheritVoiceContext} from './voice-context.js?v=ca08e18c2db32619';
+import {basedLogKey, constants, expressionCompletions, keypad, levels, permitsBasedLog, permitsConstant, permitsKey, permitsModule} from './calculator-policy.js?v=ca08e18c2db32619';
+import {toolInputs} from './calculator-inputs.js?v=ca08e18c2db32619';
+import {setInputCompletions} from './autocomplete.js?v=ca08e18c2db32619';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=ca08e18c2db32619';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -159,6 +160,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   const {saved, history} = session;
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   const workspace = launch.closest('.questionWorkspace');
+  inheritVoiceContext(dialog, workspace);
   const target = () => workspace && answerTarget(workspace);
   const transferStatus = create('span', 'calculatorTransferStatus');
   transferStatus.setAttribute('role', 'status');
@@ -271,7 +273,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     output.dataset.state = 'busy'; showText(local('计算中…', 'Calculating…'));
     const finish = () => { clearTimeout(timer); working = false; control.disabled = false; };
     try {
-      worker ||= new Worker(new URL('./calculator-worker.js?v=9bd76c894704be76', import.meta.url), {type: 'module'});
+      worker ||= new Worker(new URL('./calculator-worker.js?v=ca08e18c2db32619', import.meta.url), {type: 'module'});
       worker.onmessage = ({data}) => {
         finish();
         if (!launch.isConnected || closed) return;

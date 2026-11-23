@@ -1,5 +1,6 @@
-import {getLanguage} from './i18n.js?v=9bd76c894704be76';
-import {attachLiteralAnswer} from './formula-input.js?v=9bd76c894704be76';
+import {setVoiceContext, voiceContext} from './voice-context.js?v=ca08e18c2db32619';
+import {getLanguage} from './i18n.js?v=ca08e18c2db32619';
+import {attachLiteralAnswer} from './formula-input.js?v=ca08e18c2db32619';
 
 const targets = new WeakMap();
 const local = (zh, en) => getLanguage() === 'en' ? en : zh;
@@ -257,7 +258,8 @@ function plan(spec, input) {
   };
 }
 
-export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
+export function mountAnswerConversion(form, input, spec, {topic = false, question} = {}) {
+  setVoiceContext(form, question, spec?.type === 'hyperskill_code' ? 'code' : spec?.grading === 'exact' ? 'literal' : 'mixed');
   const box = document.createElement('div');
   box.className = 'answerConversion';
   const label = document.createElement('label'), field = document.createElement('textarea');
@@ -310,7 +312,8 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
         : mapping.read(spec?.type === 'hyperskill_code' ? text : text.trim(), speech);
       let answer = mapping.apply(commands);
       if (answer === null && requestConversion && mapping.schema && text.length <= 4000) {
-        const result = await requestConversion({text: text.trim(), controls: mapping.schema});
+        const result = await requestConversion({text: text.trim(), controls: mapping.schema,
+          ...(speech ? {context: voiceContext(form)} : {})});
         if (!available() || !guard()) return false;
         if (version !== revision || current !== input.value) {
           status.textContent = local('答题内容已修改，请重新转换。', 'The answer changed. Convert again to apply the text.');
@@ -389,5 +392,6 @@ export function mountAnswerConversion(form, input, spec, {topic = false} = {}) {
     return true;
   }
   const voiceProfile = spec?.type && !['text', 'hyperskill_code'].includes(spec.type) ? 'answer_commands' : 'answer';
-  targets.set(input, {available, convert, pin, topic, showCommandInput, selectField, calculatorState, convertCalculator, voiceProfile});
+  targets.set(input, {available, convert, pin, topic, showCommandInput, selectField, calculatorState, convertCalculator,
+    voiceProfile, context: voiceContext(form)});
 }
