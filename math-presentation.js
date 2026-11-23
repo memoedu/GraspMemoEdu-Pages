@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=ddc42ebe3987c14f';
+import {escapedAt, mathSpans} from './math-syntax.js?v=2a04bc1c131b654f';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -79,7 +79,7 @@ const mountedSvg = new WeakSet();
 let fragmentNumber = 0, renderer;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=ddc42ebe3987c14f').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=2a04bc1c131b654f').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -209,9 +209,10 @@ export function prepareMathContent(root, {literal = false} = {}) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), plain = [];
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    if (!node.parentElement || node.parentElement.closest(protectedContent) || pendingText.has(node)) continue;
     const text = node.data;
-    if (/[$\\]/.test(text)) {
+    const hasLatex = /[$\\]/.test(text);
+    if ((!hasLatex && !literal) || !node.parentElement || node.parentElement.closest(protectedContent) || pendingText.has(node)) continue;
+    if (hasLatex) {
       const spans = [...mathSpans(text)];
       if (!spans.length) continue;
       pendingText.add(node);
