@@ -1,22 +1,22 @@
-import {t, translateMessage} from './i18n.js?v=d78db3c9b6ac003a';
-import {setQuestionTools} from './question-tools.js?v=d78db3c9b6ac003a';
-import {voiceAnswerPending} from './voice-input.js?v=d78db3c9b6ac003a';
-import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=d78db3c9b6ac003a';
-import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=d78db3c9b6ac003a';
-import {createLearningCache} from './learning-cache.js?v=d78db3c9b6ac003a';
-import {helpableContent, reportableContent} from './content-report.js?v=d78db3c9b6ac003a';
-import {prepareMathContent} from './math-presentation.js?v=d78db3c9b6ac003a';
+import {t, translateMessage} from './i18n.js?v=d036b80b4dda8dbf';
+import {setQuestionTools} from './question-tools.js?v=d036b80b4dda8dbf';
+import {voiceAnswerPending} from './voice-input.js?v=d036b80b4dda8dbf';
+import {answerEditor, readerFrame, renderReviewReader, renderMultiStep, staticStepBlanks} from './learning-ui.js?v=d036b80b4dda8dbf';
+import {answerReady, questionInput, choiceTypeField} from './question-input.js?v=d036b80b4dda8dbf';
+import {createLearningCache} from './learning-cache.js?v=d036b80b4dda8dbf';
+import {helpableContent, reportableContent} from './content-report.js?v=d036b80b4dda8dbf';
+import {prepareMathContent} from './math-presentation.js?v=d036b80b4dda8dbf';
 
 const node = (tag, cls = '', text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
 const button = (label, cls, action) => { const x = node('button', cls, label); x.type = 'button'; x.addEventListener('click', action); return x; };
 const html = content => { const x = node('div', 'courseContent'); x.innerHTML = content || ''; return prepareMathContent(x); };
-import {createContentTimer} from './content-timer.js?v=d78db3c9b6ac003a';
-import {renderReviewDirectory, paperNumber} from './review-directory.js?v=d78db3c9b6ac003a';
-import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=d78db3c9b6ac003a';
-import {chunkPeek} from './memory-chunk.js?v=d78db3c9b6ac003a';
-import {pointAssessment} from './point-assessment.js?v=d78db3c9b6ac003a';
-import {trainingAudio} from './training-audio.js?v=d78db3c9b6ac003a';
-import {learningHint} from './beginner-hints.js?v=d78db3c9b6ac003a';
+import {createContentTimer} from './content-timer.js?v=d036b80b4dda8dbf';
+import {renderReviewDirectory, paperNumber} from './review-directory.js?v=d036b80b4dda8dbf';
+import {selfAssessment, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=d036b80b4dda8dbf';
+import {chunkPeek} from './memory-chunk.js?v=d036b80b4dda8dbf';
+import {pointAssessment} from './point-assessment.js?v=d036b80b4dda8dbf';
+import {trainingAudio} from './training-audio.js?v=d036b80b4dda8dbf';
+import {learningHint} from './beginner-hints.js?v=d036b80b4dda8dbf';
 
 export function createReviewTaskStarter({request, href, isCurrent}) {
   const requests = new Map();
