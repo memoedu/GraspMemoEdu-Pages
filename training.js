@@ -1,23 +1,24 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=58e9e7af1e81abed';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=58e9e7af1e81abed';
-import {answerReady, answerEmpty} from './question-input.js?v=58e9e7af1e81abed';
-import {createLearningCache} from './learning-cache.js?v=58e9e7af1e81abed';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=58e9e7af1e81abed';
-import {helpableContent} from './content-report.js?v=58e9e7af1e81abed';
-import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=58e9e7af1e81abed';
-import {pointAssessment} from './point-assessment.js?v=58e9e7af1e81abed';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=58e9e7af1e81abed';
-import {learningHint} from './beginner-hints.js?v=58e9e7af1e81abed';
+import {t, translateMessage, getLanguage} from './i18n.js?v=4bc966c0a4c3128c';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=4bc966c0a4c3128c';
+import {answerReady, answerEmpty} from './question-input.js?v=4bc966c0a4c3128c';
+import {createLearningCache} from './learning-cache.js?v=4bc966c0a4c3128c';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=4bc966c0a4c3128c';
+import {helpableContent} from './content-report.js?v=4bc966c0a4c3128c';
+import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=4bc966c0a4c3128c';
+import {pointAssessment} from './point-assessment.js?v=4bc966c0a4c3128c';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=4bc966c0a4c3128c';
+import {learningHint} from './beginner-hints.js?v=4bc966c0a4c3128c';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=58e9e7af1e81abed';
-import {setQuestionTools} from './question-tools.js?v=58e9e7af1e81abed';
-import {voiceAnswerPending} from './voice-input.js?v=58e9e7af1e81abed';
-import {questionWhiteboard} from './whiteboard-answer.js?v=58e9e7af1e81abed';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=4bc966c0a4c3128c';
+import {setQuestionTools} from './question-tools.js?v=4bc966c0a4c3128c';
+import {voiceAnswerPending} from './voice-input.js?v=4bc966c0a4c3128c';
+import {questionWhiteboard} from './whiteboard-answer.js?v=4bc966c0a4c3128c';
+import {rubberDuck} from './rubber-duck.js?v=4bc966c0a4c3128c';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess, topicBody} = bridge;
@@ -44,6 +45,7 @@ export function createTrainingView(bridge) {
   let epoch = 0, selection = 0, timer = null, group = null, current = null, sidebar, main;
   let elapsed = 0, activeSince = null, clockKey = null, visibilityHandler = null;
   let reader = null;
+  let outlineControl = null;
   let embedded = null;
   let mathStyle = null;
   let selectedRoot = null;
@@ -155,6 +157,7 @@ export function createTrainingView(bridge) {
     activeSince = state.phase === 'answer' && !state.submission_id && !document.hidden ? performance.now() : null;
   }
   function stop() {
+    outlineControl?.dispose(); outlineControl = null;
     flushClock(); clockKey = null; ++epoch; ++selection; clearTimeout(timer);
     if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
     if (onlineHandler) window.removeEventListener('online', onlineHandler);
@@ -362,6 +365,7 @@ export function createTrainingView(bridge) {
   }
   function selectIntroduction(id) {
     const intro = group.introductions?.find(i => i.id === id); if (!intro) return;
+    outlineControl?.dispose(); outlineControl = null;
     flushClock(); clockKey = null; clearTimeout(timer); ++selection; current = null;
     selectedIntroduction = id; reader.closeOnMobile(); renderSidebar();
     const step = {...intro, kind: 'introduction'};
@@ -372,6 +376,7 @@ export function createTrainingView(bridge) {
     navigationFor(id);
   }
   async function select(questionId, fresh = false, attemptId = null) {
+    outlineControl?.dispose(); outlineControl = null;
     flushClock(); clockKey = null; clearTimeout(timer);
     setQuestionTools(embedded?.toolAnchor ?? main, undefined, undefined, topicBody);
     reader.closeOnMobile();
@@ -401,14 +406,16 @@ export function createTrainingView(bridge) {
   }
   function renderQuestion() {
     clearTimeout(timer);
+    outlineControl?.dispose(); outlineControl = null;
     const state = current, e = epoch, s = selection;
+    const outline = state.question.interaction?.type === 'rubber_duck' && state.outline;
     remember(state);
     if (reviewCard) renderSidebar();
     const index = group.questions.findIndex(q => q.id === state.question_id);
     const reportContext = {topic_id: 'training.' + state.bank_id, bank_id: state.bank_id,
       group_id: state.group_id, question_id: state.question_id};
     const result = state.phase === 'done' ? state.result : null;
-    const feedback = result ? {correct: Boolean(result.stop_requested || result.self_rating > 1 || result.correct),
+    const feedback = result && !outline ? {correct: Boolean(result.stop_requested || result.self_rating > 1 || result.correct),
       title: result.stop_requested ? t('training.stopped') : result.self_rating && !state.multi_step ? t('training.selfResult', {rating: t(ratingKeys[result.self_rating])}) : t(result.correct ? 'training.correct' : 'training.incorrect'),
       reason: result.reason, details: [
         state.stopped && !result.stop_requested ? t('training.stopped') : result.practice_only && !state.stopped ? t('training.practice') : null,
@@ -417,7 +424,7 @@ export function createTrainingView(bridge) {
       current.multi_step?.current_step_id === state.multi_step?.current_step_id;
     const currentBoard = () => viewing() && current.phase === 'answer' && current.can_submit && !current.submission_id;
     const canSubmit = !state.revealed && !state.preview && currentBoard();
-    const whiteboard = !state.hyperskill && !state.academy && questionWhiteboard({
+    const whiteboard = !outline && !state.hyperskill && !state.academy && questionWhiteboard({
       key: JSON.stringify([location.origin, getAccess()?.learner_id, state.bank_id, state.question_id]), question: state.question,
       activePart: state.multi_step?.steps?.[state.multi_step.current_index],
       editable: Boolean(topicBody) || canSubmit, canSubmit,
@@ -432,15 +439,16 @@ export function createTrainingView(bridge) {
       },
     });
     const {stem} = renderReaderStep(main, {...state.question, kind: 'question', answer: state.answer, answer_display: state.answer_display,
-      explanation_html: state.explanation_html, multi_step: state.multi_step}, {titleId: 'trainingStepTitle', title: t('training.exercise', {number: index + 1}),
+      explanation_html: outline ? null : state.explanation_html, multi_step: state.multi_step}, {titleId: 'trainingStepTitle', title: t('training.exercise', {number: index + 1}),
       whiteboard, topicBody,
       counter: t('reader.modulePosition', {current: index + 1, total: group.questions.length}), toolAnchor: embedded?.toolAnchor ?? main,
-      showSubmittedInteraction: state.phase !== 'answer', submittedId: 'trainingSubmittedInteraction',
-      showAnswer: Boolean(state.answer_display && state.phase === 'done'), feedback, feedbackClass: 'trainingVerdict',
+      showSubmittedInteraction: !outline && state.phase !== 'answer', submittedId: 'trainingSubmittedInteraction',
+      showExplanation: !outline,
+      showAnswer: Boolean(!outline && state.answer_display && state.phase === 'done'), feedback, feedbackClass: 'trainingVerdict',
       referenceSource: state, decorate: (body, kind) => {
         const blockKind = state.multi_step && kind === 'question' ? 'context' : kind;
         helpableContent(body, reportContext, `${blockKind}:${state.question_id}`, state.version);
-        if (kind === 'question' && state.can_learn && !state.linked_points) {
+        if (kind === 'question' && state.can_learn && !outline && !state.linked_points) {
           const actions = node('div', 'trainingNotebookActions'); actions.dataset.helpAction = 'notebook';
           const add = button('', 'textButton trainingNotebookButton', async () => {
             add.disabled = true;
@@ -475,7 +483,32 @@ export function createTrainingView(bridge) {
     reader.refs.footerPosition.textContent = t('reader.modulePosition', {current: index + 1, total: group.questions.length});
     reader.refs.saveStatus.textContent = state.preview ? '' : t(state.submission_status === 'pending' || state.submission_status === 'running' ? '答案已提交，正在判题' : '学习进度已保存');
     let primary; const extra = [];
-    if (state.phase === 'answer' && state.hyperskill?.local_ide) {
+    if (outline) {
+      const signedIn = getAccess()?.role === 'account';
+      outlineControl = rubberDuck(main, state, {
+        signedIn, editable: state.can_submit && signedIn, request,
+        scope: JSON.stringify(['rubber_duck', getAccess()?.learner_id, state.attempt_id]),
+        async check(payload, {pending, signal}) {
+          let next = pending ? state : await post('submit', payload);
+          while (['pending', 'running'].includes(next.submission_status)) {
+            await new Promise(resolve => setTimeout(resolve, 650));
+            signal.throwIfAborted();
+            next = await request('training/state?' + query({attempt_id: state.attempt_id}), {signal, fresh: true});
+          }
+          signal.throwIfAborted();
+          if (!viewing()) throw new DOMException('Outline changed', 'AbortError');
+          settled(current, next);
+          current = remember(next);
+          reader.refs.saveStatus.textContent = t('学习进度已保存');
+          if (next.phase === 'done') {
+            if (clockKey) { flushClock(); save('elapsed', clockKey, null); clockKey = null; }
+            void refreshGroup(e, s).then(() => {
+              if (viewing()) renderQuestion();
+            }).catch(failure => { if (viewing()) error(main, failure); });
+          }
+          return next;
+        }});
+    } else if (state.phase === 'answer' && state.hyperskill?.local_ide) {
       primary = academyAnswer({...state, academy:state.hyperskill.local_ide}, e, s);
     } else if (state.phase === 'answer' && state.hyperskill) {
       hyperskillAnswer(state, e, s);
@@ -856,9 +889,9 @@ export function createTrainingView(bridge) {
     if (group) validationTimer = setTimeout(async () => {
       const e = epoch, revision = change;
       try {
-        if (document.hidden || opening.size || writes || root.inert || !group) return;
+        if (document.hidden || opening.size || writes || outlineControl?.busy || root.inert || !group) return;
         const next = await request('training/group?' + query({bank_id: group.bank_id, group_id: group.id, reader: 1}), {fresh: true});
-        if (e !== epoch || revision !== change || writes) return;
+        if (e !== epoch || revision !== change || writes || outlineControl?.busy) return;
         const old = current;
         const sidebarChanged = JSON.stringify(group.questions) !== JSON.stringify(next.questions);
         const versionChanged = group.version !== next.version;
@@ -880,9 +913,14 @@ export function createTrainingView(bridge) {
             const connectionOnly = old.phase === 'answer' && old.hyperskill?.prepared && updated.hyperskill &&
               JSON.stringify({...updated, hyperskill: {...updated.hyperskill,
                 round_id: old.hyperskill.round_id, opened: old.hyperskill.opened}}) === JSON.stringify(old);
+            const sameOutline = outlineControl && old.phase === 'answer' && updated.phase === old.phase &&
+              updated.attempt_id === old.attempt_id && updated.can_submit === old.can_submit &&
+              updated.submission_id === old.submission_id && updated.submission_status === old.submission_status &&
+              JSON.stringify(updated.outline) === JSON.stringify(old.outline);
             if (old.submission_id || read('submission', answerKey(old))) settled(old, updated);
             current = updated; renderSidebar();
-            if (connectionOnly) paintHyperskillConnection(); else renderQuestion();
+            if (connectionOnly) paintHyperskillConnection();
+            else if (!sameOutline) renderQuestion();
           } else if (sidebarChanged) renderSidebar();
         } else if (sidebarChanged) {
           renderSidebar();

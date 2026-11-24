@@ -1,11 +1,11 @@
 // UI strings only. Course HTML, names, answers and explanations never enter this module.
-import {trainingMessages} from './training-messages.js?v=58e9e7af1e81abed';
-import {readerMessages} from './reader-messages.js?v=58e9e7af1e81abed';
-import {portalMessages} from './portal-messages.js?v=58e9e7af1e81abed';
-import {staticMessages} from './static-messages.js?v=58e9e7af1e81abed';
+import {trainingMessages} from './training-messages.js?v=4bc966c0a4c3128c';
+import {readerMessages} from './reader-messages.js?v=4bc966c0a4c3128c';
+import {portalMessages} from './portal-messages.js?v=4bc966c0a4c3128c';
+import {staticMessages} from './static-messages.js?v=4bc966c0a4c3128c';
 
-import {paperMessages} from './review-paper-messages.js?v=58e9e7af1e81abed';
-import {academyMessages} from './academy-messages.js?v=58e9e7af1e81abed';
+import {paperMessages} from './review-paper-messages.js?v=4bc966c0a4c3128c';
+import {academyMessages} from './academy-messages.js?v=4bc966c0a4c3128c';
 
 export const LANGUAGE_KEY = 'graspmemoedu:ui-language';
 // Read the previous namespace once on the same origin. Renaming the public
@@ -141,6 +141,11 @@ const errors = {
   '课程版本已变化，原进度已保留。请先由管理者处理版本迁移。': 'The course was updated. Your progress is preserved; please contact the administrator.',
   '同一请求标识不能对应不同操作。': 'This request conflicts with an earlier action. Refresh and try again.',
   '请求标识已用于答案提交。': 'This request was already used to submit an answer. Refresh and try again.',
+  '已讲清全部要点。': 'You explained every point in the outline.',
+  '已展开这段讲清的要点。': 'The points you explained are now visible.',
+  '已记下这段讲解。讲清它所属的上一层后，大纲会展开。': 'This explanation is saved. Explain its parent point to reveal it.',
+  '这段还没有讲清新的要点，可以继续讲解。': 'This segment did not establish any new points. You can keep explaining.',
+  '本段讲解暂未完成判定，请重试。': 'This explanation could not be checked. Try again.',
 };
 export const errorMessages = Object.fromEntries(Object.entries(errors).map(([source, en]) =>
   [source, [source.replace(/Topic/g, '主题').replace(/管理者/g, '管理员'), en]]));

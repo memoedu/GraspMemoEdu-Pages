@@ -67,6 +67,15 @@ export function recordingMime(blob) {
   return blob.type.split(';', 1)[0];
 }
 
+export async function recordingPayload(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return {mime_type: recordingMime(blob), data_base64: btoa(binary)};
+}
+
 export async function recordingDigest(blob) {
   const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
   return Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');

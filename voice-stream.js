@@ -1,4 +1,4 @@
-import {recordMicrophone} from './microphone-recorder.js?v=58e9e7af1e81abed';
+import {recordMicrophone} from './microphone-recorder.js?v=4bc966c0a4c3128c';
 
 function wave(frames, size) {
   if (!size) return null;
@@ -11,7 +11,7 @@ function wave(frames, size) {
   return new Blob([header, ...frames], {type: 'audio/wav'});
 }
 
-function recognizeSegments(request, signal) {
+function recognizeSegments(request, signal, onPreview) {
   const take = crypto.randomUUID();
   const send = async body => request({take, ...body});
   const queue = [];
@@ -51,6 +51,7 @@ function recognizeSegments(request, signal) {
           throw Error('Invalid transcription response');
         }
         offset = answer.offset;
+        if (!retired && typeof answer.preview === 'string') onPreview?.(answer.preview);
         if (boundary) {
           part++;
           offset = 0;
@@ -70,7 +71,7 @@ function recognizeSegments(request, signal) {
   }
 
   signal.addEventListener('abort', retire, {once: true});
-  void send({op: 'open', manual: true, independent: true}).then(answer => {
+  void send({op: 'open', manual: true, independent: true, ...(onPreview && {live: true})}).then(answer => {
     opened = true;
     if (retired) { void send({op: 'cancel'}).catch(() => {}); return; }
     if (answer.offset !== 0) { retire(); return; }
@@ -148,6 +149,10 @@ export function retainMicrophone(scope) {
   if (old.audio && old.audio.state !== 'closed') void old.audio.close().catch(() => {});
 }
 
+export function releaseMicrophone(scope) {
+  if (microphone?.scope === scope) retainMicrophone();
+}
+
 async function prepareGraph(device) {
   if (!globalThis.AudioWorkletNode || !globalThis.AudioContext) throw Error('AudioWorklet unavailable');
   const options = {sampleRate: 16000, latencyHint: 'interactive'};
@@ -158,10 +163,10 @@ async function prepareGraph(device) {
   const audio = device.audio ||= new AudioContext(options);
   if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
   // Start both while the click still carries user activation, alongside the permission request.
-  await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=58e9e7af1e81abed', import.meta.url))]);
+  await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=4bc966c0a4c3128c', import.meta.url))]);
 }
 
-export async function segmentMicrophone({signal, scope, maxDurationMs, request}) {
+export async function segmentMicrophone({signal, scope, maxDurationMs, request, onPreview}) {
   signal.throwIfAborted();
   retainMicrophone(scope);
   if (!microphone?.media?.active) retainMicrophone();
@@ -199,7 +204,7 @@ export async function segmentMicrophone({signal, scope, maxDurationMs, request})
     node = new AudioWorkletNode(audio, 'voice-pcm', {channelCount: 1, channelCountMode: 'explicit'});
     device.source ||= audio.createMediaStreamSource(media);
     device.source.connect(node); node.connect(audio.destination);
-    if (request && crypto.randomUUID) online = recognizeSegments(request, signal);
+    if (request && crypto.randomUUID) online = recognizeSegments(request, signal, onPreview);
   } catch (error) {
     clearTimeout(setupTimer);
     device.source?.disconnect();

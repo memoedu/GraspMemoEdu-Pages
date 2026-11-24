@@ -1,10 +1,10 @@
-import {getLanguage} from './i18n.js?v=58e9e7af1e81abed';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=58e9e7af1e81abed';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=58e9e7af1e81abed';
-import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=58e9e7af1e81abed';
-import {dictationContext, voiceContext} from './voice-context.js?v=58e9e7af1e81abed';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=58e9e7af1e81abed';
-import {currentModal} from './question-tools.js?v=58e9e7af1e81abed';
+import {getLanguage} from './i18n.js?v=4bc966c0a4c3128c';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=4bc966c0a4c3128c';
+import {microphoneIcon, recordingPayload} from './microphone-recorder.js?v=4bc966c0a4c3128c';
+import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=4bc966c0a4c3128c';
+import {dictationContext, voiceContext} from './voice-context.js?v=4bc966c0a4c3128c';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=4bc966c0a4c3128c';
+import {currentModal} from './question-tools.js?v=4bc966c0a4c3128c';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -117,17 +117,13 @@ function setPhase(job, phase, message) {
 }
 
 async function recordedResult(job, blob) {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = '';
-  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
-  }
+  const recording = await recordingPayload(blob);
   if (!active(job)) return null;
   const before = ((job.context?.textbox?.before || '') + job.text).slice(-4096).replace(/^[\uDC00-\uDFFF]/, '');
   const context = job.text && !job.target.answer ? {...job.context, textbox: {
     ...job.context?.textbox, before,
   }} : job.context;
-  return transcribe({mime_type: recordingMime(blob), data_base64: btoa(binary), profile: job.target.profile,
+  return transcribe({...recording, profile: job.target.profile,
     context, segmented: true, ...(!job.target.answer && {live: true})});
 }
 
