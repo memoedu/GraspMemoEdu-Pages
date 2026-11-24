@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=1f6616389b6747b9';
+  from './calculator-policy.js?v=41fbccf5f0034dcf';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=1f6616389b6747b9');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=1f6616389b6747b9');
-const applied = () => import('./vendor/calculator/applied.mjs?v=1f6616389b6747b9');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=1f6616389b6747b9');
+const core = () => import('./vendor/calculator/core.mjs?v=41fbccf5f0034dcf');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=41fbccf5f0034dcf');
+const applied = () => import('./vendor/calculator/applied.mjs?v=41fbccf5f0034dcf');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=41fbccf5f0034dcf');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
@@ -161,7 +161,7 @@ function storedValue(math, value, config, extensions) {
   return math.complex(value.re, value.im);
 }
 
-function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false,
+function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false, selectionArithmetic = false,
   extensions = false, names, bindings, memory = {}, expanding = []} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
   const original = commonNotation(value).normalize('NFC').replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1');
@@ -263,14 +263,21 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
           Object.fromEntries(fields.map(([field], index) => [field, values[index]])), config, {asExpression: true}));
       }
       const basedLog = name === 'logBase' || name === 'log' && node.args.length === 2;
-      ensure(basedLog || Object.hasOwn(functions, name), 'restricted');
-      const [key, tier, minimum, maximum = minimum] = basedLog ? ['log_base', 1, 2] : functions[name];
+      const remainder = selectionArithmetic && name === 'mod';
+      ensure(basedLog || remainder || Object.hasOwn(functions, name), 'restricted');
+      const [key, tier, minimum, maximum = minimum] = remainder ? ['mod', 2, 2] : basedLog ? ['log_base', 1, 2] : functions[name];
       checkKey(config, key, tier);
       ensure(node.args.length >= minimum && node.args.length <= maximum);
       const args = node.args.map(child => compile(child, depth + 1));
       const implementation = {ln: 'log', nCr: 'combinations', nPr: 'permutations'}[name] || name;
       return compose(args, values => {
         ensure(values.every(value => !Array.isArray(value)), 'domain');
+        if (remainder) {
+          const [dividend, divisor] = values;
+          ensure(Number.isFinite(dividend) && Number.isFinite(divisor) && divisor !== 0, 'domain');
+          const residue = dividend % divisor;
+          return residue && Math.sign(residue) !== Math.sign(divisor) ? residue + divisor : residue;
+        }
         if (basedLog) {
           const [argument, base] = name === 'logBase' ? values.reverse() : values;
           ensure(Number.isFinite(base) && base > 0 && base !== 1, 'domain');
@@ -453,7 +460,7 @@ export async function storedExpression(source, config, name, memory) {
   return {expression};
 }
 
-export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory}) {
+export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory, selectionArithmetic = false}) {
   ensure(permitsModule(config, module), 'restricted');
   if (module === 'expression' && operation === 'assign_variables') {
     checkKey(config, 'evaluate');
@@ -474,7 +481,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
   const context = {degrees, answer, memory};
   if (operation === 'evaluate') {
     const names = new Set(), bindings = new Map();
-    const expression = expressionPlan(math, storage.expression, config, {...context, names, bindings, extensions: true});
+    const expression = expressionPlan(math, storage.expression, config, {...context, names, bindings, extensions: true, selectionArithmetic});
     const supplied = input.assignments ?? {};
     ensure(typeof supplied === 'object' && !Array.isArray(supplied) && Object.keys(supplied).length <= 12);
     for (const name of names) {
@@ -502,6 +509,17 @@ export async function calculate({config, module, operation, input = {}, degrees 
   const text = formatted(math, value);
   if (Array.isArray(value)) return {text, array: value};
   return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
+}
+
+export async function calculateSelectedFormula({expression, config = {level: 'cas'}, cas = true, memory}) {
+  if (typeof expression !== 'string' || /[=<>≤≥≠]/u.test(expression)) throw new CalculationError('expression_required');
+  const input = {expression};
+  try {
+    return await calculate({config, module: 'expression', operation: 'evaluate', input, memory, selectionArithmetic: true});
+  } catch (error) {
+    if (!cas || error.code !== 'unassigned' || !permitsModule(config, 'symbolic')) throw error;
+    return calculate({config, module: 'symbolic', operation: 'simplify', input});
+  }
 }
 
 async function runOperation(math, operation, input, config, context) {

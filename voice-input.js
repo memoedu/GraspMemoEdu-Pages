@@ -1,10 +1,10 @@
-import {getLanguage} from './i18n.js?v=1f6616389b6747b9';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=1f6616389b6747b9';
-import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=1f6616389b6747b9';
-import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=1f6616389b6747b9';
-import {dictationContext, voiceContext} from './voice-context.js?v=1f6616389b6747b9';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=1f6616389b6747b9';
-import {currentModal} from './question-tools.js?v=1f6616389b6747b9';
+import {getLanguage} from './i18n.js?v=41fbccf5f0034dcf';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=41fbccf5f0034dcf';
+import {microphoneIcon, recordingMime} from './microphone-recorder.js?v=41fbccf5f0034dcf';
+import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=41fbccf5f0034dcf';
+import {dictationContext, voiceContext} from './voice-context.js?v=41fbccf5f0034dcf';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=41fbccf5f0034dcf';
+import {currentModal} from './question-tools.js?v=41fbccf5f0034dcf';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];
@@ -55,7 +55,9 @@ function destination(field) {
 function currentDestination() {
   const active = document.activeElement;
   const modal = currentModal();
-  const board = !modal && active?.closest('.questionWorkspace.whiteboardOpen')?.querySelector('[data-whiteboard-expression]');
+  const workspace = !modal && active?.closest('.questionWorkspace.whiteboardOpen');
+  const board = workspace && (workspace.querySelector('[data-whiteboard-voice-selection]') ||
+    workspace.querySelector('[data-whiteboard-expression]'));
   const target = destination(board && active?.matches('iframe') ? board :
     active?.closest('.questionTools') ? (board && !lastField?.closest('.whiteboardMath') ? board : lastField) : active);
   if (target && (!modal || modal.contains(target.field))) return target;
@@ -75,7 +77,9 @@ function insert(target, text) {
     if (field.value !== next) { field.value = value; return false; }
   }
   field.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: text}));
-  if (field.hasAttribute('data-whiteboard-expression')) field.dispatchEvent(new CustomEvent('whiteboard-dictation', {detail: text}));
+  if (field.matches('[data-whiteboard-expression], [data-whiteboard-variable]')) {
+    field.dispatchEvent(new CustomEvent('whiteboard-dictation', {detail: text}));
+  }
   return true;
 }
 
