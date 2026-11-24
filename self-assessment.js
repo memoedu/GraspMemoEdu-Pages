@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=865006a6b8d8de41';
-import {answerEmpty} from './question-input.js?v=865006a6b8d8de41';
-import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=865006a6b8d8de41';
-import {answerAssessment} from './point-assessment.js?v=865006a6b8d8de41';
-import {fromWhiteboard, whiteboardText} from './whiteboard-answer.js?v=865006a6b8d8de41';
+import {t} from './i18n.js?v=f1e14d4b0c196fc7';
+import {answerEmpty} from './question-input.js?v=f1e14d4b0c196fc7';
+import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=f1e14d4b0c196fc7';
+import {answerAssessment} from './point-assessment.js?v=f1e14d4b0c196fc7';
+import {fromWhiteboard, whiteboardText} from './whiteboard-answer.js?v=f1e14d4b0c196fc7';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
@@ -132,13 +132,12 @@ export function referenceAnswer(question) {
   box.append(prepareAnswerContent(body)); return box;
 }
 
-export function ratingChoices({labels, selected, disabled = false, onRate, binaryCorrectRating}) {
+function renderRatingChoices(choices, {selected, disabled = false, onRate}, binary = false) {
   const ratings = element('div', 'trainingRatings');
-  const binary = binaryCorrectRating !== undefined;
-  const choices = binary ? [[binaryCorrectRating, 'question.didRight'], [1, 'question.didWrong']] : labels.map((label, index) => [index + 1, label]);
   ratings.style.setProperty('--rating-count', String(choices.length));
   choices.forEach(([rating, label]) => {
-    const control = element('button', `trainingRating ${binary ? `stepOutcome ${rating === binaryCorrectRating ? 'outcomeCorrect' : 'outcomeIncorrect'}` : `rating${rating}`}`);
+    const style = binary ? `stepOutcome ${rating === 1 ? 'outcomeIncorrect' : 'outcomeCorrect'}` : `rating${rating}`;
+    const control = element('button', `trainingRating ${style}`);
     control.type = 'button'; control.disabled = disabled; control.dataset.rating = rating;
     control.setAttribute('aria-pressed', String(selected === rating));
     control.setAttribute('aria-label', binary ? t(label) : `${rating} · ${t(label)}`); control.title = t(label);
@@ -159,6 +158,21 @@ export function ratingChoices({labels, selected, disabled = false, onRate, binar
   return ratings;
 }
 
+export function ratingChoices({labels, ...controls}) {
+  return renderRatingChoices(labels.map((label, index) => [index + 1, label]), controls);
+}
+
+export function selfAssessmentChoices(question, {courseQuestion = false, canStop = question.can_stop_reviews, ...controls}) {
+  if (question.multi_step || courseQuestion) {
+    // Keep the existing API values for course answers and individual steps.
+    const correct = question.multi_step ? 5 : 4;
+    return renderRatingChoices([[1, 'question.didWrong'], [correct, 'question.didRight']], controls, true);
+  }
+  const labels = ['training.again', 'training.hard', 'training.good', 'training.easy'];
+  if (canStop) labels.push('training.retire');
+  return ratingChoices({labels, ...controls});
+}
+
 export function showAnswerButton(reveal, {disabled = false, input, label = t('training.show')} = {}) {
   const show = element('button', 'secondaryButton showAnswer', label);
   show.type = 'button';
@@ -177,8 +191,7 @@ export function isCourseSelfRating(value) {
 }
 
 // Shared controls; each reader keeps its original submission and grading policy.
-export function selfAssessment(question, input, {disabled = false, reveal, rate, explanation,
-  binaryCorrectRating = question.multi_step ? 5 : undefined} = {}) {
+export function selfAssessment(question, input, {disabled = false, reveal, rate, explanation, courseQuestion} = {}) {
   if (!question.can_self_rate) return null;
   const box = element('div', 'selfAssessment');
   if (!question.revealed) {
@@ -187,8 +200,6 @@ export function selfAssessment(question, input, {disabled = false, reveal, rate,
   }
   const reference = referenceAnswer(question); if (reference) box.append(reference);
   if (explanation) box.append(element('h3', 'exampleExplanationHeader', t('Explanation · 解析')), prepareAnswerContent(explanation, {explanation: true}));
-  const labels = ['training.again', 'training.hard', 'training.good', 'training.easy'];
-  if (question.can_stop_reviews) labels.push('training.retire');
-  const ratings = ratingChoices({labels, disabled, selected: question.self_rating, onRate: rate, binaryCorrectRating});
+  const ratings = selfAssessmentChoices(question, {courseQuestion, disabled, selected: question.self_rating, onRate: rate});
   box.append(ratings); return box;
 }
