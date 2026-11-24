@@ -1,30 +1,31 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=7bb5e54ec4db0048";
-import {attachFormulaEditing} from './formula-input.js?v=7bb5e54ec4db0048';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=7bb5e54ec4db0048';
-import { createReviewView } from "./review.js?v=7bb5e54ec4db0048";
-import { renderCourseGraph } from "./course-graph.js?v=7bb5e54ec4db0048";
-import {questionInput, choiceTypeField} from './question-input.js?v=7bb5e54ec4db0048';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=7bb5e54ec4db0048';
-import {enhanceTopicContent} from './topic-content.js?v=7bb5e54ec4db0048';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=7bb5e54ec4db0048';
-import {createCatalogPicker} from './catalog-picker.js?v=7bb5e54ec4db0048';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=7bb5e54ec4db0048';
-import {createAtomicView} from './atomic.js?v=7bb5e54ec4db0048';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=7bb5e54ec4db0048';
-import {sourceAttributions} from './memory-chunk.js?v=7bb5e54ec4db0048';
-import {createTrainingView} from './training.js?v=7bb5e54ec4db0048';
-import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=7bb5e54ec4db0048';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=7bb5e54ec4db0048";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=d338291713395108";
+import {attachFormulaEditing} from './formula-input.js?v=d338291713395108';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=d338291713395108';
+import { createReviewView } from "./review.js?v=d338291713395108";
+import { renderCourseGraph } from "./course-graph.js?v=d338291713395108";
+import {questionInput, choiceTypeField} from './question-input.js?v=d338291713395108';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=d338291713395108';
+import {enhanceTopicContent} from './topic-content.js?v=d338291713395108';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=d338291713395108';
+import {createCatalogPicker} from './catalog-picker.js?v=d338291713395108';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=d338291713395108';
+import {createAtomicView} from './atomic.js?v=d338291713395108';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=d338291713395108';
+import {sourceAttributions} from './memory-chunk.js?v=d338291713395108';
+import {createTrainingView} from './training.js?v=d338291713395108';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=d338291713395108';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=d338291713395108";
 
-import {createPaperView} from './review-papers.js?v=7bb5e54ec4db0048';
-import {createFreeStudyView} from './free-study.js?v=7bb5e54ec4db0048';
-import {createContextLibraryView} from './context-library.js?v=7bb5e54ec4db0048';
+import {createPaperView} from './review-papers.js?v=d338291713395108';
+import {createFreeStudyView} from './free-study.js?v=d338291713395108';
+import {createContextLibraryView} from './context-library.js?v=d338291713395108';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=7bb5e54ec4db0048';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=7bb5e54ec4db0048';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=7bb5e54ec4db0048';
-import {createStudentDashboard} from './student-dashboard.js?v=7bb5e54ec4db0048';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=7bb5e54ec4db0048';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=d338291713395108';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=d338291713395108';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=d338291713395108';
+import {createStudentDashboard} from './student-dashboard.js?v=d338291713395108';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=d338291713395108';
+import {currentPwa, isStandalone, installEntry, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=d338291713395108';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -41,20 +42,10 @@ const taskLabelKeys = {Review: 'portal.reviewTask', Placement: 'portal.diagnosti
 const statusNames = { not_started: t("portal.not.started.3"), in_progress: t("portal.in.progress.4"), paused: t("portal.paused.5"), completed: t("portal.completed.6") };
 const roundButton = (text, action) => control(text, "portalStart", action);
 
-function resumableLearningHash(hash) {
-  if (!hash?.startsWith('#/')) return false;
-  const {subjectId, path, params} = parsePlatformRoute(hash);
-  if (!subjectId) return false;
-  if (/^\/(?:courses(?:\/[^/]+(?:\/progress)?)?|topic\/[^/]+(?:\/content)?|reading)$/.test(path)) return true;
-  if (/^\/banks(?:\/[^/]+){0,2}$/.test(path)) return params.get('review') !== '1';
-  // Opening a review without a session, or an atomic review link, can start work.
-  return /^\/review\/[^/]+\/[^/]+$/.test(path) && !path.endsWith('/atomic') && Boolean(params.get('session'));
-}
-
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=7bb5e54ec4db0048').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=d338291713395108').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -85,19 +76,31 @@ export function initPortal(bridge) {
   }
   function clearWorkspaceLocations() { workspaceLocations.clear(); readBankGroups.clear(); currentHash = ''; }
   const routeKey = () => location.hash || "#/";
-  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const installed = isStandalone();
+  const installLink = $('pwaInstallLink');
   let renderedLearningLocation = null;
   function learningLocationKey() {
     const access = bridge.getAccess();
     if (!installed || !access?.learner_id || bridge.getIdentityProblem()) return null;
-    return 'graspmemoedu:pwa-learning-location:' + JSON.stringify([bridge.getApiOrigin(), access.role, access.learner_id]);
+    return pwaLocationKey(currentPwa, bridge.getApiOrigin(), access);
+  }
+  function resetLearningLocation() {
+    renderedLearningLocation = null;
+    const key = learningLocationKey();
+    if (key) { try { localStorage.removeItem(key); } catch {} }
   }
   function saveLearningLocation() {
     if (!renderedLearningLocation || renderedLearningLocation.key !== learningLocationKey()) return;
-    const hash = location.hash;
+    const hash = routeKey();
     // Reader controls can replace query parameters without dispatching hashchange.
-    if (hash.split('?')[0] !== renderedLearningLocation.path || !resumableLearningHash(hash)) return;
+    if (hash.split('?')[0] !== renderedLearningLocation.path || !restorableHash(currentPwa, hash)) return;
+    if (hash === currentPwa.home) return resetLearningLocation();
     try { localStorage.setItem(renderedLearningLocation.key, hash); } catch {}
+  }
+  if (installed) {
+    installLink.target = '_blank';
+    installLink.rel = 'noopener';
+    observeScopeDeparture(currentPwa, resetLearningLocation);
   }
   const selectedDashboard = () => dashboards.get(selectedCourse);
   const timezone = () => profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -398,7 +401,7 @@ export function initPortal(bridge) {
       try {
         if (localStorage.getItem(resumeKey) === resumedHash) localStorage.removeItem(resumeKey);
       } catch {}
-      return navigate('#/', true);
+      return navigate(currentPwa.home, true);
     }
     const resumedHash = location.hash;
     // A reader can replace the hash while selecting a question without firing
@@ -419,6 +422,11 @@ export function initPortal(bridge) {
     }
     if (currentRoute.canonicalHash && currentRoute.canonicalHash !== location.hash) history.replaceState(null, "", currentRoute.canonicalHash);
     currentHash = routeKey();
+    if (!restorableHash(currentPwa, currentHash)) resetLearningLocation();
+    const entry = installEntry(currentRoute);
+    installLink.href = entry.url.href;
+    installLink.dataset.i18n = entry.label;
+    installLink.textContent = t(entry.label);
     focusMode.start(currentRoute);
     let readerOpened = false;
     $('adminLearningNotice').querySelector('.adminAllBlocksLink')?.remove();
@@ -440,7 +448,7 @@ export function initPortal(bridge) {
       if (ticket !== sequence) return;
       const { path, params, subjectId } = currentRoute;
       const subject = subjects.find(item => item.id === subjectId);
-      if (resumeKey && (!subject || subjectRestricted(subject))) return forgetUnavailableLocation();
+      if (resumeKey && subjectId && (!subject || subjectRestricted(subject))) return forgetUnavailableLocation();
       if (subjectId && !subject) throw new Error(t("platform.unknownSubject"));
       updateSubjectContext(subject || null);
       if (subjectRestricted(subject)) { restrictedNotice(subject); return; }
@@ -516,7 +524,9 @@ export function initPortal(bridge) {
           const target = state.training_target;
           const search = query({question: target.question_id, introduction: target.question_id ? null : target.introduction_id,
             root: params.get('bank') === target.bank_id ? params.get('root') : null});
-          navigate(focusMode.readerHref(`/banks/${encode(target.bank_id)}/${encode(target.group_id)}?${search}`));
+          const destination = focusMode.readerHref(`/banks/${encode(target.bank_id)}/${encode(target.group_id)}?${search}`);
+          if (resumeKey && !restorableHash(currentPwa, destination)) return forgetUnavailableLocation();
+          navigate(destination);
           return;
         }
         if (state.training_mode === 'atomic_retrieval') await atomic.open(topicId, 'learn', state);
@@ -529,7 +539,7 @@ export function initPortal(bridge) {
       readerOpened = focusReaderRoute(currentRoute);
       currentHash = routeKey(); currentRoute = parseRoute();
       const learningKey = learningLocationKey();
-      if (learningKey && resumableLearningHash(currentHash)) {
+      if (learningKey && restorableHash(currentPwa, currentHash)) {
         renderedLearningLocation = {key: learningKey, path: currentHash.split('?')[0]};
         saveLearningLocation();
       }
@@ -2068,12 +2078,13 @@ export function initPortal(bridge) {
           if (location.hash) return route();
           const key = learningLocationKey();
           const hash = key && localStorage.getItem(key);
-          if (resumableLearningHash(hash)) {
+          if (restorableHash(currentPwa, hash)) {
             history.replaceState(history.state, '', hash);
             return route(undefined, key);
           }
         } catch { /* The regular route handles identity, connection and storage failures. */ }
       }
+      if (!location.hash && currentPwa.home !== '#/') history.replaceState(history.state, '', currentPwa.home);
       return route();
     },
     async showAtomic(next) {
