@@ -7,6 +7,10 @@ export function escapedAt(text, index) {
   return (index - start) % 2 === 1;
 }
 
+function startsOnLine(text, index) {
+  return /^[\t ]*$/.test(text.slice(text.lastIndexOf('\n', index - 1) + 1, index));
+}
+
 export function mathAt(text, from = 0, {allowUnbalanced = false} = {}) {
   if (escapedAt(text, from)) return null;
   const opening = text.slice(from, from + 2);
@@ -29,16 +33,19 @@ export function mathAt(text, from = 0, {allowUnbalanced = false} = {}) {
   const close = {'$$': '$$', '\\(': '\\)', '\\[': '\\]', '$': '$'}[open];
   if (!close) return null;
   const begin = from + open.length;
+  const lineDelimited = open === '$' && startsOnLine(text, from) && /^[\t ]*\r?\n/.test(text.slice(begin));
   const spanEndingAt = end => ({from, to: end + close.length, raw: text.slice(from, end + close.length),
-    latex: text.slice(begin, end), display: open === '$$' || open === '\\['});
+    latex: lineDelimited ? text.slice(begin, end).trim() : text.slice(begin, end),
+    display: lineDelimited || open === '$$' || open === '\\['});
   let unbalancedEnd;
   for (let i = begin, depth = 0; i < text.length; i++) {
     if (text[i] === '\n' && (open === '$' || open === '\\(')) {
       if (text[i + 1] === '\n') break;
-      if (open === '$' && !/\\begin\{/.test(text.slice(begin, i + 1))
+      if (open === '$' && !lineDelimited && !/\\begin\{/.test(text.slice(begin, i + 1))
           && !/^[\t ]*\\begin\{/.test(text.slice(i + 1))) break;
     }
     if (text.startsWith(close, i)) {
+      if (lineDelimited && (!startsOnLine(text, i) || !/^[\t ]*(?:\r?\n|$)/.test(text.slice(i + 1)))) return null;
       if (depth) {
         unbalancedEnd ??= i;
         continue;

@@ -1,8 +1,8 @@
-import {setVoiceContext} from './voice-context.js?v=00493ad7a36c230c';
-import {getLanguage} from './i18n.js?v=00493ad7a36c230c';
-import {calculatorToolGroups} from './calculator.js?v=00493ad7a36c230c';
-import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=00493ad7a36c230c';
-import {questionWhiteboard} from './whiteboard-answer.js?v=00493ad7a36c230c';
+import {setVoiceContext} from './voice-context.js?v=58e9e7af1e81abed';
+import {getLanguage} from './i18n.js?v=58e9e7af1e81abed';
+import {calculatorToolGroups} from './calculator.js?v=58e9e7af1e81abed';
+import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=58e9e7af1e81abed';
+import {questionWhiteboard} from './whiteboard-answer.js?v=58e9e7af1e81abed';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
