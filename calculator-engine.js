@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsCustomFunctions, permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=a021a7de9f0871f6';
+  from './calculator-policy.js?v=d703cbf2a73e0061';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=a021a7de9f0871f6');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=a021a7de9f0871f6');
-const applied = () => import('./vendor/calculator/applied.mjs?v=a021a7de9f0871f6');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=a021a7de9f0871f6');
+const core = () => import('./vendor/calculator/core.mjs?v=d703cbf2a73e0061');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=d703cbf2a73e0061');
+const applied = () => import('./vendor/calculator/applied.mjs?v=d703cbf2a73e0061');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=d703cbf2a73e0061');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
