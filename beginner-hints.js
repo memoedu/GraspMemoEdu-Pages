@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=d036b80b4dda8dbf';
+import {t} from './i18n.js?v=1f6616389b6747b9';
 
 const icons = {success: '✓', incorrect: '×', warning: 'Ⅱ', info: 'i', schedule: '◷'};
 const seenEvents = new Set();
