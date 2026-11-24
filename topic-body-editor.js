@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=74b96f499bbe2fdf';
+import {getLanguage} from './i18n.js?v=0fbc589f2ae710fc';
 
 const say = (zh, en) => getLanguage() === 'en' ? en : zh;
 const enabledKey = learner => 'graspmemoedu:topic-edit:' + learner;

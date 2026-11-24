@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=74b96f499bbe2fdf';
+import {escapedAt, mathSpans} from './math-syntax.js?v=0fbc589f2ae710fc';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -78,10 +78,11 @@ const pendingText = new WeakSet();
 const pendingDisplays = new WeakSet();
 const mountedSvg = new WeakSet();
 const glyphCodepoints = new WeakMap();
-let fragmentNumber = 0, renderer;
+const archivedGlyphs = new WeakMap();
+let fragmentNumber = 0, renderer, svgGlyphLookup;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=74b96f499bbe2fdf').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=0fbc589f2ae710fc').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -139,9 +140,28 @@ function scopeGlyphs(root) {
   }
 }
 
+async function identifyArchivedPaths(math, hashes) {
+  const paths = [...math.querySelectorAll('svg [data-mml-node="math"] path[d]:not([d=""],[data-c])')];
+  if (!paths.length || !globalThis.crypto?.subtle) return;
+  svgGlyphLookup ||= import('./vendor/mathjax-svg-glyphs/index.mjs?v=0fbc589f2ae710fc').catch(error => {
+    svgGlyphLookup = null;
+    throw error;
+  });
+  const {glyphs} = await svgGlyphLookup;
+  const encoder = new TextEncoder();
+  await Promise.all(paths.map(async path => {
+    const outline = path.getAttribute('d');
+    if (!hashes.has(outline)) hashes.set(outline, crypto.subtle.digest('SHA-256', encoder.encode(outline))
+      .then(bytes => Array.from(new Uint8Array(bytes, 0, 12), byte => byte.toString(16).padStart(2, '0')).join('')));
+    const point = glyphs[await hashes.get(outline)];
+    if (point) archivedGlyphs.set(path, point);
+  }));
+}
+
 const mathEscape = text => text.replace(/[#$%&_{}]/g, '\\$&')
-  .replaceAll('−', '-').replaceAll('\u2061', ' ').replaceAll('\u2062', '');
+  .replaceAll('−', '-').replaceAll('′', '\\prime ').replaceAll('\u2061', ' ').replaceAll('\u2062', '');
 const presentationOnly = new Set(['defs', 'rect', 'line', 'annotation', 'annotation-xml']);
+const functionName = /^(?:arcsin|arccos|arctan|sin|cos|tan|cot|sec|csc|log|ln|exp|max|min|lim)$/;
 
 function presentationLatex(node) {
   const tag = node.getAttribute('data-mml-node') || node.localName;
@@ -150,14 +170,20 @@ function presentationLatex(node) {
     const glyph = href.startsWith('#') ? node.ownerDocument.getElementById(href.slice(1)) : null;
     const code = node.getAttribute('data-c') || glyphCodepoints.get(glyph) ||
       /^#MJX-.*-([A-F0-9]{2,6})$/i.exec(href)?.[1];
-    const point = /^[A-F0-9]{2,6}$/i.test(code || '') ? parseInt(code, 16) : 0;
-    return point >= 32 && point <= 0x10ffff ? mathEscape(String.fromCodePoint(point)) : '';
+    const point = /^[A-F0-9]{2,6}$/i.test(code || '') ? parseInt(code, 16) : archivedGlyphs.get(node);
+    if (!point && tag === 'path' && node.getAttribute('d') === '') return '';
+    return point >= 32 && point <= 0x10ffff ? mathEscape(String.fromCodePoint(point)) : null;
   }
   const children = node.childElementCount
     ? [...node.children].filter(child => !presentationOnly.has(child.localName)).map(presentationLatex)
     : [mathEscape(node.textContent)];
+  if (children.includes(null)) return null;
   const [base = '', sub = '', upper = ''] = children;
   switch (tag) {
+    case 'mi': {
+      const text = children.join('');
+      return functionName.test(text) ? '\\' + text + ' ' : text;
+    }
     case 'mfrac': return '\\frac{' + base + '}{' + sub + '}';
     case 'msup': return '{' + base + '}^{' + sub + '}';
     case 'msub': return '{' + base + '}_{' + sub + '}';
@@ -170,6 +196,7 @@ function presentationLatex(node) {
     case 'mtable': return '\\begin{matrix}' + children.join(' \\\\ ') + '\\end{matrix}';
     case 'mtr': case 'mlabeledtr': return children.join(' & ');
     case 'mtext': return '\\text{' + children.join('') + '}';
+    case 'mphantom': return '\\phantom{' + children.join('') + '}';
     default: return children.join('');
   }
 }
@@ -178,7 +205,7 @@ function presentationLatex(node) {
 export function presentationMathSource(node) {
   const math = node.matches('math') ? node : node.querySelector('math,svg [data-mml-node="math"]');
   if (!math) return '';
-  const latex = presentationLatex(math).trim();
+  const latex = presentationLatex(math)?.trim();
   if (!latex) return '';
   const display = node.matches('[display="true"],[display="block"]');
   return display ? '\\[' + latex + '\\]' : '\\(' + latex + '\\)';
@@ -279,8 +306,9 @@ export function installSelectableMath(root = document.body) {
     if (!pending.length) return;
     pending.forEach(math => seen.add(math));
     void loadRenderer().then(({renderLatex}) => {
-      for (const math of pending) {
-        if (!root.contains(math) || !math.matches(archivedMath)) continue;
+      const hashes = new Map();
+      return Promise.all(pending.map(async math => {
+        if (!root.contains(math) || !math.matches(archivedMath)) return;
         const legacy = math.matches('.mjpage');
         const source = storedLatex(math);
         const display = math.matches('[display="true"],.mjpage__block');
@@ -288,20 +316,27 @@ export function installSelectableMath(root = document.body) {
         const latex = legacy && source.length <= 4000 ? normalizeArchivedLatex(source, display) : source;
         if (!latex || !renderLatex(content, latex, display)) {
           const semantic = math.querySelector('mjx-assistive-mml math');
-          const recovered = presentationMathSource(math);
+          let recovered = presentationMathSource(math);
           if (semantic) {
             const native = semantic.cloneNode(true);
             if (display) native.setAttribute('display', 'block');
             content.append(native);
-          } else if (!recovered || !renderLatex(content, recovered.slice(2, -2), display)) continue;
-          if (!source && recovered) math.dataset.mathSource = recovered;
+          } else {
+            if (!recovered && !legacy) {
+              await identifyArchivedPaths(math, hashes).catch(() => {});
+              if (!root.contains(math) || !math.matches(archivedMath)) return;
+              recovered = presentationMathSource(math);
+            }
+            if (!recovered || !renderLatex(content, recovered.slice(2, -2), display)) return;
+          }
+          if (recovered) math.dataset.mathSource = recovered;
         }
         if (legacy) {
           math.dataset.mathSource = (display ? '\\[' : '\\(') + latex + (display ? '\\]' : '\\)');
           math.classList.add(display ? 'mathDisplay' : 'mathInline');
         } else math.setAttribute('jax', 'HTML');
         math.replaceChildren(...content.childNodes);
-      }
+      }));
     }).catch(() => pending.forEach(math => seen.delete(math)));
   }
   const initial = new Set();
@@ -426,11 +461,14 @@ export function setOptionContent(element, item) {
     element.innerHTML = item.html;
     const spans = [...mathSpans(text)];
     const singleFormula = spans.length === 1 && spans[0].raw === text.trim();
+    const archives = element.querySelectorAll(archivedMath);
+    const soleArchive = singleFormula && archives.length === 1
+      && !element.textContent.replace(archives[0].textContent, '').trim();
     // Older Math Academy options split an environment out of its enclosing
     // inline formula. Re-render from the option source if only fragment
     // paragraphs and the compiled formulas are present.
-    if (spans.length && element.querySelector('.mathDisplay > mjx-container')
-        && element.textContent.includes('$')
+    if ((soleArchive || spans.length && element.querySelector('.mathDisplay > mjx-container')
+        && element.textContent.includes('$'))
         && !element.querySelector('img,a,code,pre,table')
         && (singleFormula || [...element.children].every(child => child.matches('p,.mathDisplay,.mathInline'))
           && !element.querySelector('em,strong,ul,ol'))) {

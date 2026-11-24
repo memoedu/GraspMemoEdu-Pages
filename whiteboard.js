@@ -1,8 +1,8 @@
-import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=74b96f499bbe2fdf';
-import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=74b96f499bbe2fdf';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=74b96f499bbe2fdf';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=74b96f499bbe2fdf';
-import {whiteboardDocument} from './whiteboard-editor.js?v=74b96f499bbe2fdf';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=0fbc589f2ae710fc';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=0fbc589f2ae710fc';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=0fbc589f2ae710fc';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=0fbc589f2ae710fc';
+import {whiteboardDocument} from './whiteboard-editor.js?v=0fbc589f2ae710fc';
 
 const boards = new WeakMap();
 const work = new Map();
