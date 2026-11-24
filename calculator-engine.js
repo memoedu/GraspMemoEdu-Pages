@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsCustomFunctions, permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=96d6ac0e64adb146';
+  from './calculator-policy.js?v=00493ad7a36c230c';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=96d6ac0e64adb146');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=96d6ac0e64adb146');
-const applied = () => import('./vendor/calculator/applied.mjs?v=96d6ac0e64adb146');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=96d6ac0e64adb146');
+const core = () => import('./vendor/calculator/core.mjs?v=00493ad7a36c230c');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=00493ad7a36c230c');
+const applied = () => import('./vendor/calculator/applied.mjs?v=00493ad7a36c230c');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=00493ad7a36c230c');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
@@ -46,6 +46,19 @@ const commonNotation = value => inputText(value, 1024)
   .replaceAll('（', '(').replaceAll('）', ')').replaceAll('，', ',').replaceAll('＝', '=')
   .replaceAll('≤', '<=').replaceAll('≥', '>=').replaceAll('≠', '!=')
   .replaceAll('×', '*').replaceAll('÷', '/').replaceAll('−', '-');
+
+const closingDelimiters = {'(': ')', '[': ']', '{': '}'};
+
+function completeParentheses(source) {
+  if (!source.includes('(') || source.endsWith('(') || /[#'"]/.test(source)) return source;
+  const pending = [];
+  for (const [delimiter] of source.matchAll(/[()[\]{}]/g)) {
+    if (Object.hasOwn(closingDelimiters, delimiter)) pending.push(closingDelimiters[delimiter]);
+    else if (pending.pop() !== delimiter) return source;
+  }
+  // Only a suffix of round closers may be implied. The evaluator still validates the expression.
+  return pending.every(delimiter => delimiter === ')') ? source + pending.join('') : source;
+}
 
 const parameterLimit = 12;
 
@@ -81,8 +94,9 @@ function storageExpression(input, config, defineFunction = false) {
 // Token, depth and permission limits mirror the existing expression engine.
 export function calculateImmediate(input, config, memory = {}, answer, defineFunction = false) {
   if (!permitsModule(config, 'expression') || !permitsKey(config, 'evaluate')) return null;
-  const {expression, register, definition, operator} = storageExpression(input, config, defineFunction);
+  const {expression: source, register, definition, operator} = storageExpression(input, config, defineFunction);
   if (definition || operator) return null;
+  const expression = completeParentheses(source);
   const tokens = [];
   const lexer = /\s*(?:(\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|([\p{L}][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*)|([+*/^()-]))\s*/guy;
   while (lexer.lastIndex < expression.length) {
@@ -192,9 +206,10 @@ function storedValue(math, value, config, extensions) {
 
 function expressionPlan(math, value, config, {variable, answer, degrees = false, symbolic = false, freeSymbols = false, selectionArithmetic = false,
   extensions = false, names, bindings, memory = {}, expanding = [],
-  parameters, inferParameters = false, validatingDefinition = false, budget = {remaining: 720}} = {}) {
+  parameters, inferParameters = false, validatingDefinition = false, completeTrailing = true, budget = {remaining: 720}} = {}) {
   const subscriptDigits = '₀₁₂₃₄₅₆₇₈₉';
-  const original = commonNotation(value).normalize('NFC').replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1');
+  const notation = commonNotation(value).normalize('NFC').replace(/_\{([\p{L}\p{Nd}]+)\}/gu, '_$1');
+  const original = completeTrailing ? completeParentheses(notation) : notation;
   ensure(!original.includes('__gmeVar'), 'restricted');
   checkNotation(original, config);
   const rewritten = original.replace(
@@ -442,7 +457,7 @@ function rows(...entries) {
 }
 
 function modularPower(math, bigInteger, input, config) {
-  const source = commonNotation(input.expression);
+  const source = completeParentheses(commonNotation(input.expression));
   const modulusText = inputText(input.modulus, 2048);
   ensure(/^[0-9]+$/.test(modulusText));
   checkNotation(source, config);
@@ -680,8 +695,8 @@ async function runOperation(math, operation, input, config, context) {
       ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && assignableVariable(variable));
       const pieces = inputText(input.expression, 400).split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
-      const text = pieces.map(piece => expressionPlan(math, piece, config, {
-        variable, symbolic: true, freeSymbols: operation === 'simplify',
+      const text = pieces.map((piece, index) => expressionPlan(math, piece, config, {
+        variable, symbolic: true, freeSymbols: operation === 'simplify', completeTrailing: index === pieces.length - 1,
       }).source).join('=');
       const {nerdamer} = await symbolicEngine();
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
