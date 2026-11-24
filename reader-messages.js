@@ -2,6 +2,9 @@
 export const readerMessages = {
   'focus.enter': ['专注模式', 'Focus Mode'],
   'focus.exit': ['退出专注模式', 'Exit Focus Mode'],
+  'focus.fullscreen': ['进入全屏', 'Enter fullscreen'],
+  'focus.fullscreenUnavailable': ['此浏览器无法让网页进入全屏。', 'This browser cannot display the page in fullscreen.'],
+  'focus.fullscreenFailed': ['未能进入全屏，可再次点击进入。', 'Fullscreen did not start. Select Enter fullscreen to retry.'],
   'focus.next': ['下一个 Topic', 'Next Topic'],
   'focus.retry': ['重试查找下一个 Topic', 'Retry finding the next Topic'],
   'source.practiceDraft': ['可在此试答。本次作答保存在当前标签页，供自己核对。', 'Try the question here. Your draft stays in this tab for self-checking.'],

@@ -1,16 +1,26 @@
-import {t} from './i18n.js?v=23dea509222127b3';
+import {t} from './i18n.js?v=b12283c47de1d27f';
 
 export function focusReaderRoute({path, params}) {
   return /^\/(?:topic\/[^/]+|review\/[^/]+\/[^/]+)$/.test(path)
     || (/^\/banks\/[^/]+\/[^/]+$/.test(path) && params.get('review') !== '1' && params.get('card') !== '1');
 }
 
-export function createFocusMode({toolbar, toggle, nextHref, locationChanged}) {
+export function createFocusMode({toolbar, toggle, fullscreen, fullscreenNotice, nextHref, locationChanged}) {
   let enabled = false, pending = null;
+  let nativeActive = false, requesting = false, fullscreenFailed = false;
+  const surface = document.documentElement;
+  const canFullscreen = () => document.fullscreenEnabled && typeof surface.requestFullscreen === 'function';
   const render = () => {
     document.body.classList.toggle('learningFocus', enabled);
     toggle.textContent = t(enabled ? 'focus.exit' : 'focus.enter');
     toggle.setAttribute('aria-pressed', String(enabled));
+    const hideFullscreen = !enabled || nativeActive || !canFullscreen();
+    if (hideFullscreen && document.activeElement === fullscreen && !toolbar.hidden) toggle.focus({preventScroll: true});
+    fullscreen.hidden = hideFullscreen;
+    fullscreen.disabled = requesting;
+    const message = !canFullscreen() ? t('focus.fullscreenUnavailable') : fullscreenFailed ? t('focus.fullscreenFailed') : '';
+    if (fullscreenNotice.textContent !== message) fullscreenNotice.textContent = message;
+    fullscreenNotice.hidden = !enabled || !message;
   };
   function readerHref(href, active = enabled) {
     const [path, search] = href.split('?');
@@ -41,24 +51,61 @@ export function createFocusMode({toolbar, toggle, nextHref, locationChanged}) {
       retry.hidden = true;
     }, () => { if (current()) retry.hidden = false; });
   }
-  toggle.addEventListener('click', () => {
-    enabled = !enabled;
+  function setEnabled(active) {
+    enabled = active;
     pending = null;
+    fullscreenFailed = false;
     history.replaceState(history.state, '', readerHref(location.hash));
     locationChanged();
     render();
     syncActions();
+  }
+  function closeFullscreen() {
+    if (nativeActive && document.fullscreenElement === surface) void document.exitFullscreen().catch(() => {});
+  }
+  async function openFullscreen() {
+    if (!enabled || requesting || !canFullscreen() || document.fullscreenElement === surface) return;
+    requesting = true;
+    fullscreenFailed = false;
+    render();
+    try {
+      await surface.requestFullscreen({navigationUI: 'hide'});
+      nativeActive = document.fullscreenElement === surface;
+      if (!enabled) closeFullscreen();
+    } catch {
+      fullscreenFailed = enabled;
+    } finally {
+      requesting = false;
+      render();
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    const wasActive = nativeActive;
+    nativeActive = document.fullscreenElement === surface && (requesting || wasActive);
+    if (nativeActive && !enabled) closeFullscreen();
+    else if (wasActive && !nativeActive && enabled) setEnabled(false);
+    else render();
   });
+  toggle.addEventListener('click', () => {
+    setEnabled(!enabled);
+    if (enabled) void openFullscreen();
+    else closeFullscreen();
+  });
+  fullscreen.addEventListener('click', openFullscreen);
   return {
     start(route) {
       pending = null;
       enabled = Boolean(route && focusReaderRoute(route) && route.params.get('focus') === '1');
       toolbar.hidden = true;
+      if (!enabled) closeFullscreen();
       render();
     },
     show(visible) {
       toolbar.hidden = !visible;
-      if (!visible) enabled = false;
+      if (!visible) {
+        enabled = false;
+        closeFullscreen();
+      }
       render();
       if (visible) syncActions();
     },

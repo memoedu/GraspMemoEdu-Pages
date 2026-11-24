@@ -3,6 +3,8 @@
 .focusToolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  column-gap: 8px;
   padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
 }
 
@@ -12,11 +14,22 @@
   color: var(--muted);
 }
 
+.focusToggle:focus-visible { outline-color: var(--ma-blue); }
+.focusToggle:active { color: var(--button-active); }
+.focusFullscreenNotice { margin: 0 auto 0 0; color: var(--muted); font-size: .8rem; }
+
 .focusCompletion { display: contents; }
 body:not(.learningFocus) .focusCompletionOnly { display: none; }
 
+html:has(> body.learningFocus) { scrollbar-gutter: stable both-edges; }
+
 body.learningFocus {
   --focus-gutter: clamp(12px, 2.6vw, 48px);
+  --focus-reader-width: 66rem;
+  --focus-wide-width: 96rem;
+  --focus-rail-width: 64px;
+  --focus-rail-gap: 12px;
+  --focus-dock-offset: 0px;
   --site-header-height: calc(44px + env(safe-area-inset-top));
   padding-top: 0;
 }
@@ -40,23 +53,31 @@ body.learningFocus.historyDrawerOpen:not(.portalModalOpen) { overflow: visible; 
   display: none;
 }
 
-.learningFocus :is(.appLayout, .portalShell, .atomicLayout, .reviewLayout) {
-  display: block;
+.learningFocus :is(.appLayout, .portalShell) {
+  display: flex;
+  flex-direction: column;
   max-inline-size: none;
   margin: 0;
-}
-
-.learningFocus :is(.appLayout, .portalShell) {
-  min-block-size: calc(100dvh - var(--site-header-height));
+  min-block-size: calc(100dvh - var(--site-header-height) - var(--focus-dock-offset));
   padding-inline: max(var(--focus-gutter), env(safe-area-inset-left)) max(var(--focus-gutter), env(safe-area-inset-right));
-  padding-block-end: max(var(--focus-gutter), env(safe-area-inset-bottom));
+  padding-block: var(--focus-gutter) max(var(--focus-gutter), env(safe-area-inset-bottom));
 }
 
-.learningFocus .appLayout .pageShell,
-.learningFocus :is(.atomicLayout, .reviewLayout) > :is(.atomicMain, .reviewMain) {
-  width: 100%;
-  max-width: none;
-  margin: 0;
+.learningFocus :is(.atomicLayout, .reviewLayout) {
+  display: block;
+  margin: auto 0;
+}
+
+.learningFocus :is(.appLayout .pageShell, .atomicLayout > .atomicMain, .reviewLayout > .reviewMain) {
+  inline-size: fit-content;
+  min-inline-size: min(100%, 32rem);
+  max-inline-size: var(--focus-reader-width);
+  margin: auto;
+}
+
+.learningFocus :is(.pageShell, .atomicMain, .reviewMain):has(.passageWorkspace, .whiteboardOpen) {
+  --focus-reader-width: var(--focus-wide-width);
+  inline-size: 100%;
 }
 
 .learningFocus .appLayout .lesson { margin: 0; }
@@ -78,10 +99,65 @@ body.learningFocus.historyDrawerOpen:not(.portalModalOpen) { overflow: visible; 
   max-width: min(100%, 76ch);
 }
 
-@media (min-width: 1001px) {
-  .learningFocus .passageWorkspace:has(> .passageQuestionPane) > :is(.passageQuestionPane, form, .questionInteraction) {
-    height: clamp(360px, calc(100dvh - var(--site-header-height) - 135px), 940px);
+@media (min-width: 1000px) {
+  .learningFocus :is(.appLayout .pageShell, .atomicLayout > .atomicMain, .reviewLayout > .reviewMain)
+      :where(.questionWorkspace:not(.whiteboardOpen)) {
+    display: block;
+    position: relative;
+    container-type: normal;
   }
+
+  .learningFocus :is(.appLayout .pageShell, .atomicLayout > .atomicMain, .reviewLayout > .reviewMain)
+      :where(.questionWorkspace:not(.whiteboardOpen)) > .questionToolRail {
+    --question-tool-width: var(--focus-rail-width);
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(100% + var(--focus-rail-gap));
+  }
+
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolGroup { flex-direction: column; }
+
+  .learningFocus :is(.pageShell, .atomicMain, .reviewMain):has(.questionWorkspace:not(.whiteboardOpen) > .questionToolRail) {
+    max-inline-size: min(var(--focus-reader-width),
+      calc(100% - 2 * max(0px, var(--focus-rail-width) + var(--focus-rail-gap) - var(--focus-gutter))));
+  }
+
+  .learningFocus .passageWorkspace:has(> .passageQuestionPane) > :is(.passageQuestionPane, form, .questionInteraction) {
+    height: clamp(360px, calc(100dvh - var(--site-header-height) - 2 * var(--focus-gutter) - 135px), 940px);
+  }
+}
+
+@media (width < 1000px) {
+  .learningFocus .questionWorkspace:not(.whiteboardOpen):has(> .questionToolRail) { display: flex; flex-direction: column; }
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail {
+    order: -1;
+    align-self: end;
+    inline-size: auto;
+    max-inline-size: 100%;
+    margin-block-end: 8px;
+  }
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolRow:not([data-calculator-open]) .questionTools {
+    flex-direction: row;
+    align-items: center;
+  }
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolRow:not([data-calculator-open]) .questionToolGroups {
+    flex-flow: row wrap;
+    min-inline-size: 0;
+    scrollbar-gutter: auto;
+  }
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolRow:not([data-calculator-open]) .questionToolGroup {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolRow:not([data-calculator-open]) .toolbarMarker { margin: 4px; }
+}
+
+@media (width < 1100px) {
+  body.learningFocus:has(.questionCalculator[open]) { --focus-dock-offset: min(72dvh, calc(100dvh - 150px)); }
+}
+
+@media (min-width: 1100px) {
+  .learningFocus:has(.questionCalculator[open]) .focusToolbar { margin-inline-end: calc(-1 * (var(--calculator-width) + 24px)); }
 }
 
 @media print { .focusToolbar { display: none; } }
