@@ -78,6 +78,7 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
 .progressSegment.completed { background: var(--ma-blue); }
 .progressSegment.in_progress, .progressSegment.paused { background: var(--lesson-progress); }
 .lessonToolbar { display: flex; justify-content: flex-end; align-items: center; margin: 0 0 17px; }
+.topicBodyFrame { display: block; width: 100%; min-height: min(65vh, 46rem); border: 0; margin-block: .5rem 1rem; }
 /* Hallmark · question tools · existing learning palette.
  * Pre-emit critique: P4 H5 E4 S5 R5 V4. */
 .pageShell:has(.questionToolRail) { max-width: 948px; }
