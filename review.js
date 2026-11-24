@@ -1,15 +1,15 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=06a0f801bfc16166';
-import {attachFormulaEditing} from './formula-input.js?v=06a0f801bfc16166';
-import {setQuestionTools} from './question-tools.js?v=06a0f801bfc16166';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=06a0f801bfc16166';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=06a0f801bfc16166';
-import {mountAnswerConversion} from './answer-conversion.js?v=06a0f801bfc16166';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=06a0f801bfc16166';
-import {reportableContent} from './content-report.js?v=06a0f801bfc16166';
-import {createLearningCache} from './learning-cache.js?v=06a0f801bfc16166';
-import {enhanceTopicContent} from './topic-content.js?v=06a0f801bfc16166';
-import {practiceHint} from './beginner-hints.js?v=06a0f801bfc16166';
-import {questionWhiteboard} from './whiteboard-answer.js?v=06a0f801bfc16166';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=a7d489286149768a';
+import {attachFormulaEditing} from './formula-input.js?v=a7d489286149768a';
+import {setQuestionTools} from './question-tools.js?v=a7d489286149768a';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=a7d489286149768a';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a7d489286149768a';
+import {mountAnswerConversion} from './answer-conversion.js?v=a7d489286149768a';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=a7d489286149768a';
+import {reportableContent} from './content-report.js?v=a7d489286149768a';
+import {createLearningCache} from './learning-cache.js?v=a7d489286149768a';
+import {enhanceTopicContent} from './topic-content.js?v=a7d489286149768a';
+import {practiceHint} from './beginner-hints.js?v=a7d489286149768a';
+import {questionWhiteboard} from './whiteboard-answer.js?v=a7d489286149768a';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
