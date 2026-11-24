@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=aa281f8b7310cbd6';
+import {t} from './i18n.js?v=67f23779c47825ad';
 
 const blocks = new WeakMap();
 const helpBlocks = new WeakMap();

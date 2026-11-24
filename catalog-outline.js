@@ -1,4 +1,4 @@
-import {createOutlineGroup} from './task-tree.js?v=aa281f8b7310cbd6';
+import {createOutlineGroup} from './task-tree.js?v=67f23779c47825ad';
 
 // Selection and navigation are views of the existing course/bank tree. They
 // never create synthetic courses or change the ownership of learning records.

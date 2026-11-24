@@ -18,9 +18,12 @@ async function recognize(png, request, language, fields) {
   return request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, language, ...fields}});
 }
 
-export function questionWhiteboard({key, editable, current, submit, request, question, language, activePart}) {
+export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart, standalone = false}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const ocrLanguage = language === 'en' ? 'en' : 'zh';
+  const options = {key, editable, standalone, isCurrent: current,
+    recognizeSelection: png => recognize(png, request, ocrLanguage, {purpose: 'expression'})};
+  if (!canSubmit) return options;
   const content = document.createElement('template');
   content.innerHTML = [question.html, activePart?.html].filter(Boolean).join('<br>');
   for (const element of content.content.querySelectorAll('script,style,template,[hidden],[inert],[aria-hidden="true"]')) element.remove();
@@ -36,8 +39,7 @@ export function questionWhiteboard({key, editable, current, submit, request, que
   const text = [...[content.content.textContent || question.question || '', question.constraints || ''].join('\n').trim()]
     .slice(0, 7000).join('').toWellFormed();
   return {
-    key, editable, isCurrent: current,
-    recognizeSelection: png => recognize(png, request, ocrLanguage, {purpose: 'expression'}),
+    ...options,
     submit: async png => {
       if (!current()) return '';
       const result = await recognize(png, request, ocrLanguage, {question: text});
