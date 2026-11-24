@@ -1,7 +1,7 @@
-import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=2469085234b24522';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=2469085234b24522';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=2469085234b24522';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=2469085234b24522';
+import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=6472887ae33cd079';
+import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=6472887ae33cd079';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=6472887ae33cd079';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=6472887ae33cd079';
 
 const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v3/whiteboard.html';
 const boards = new WeakMap();
@@ -137,7 +137,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     resize({ArrowLeft: share - 2, ArrowRight: share + 2, Home: 30, End: 70}[event.key]);
   });
   resize(share);
-  control(header, '交换位置', 'Swap sides', () => {
+  if (!options.standalone) control(header, '交换位置', 'Swap sides', () => {
     swapped = !swapped;
     workspace.classList.toggle('whiteboardFirst', swapped);
     resize(100 - share);
@@ -160,7 +160,9 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       if (!closed) refresh();
     }
   });
+  folder.hidden = options.standalone;
   const submit = control(header, '提交', 'Submit', submitBoard, 'primaryButton');
+  submit.classList.add('whiteboardSubmit');
   const dismiss = control(header, '收起', 'Close', () => toggle());
 
   const math = node('div', 'whiteboardMath');
@@ -261,7 +263,8 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   if (stores || evaluates) math.append(selectionTools);
   math.append(result);
   panel.append(header, frame, math, status);
-  workspace.append(divider, panel);
+  if (!options.standalone) workspace.append(divider);
+  workspace.append(panel);
   show(true);
 
   function selectionChanged({id, count}) {
@@ -425,7 +428,6 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   function refresh() {
     for (const control of math.querySelectorAll('button, input')) control.disabled = busy || !ready || !state.options.editable;
     submit.disabled = busy || !ready || !state.options.submit || !state.options.editable;
-    submit.hidden = !state.options.submit;
     folder.disabled = busy || !ready;
     dismiss.disabled = busy;
     if (ready && !busy) void port.send('lock', !state.options.editable).catch(() => {});
@@ -459,7 +461,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       }
     }
     status.textContent = imageMissing ? local('已恢复笔迹，原归档的 PNG 文件已缺失。', 'Work restored. The original PNG is missing.')
-      : root ? '' : local('选择本机归档目录后即可保存白板。', 'Choose a local archive folder to save whiteboards.');
+      : root || options.standalone ? '' : local('选择本机归档目录后即可保存白板。', 'Choose a local archive folder to save whiteboards.');
   }
 
   async function submitBoard() {
@@ -478,6 +480,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
         status.textContent = local('请先选择并授权本机归档目录。', 'Choose and authorize a local archive folder first.');
         return;
       }
+      if (closed || !state.options.submit || !current.isCurrent()) return;
       await port.send('lock', true);
       const snapshot = await port.send('snapshot');
       session.whiteboardScene = snapshot.scene;
@@ -487,7 +490,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       }
       await saveWhiteboard(root, current.key, snapshot, session.memory);
       hydrated = true;
-      if (closed || !current.isCurrent()) return;
+      if (closed || !state.options.submit || !current.isCurrent()) return;
       status.textContent = local('已保存白板，正在识别并判题…', 'Board saved. Reading and grading your work…');
       status.textContent = await current.submit(snapshot.png) || '';
     } catch (error) { status.textContent = error.message || ioError(); }
@@ -520,6 +523,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     if (closed) return;
     ready = true;
     refresh();
+    if (options.standalone && shown && document.activeElement === launcher) expression.focus({preventScroll: true});
   }).catch(() => {
     if (closed) return;
     loadFailed = true;

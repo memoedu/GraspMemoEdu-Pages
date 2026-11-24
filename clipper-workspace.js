@@ -1,5 +1,5 @@
-import {clipText as tx, openClipperPopup} from './clipper.js?v=2469085234b24522';
-import {mountFloating, replayRecording} from './clipper-host.js?v=2469085234b24522';
+import {clipText as tx, openClipperPopup} from './clipper.js?v=6472887ae33cd079';
+import {mountFloating, replayRecording} from './clipper-host.js?v=6472887ae33cd079';
 
 const title = () => tx('零碎知识简藏', 'Knowledge Clipper');
 const toolName = {
