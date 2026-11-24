@@ -1,11 +1,20 @@
-import {calculate, storedExpression} from './calculator-engine.js?v=1f6616389b6747b9';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=1f6616389b6747b9';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=1f6616389b6747b9';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=1f6616389b6747b9';
+import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=41fbccf5f0034dcf';
+import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=41fbccf5f0034dcf';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=41fbccf5f0034dcf';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=41fbccf5f0034dcf';
 
-const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v2/whiteboard.html';
+const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v3/whiteboard.html';
 const boards = new WeakMap();
 const work = new Map();
+const casPreference = 'graspmemoedu:whiteboard-cas';
+
+export function whiteboardCasEnabled() {
+  try { return localStorage.getItem(casPreference) !== 'off'; } catch { return true; }
+}
+
+export function setWhiteboardCasEnabled(enabled) {
+  try { localStorage.setItem(casPreference, enabled ? 'on' : 'off'); } catch { /* Keep storage failures local to this preference. */ }
+}
 
 export function questionToolSession(key) {
   if (key && work.has(key)) return work.get(key);
@@ -31,7 +40,7 @@ function node(tag, className, text) {
   return element;
 }
 
-function bridge(frame) {
+function bridge(frame, onSelection) {
   const channel = new MessageChannel();
   const pending = new Map();
   let sequence = 0;
@@ -44,6 +53,7 @@ function bridge(frame) {
   }, {once: true});
   channel.port1.onmessage = ({data}) => {
     if (data?.ready === 1) { clearTimeout(timeout); resolveReady(); }
+    if (data?.selection) onSelection(data.selection);
     const task = pending.get(data?.id);
     if (!task) return;
     pending.delete(data.id);
@@ -83,7 +93,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   frame.title = local('批注画布', 'Annotation canvas');
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
   frame.referrerPolicy = 'no-referrer';
-  const port = bridge(frame);
+  const port = bridge(frame, selectionChanged);
   frame.src = editorUrl + (english ? '?lang=en' : '');
   const divider = node('div', 'whiteboardDivider');
   divider.tabIndex = 0;
@@ -97,6 +107,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   const ioError = () => local('无法读写白板。请检查目录授权或重试。', 'Could not access the whiteboard. Check folder access or try again.');
   const loading = local('正在打开白板…', 'Opening whiteboard…');
   let ready = false, loadFailed = false, busy = false, closed = false, shown = true, hydrated = false, share = 55, swapped = false;
+  let selected, identified, selectionBusy = false, voiceSubstitute = false;
   const state = {options, dispose, toggle, refresh};
   boards.set(workspace, state);
 
@@ -180,13 +191,32 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   variable.setAttribute('aria-label', local('变量名', 'Variable name'));
   const stores = permitsKey(question.calculate, 'memory_registers');
   const evaluates = permitsKey(question.calculate, 'evaluate');
-  function operand() {
-    const start = expression.selectionStart ?? 0;
-    const end = expression.selectionEnd ?? start;
-    return {start, end, value: (start === end ? expression.value : expression.value.slice(start, end)).trim()};
+  function operand(field = expression) {
+    const start = field.selectionStart ?? 0;
+    const end = field.selectionEnd ?? start;
+    return {start, end, value: (start === end ? field.value : field.value.slice(start, end)).trim()};
   }
   const result = node('output');
   result.setAttribute('aria-live', 'polite');
+  const showMemory = fallback => {
+    result.textContent = [...session.memory].map(([key, entry]) => key + ' = ' + entry.text).join(' · ') || fallback || '';
+  };
+  async function calculateOperand(value, register, selectionArithmetic = false) {
+    const memory = Object.fromEntries([...session.memory].map(([key, entry]) => [key, entry.value]));
+    try {
+      return await calculate({config: question.calculate, module: 'expression', operation: 'evaluate',
+        input: {expression: value}, memory, selectionArithmetic});
+    } catch (error) {
+      if (!register) throw error;
+      return {text: value, symbolic: await storedExpression(value, question.calculate, register, memory)};
+    }
+  }
+  function remember(name, calculation) {
+    const value = calculation.numeric ?? calculation.complex ?? calculation.array ?? calculation.symbolic;
+    if (value == null) throw Error('register');
+    session.memory.set(name, {value, text: calculation.text});
+    showMemory();
+  }
   async function evaluate(store = false) {
     const part = operand();
     const original = expression.value;
@@ -197,38 +227,184 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       return;
     }
     try {
-      const memory = Object.fromEntries([...session.memory].map(([key, entry]) => [key, entry.value]));
-      let calculated;
-      try {
-        calculated = await calculate({config: question.calculate, module: 'expression', operation: 'evaluate',
-          input: {expression: part.value}, memory});
-      } catch (error) {
-        if (!store) throw error;
-        calculated = {text: part.value, symbolic: await storedExpression(part.value, question.calculate, name, memory)};
-      }
+      const calculated = await calculateOperand(part.value, store ? name : null);
       if (closed || busy || expression.value !== original) return;
       if (store) {
-        const value = calculated.numeric ?? calculated.complex ?? calculated.array ?? calculated.symbolic;
-        if (value == null) throw Error('register');
-        session.memory.set(name, {value, text: calculated.text});
+        remember(name, calculated);
         if (part.start !== part.end) {
           expression.setRangeText(name, part.start, part.end, 'end');
           expression.dispatchEvent(new Event('input'));
         }
       } else await port.send('insert', part.value + ' = ' + calculated.text);
-      result.textContent = [...session.memory].map(([key, entry]) => key + ' = ' + entry.text).join(' · ') || calculated.text;
+      showMemory(calculated.text);
     } catch { result.textContent = local('无法计算或储存这段表达式。', 'This expression could not be evaluated or stored.'); }
   }
-  if (evaluates) control(math, '计算', 'Evaluate', () => evaluate());
+  const evaluateButton = evaluates && control(math, '计算', 'Evaluate', () => selected === undefined ? evaluate() : evaluateSelection());
+  const manualStore = stores && control(math, '储存／换元', 'Store / substitute', () => evaluate(true));
+  const selectionTools = node('div', 'whiteboardSelection');
+  selectionTools.hidden = true;
+  const identify = control(selectionTools, '识别圈选公式', 'Recognize selected formula', recognizeSelected);
+  const selectedFormula = node('input');
+  selectedFormula.maxLength = 1024;
+  selectedFormula.setAttribute('aria-label', local('圈选公式识别结果', 'Recognized formula'));
+  selectedFormula.setAttribute('data-no-voice', '');
+  selectionTools.append(selectedFormula);
+  const storeSelection = control(selectionTools, '赋值', 'Assign', () => applySelection(false));
+  const substitute = control(selectionTools, '赋值并换元', 'Assign and replace', () => applySelection(true));
+  const selectionMessage = node('output');
+  selectionMessage.setAttribute('aria-live', 'polite');
+  selectionTools.append(selectionMessage);
   if (stores) {
     math.append(variable);
-    control(math, '储存／换元', 'Store / substitute', () => evaluate(true));
-    result.textContent = [...session.memory].map(([name, entry]) => name + ' = ' + entry.text).join(' · ');
+    showMemory();
   }
+  if (stores || evaluates) math.append(selectionTools);
   math.append(result);
   panel.append(header, frame, math, status);
   workspace.append(divider, panel);
   show(true);
+
+  function selectionChanged({id, count}) {
+    if (!(stores || evaluates) || !state.options.recognizeSelection || closed) return;
+    selected = count ? id : undefined;
+    identified = undefined;
+    selectedFormula.value = '';
+    voiceSubstitute = false;
+    selectionMessage.textContent = '';
+    refreshSelection();
+    refreshVoiceInput();
+  }
+
+  function refreshSelection() {
+    if (!(stores || evaluates)) return;
+    const active = selected !== undefined && state.options.editable;
+    const hasFormula = active && identified === selected;
+    const disabled = busy || selectionBusy || !ready;
+    selectionTools.hidden = !active;
+    if (manualStore) manualStore.hidden = active;
+    variable.toggleAttribute('data-whiteboard-voice-selection', active && stores);
+    identify.disabled = disabled || !active;
+    selectedFormula.hidden = !hasFormula;
+    storeSelection.hidden = substitute.hidden = !stores || !hasFormula;
+    selectedFormula.disabled = storeSelection.disabled = substitute.disabled = disabled || !hasFormula;
+    if (evaluateButton) evaluateButton.disabled ||= selectionBusy;
+    submit.disabled ||= selectionBusy;
+  }
+
+  async function recognizeSelected(focus = true) {
+    if (busy || selectionBusy || selected === undefined || !state.options.isCurrent()) return;
+    const id = selected;
+    selectionBusy = true;
+    selectionMessage.textContent = local('正在识别圈选公式…', 'Reading the selected formula…');
+    refresh();
+    let recognized = false;
+    try {
+      const snapshot = await port.send('snapshotSelection');
+      if (closed || selected !== id) return;
+      if (!snapshot?.png || snapshot.id !== id) throw Error(local('请重新圈选一段可见公式。', 'Select a visible formula again.'));
+      const response = await state.options.recognizeSelection(snapshot.png);
+      if (closed || selected !== id || !state.options.isCurrent()) return;
+      if (response.status !== 'ready' || typeof response.answer !== 'string' || !response.answer.trim()) {
+        throw Error(response.feedback || local('未识别到清晰公式。', 'No clear formula was recognized.'));
+      }
+      selectedFormula.value = response.answer;
+      identified = id;
+      selectionMessage.textContent = voiceSubstitute ? local('核对公式后，按 Enter 确认赋值并换元。', 'Check the formula, then press Enter to assign and replace.') :
+        local('核对公式后，输入或读出变量名。', 'Check the formula, then type or say the variable name.');
+      recognized = true;
+    } catch (error) {
+      if (!closed && selected === id) selectionMessage.textContent = error.message || ioError();
+    } finally {
+      selectionBusy = false;
+      if (!closed) refresh();
+    }
+    if (recognized && focus && stores && shown && selected === id && !voiceFieldPending(variable)) {
+      variable.focus();
+      variable.select();
+    }
+  }
+
+  async function evaluateSelection() {
+    if (busy || selectionBusy || selected === undefined || !state.options.isCurrent()) return;
+    const id = selected;
+    if (identified !== id) await recognizeSelected(false);
+    if (closed || selected !== id || identified !== id || !state.options.isCurrent()) return;
+    const part = operand(selectedFormula);
+    selectionBusy = true;
+    refresh();
+    try {
+      const value = await calculateSelectedFormula({expression: part.value, config: question.calculate,
+        cas: whiteboardCasEnabled(), memory: Object.fromEntries([...session.memory].map(([name, entry]) => [name, entry.value]))});
+      if (closed || selected !== id || !state.options.isCurrent()) return;
+      selectionMessage.textContent = part.value + ' = ' + value.text;
+      showMemory(value.text);
+    } catch (error) {
+      if (!closed && selected === id) selectionMessage.textContent = error.code === 'expression_required' ?
+        local('请选择等式或不等式中要计算的一段。', 'Select the part of the equation or inequality to evaluate.') :
+        local('无法计算，请核对识别结果和题目的计算器设置。', 'Check the recognized formula and question calculator settings.');
+    } finally {
+      selectionBusy = false;
+      if (!closed) refresh();
+    }
+  }
+
+  async function applySelection(replace) {
+    if (busy || selectionBusy || selected === undefined || identified !== selected || !state.options.isCurrent()) return;
+    const id = selected;
+    const name = normalizeVariableName(variable.value);
+    const original = selectedFormula.value;
+    const part = operand(selectedFormula);
+    if (!assignableVariable(name) || !part.value || /[=<>≤≥≠]/u.test(part.value)) {
+      selectionMessage.textContent = local('请输入变量名。识别结果含等号或不等号时，请选中其中一段表达式。',
+        'Enter a variable name. For an equation or inequality, select the expression to store.');
+      return;
+    }
+    selectionBusy = true;
+    refresh();
+    try {
+      const calculation = await calculateOperand(part.value, name, true);
+      if (closed || selected !== id || !state.options.isCurrent()) return;
+      if ((calculation.numeric ?? calculation.complex ?? calculation.array ?? calculation.symbolic) == null) throw Error('register');
+      if (replace) {
+        const text = part.start === part.end ? name : original.slice(0, part.start) + name + original.slice(part.end);
+        if (!await port.send('replaceSelection', {id, text})) {
+          throw Error(local('选区已变化或公式过长，请重新圈选。', 'The selection changed or the formula is too long. Select it again.'));
+        }
+      }
+      remember(name, calculation);
+      if (replace) status.textContent = local('已换元，可在画布撤销。', 'Replaced on the board. Use canvas undo to revert.');
+      else selectionMessage.textContent = local('已赋值。', 'Assigned.');
+    } catch (error) {
+      if (!closed && selected === id) selectionMessage.textContent = error.message === 'register' ?
+        local('无法储存这段表达式。请核对识别结果。', 'Check the recognized expression before assigning.') :
+        local('无法完成赋值或换元，请核对表达式和圈选范围。', 'Check the expression and selection before assigning or replacing.');
+    } finally {
+      selectionBusy = false;
+      if (!closed) refresh();
+    }
+  }
+
+  variable.addEventListener('whiteboard-dictation', ({detail}) => {
+    if (selected === undefined) return;
+    const spoken = detail.trim().replace(/[。.!！?？]+$/u, '');
+    const command = spoken.match(/^(赋值给|设为|换元为|替换成)\s*([A-Za-z][A-Za-z0-9_]*|\p{Script=Greek})$/u) ||
+      spoken.match(/^(用)\s*([A-Za-z][A-Za-z0-9_]*|\p{Script=Greek})\s*换元$/u);
+    if (command) {
+      voiceSubstitute = ['换元为', '替换成', '用'].includes(command[1]);
+      variable.value = command[2];
+    } else if (/^([A-Za-z][A-Za-z0-9_]*|\p{Script=Greek})$/u.test(spoken)) {
+      variable.value = spoken;
+    } else return;
+    if (identified !== selected) void recognizeSelected();
+    else selectionMessage.textContent = voiceSubstitute ? local('按 Enter 确认赋值并换元。', 'Press Enter to assign and replace.') :
+      local('按 Enter 确认赋值。', 'Press Enter to assign.');
+  });
+  variable.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || event.isComposing || selected === undefined) return;
+    event.preventDefault();
+    if (identified === selected) void applySelection(voiceSubstitute);
+    else void recognizeSelected();
+  });
 
   function show(value) {
     shown = value;
@@ -253,6 +429,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     folder.disabled = busy || !ready;
     dismiss.disabled = busy;
     if (ready && !busy) void port.send('lock', !state.options.editable).catch(() => {});
+    refreshSelection();
     refreshVoiceInput();
   }
 
@@ -287,7 +464,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
 
   async function submitBoard() {
     if (busy || !ready || !state.options.editable || !state.options.submit) return;
-    if (voiceFieldPending(expression)) {
+    if (selectionBusy || voiceFieldPending(expression) || voiceFieldPending(variable)) {
       status.textContent = local('请先结束录音并等待转写完成。', 'Stop recording and wait for the transcript before submitting.');
       return;
     }

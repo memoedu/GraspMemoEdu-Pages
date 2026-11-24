@@ -34,6 +34,10 @@
   font: inherit;
 }
 .whiteboardMath input[data-whiteboard-variable] { flex: 0 1 7em; }
+.whiteboardSelection { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 6px; }
+.whiteboardSelection[hidden] { display: none; }
+.whiteboardSelection [hidden] { display: none; }
+.whiteboardSelection button { white-space: nowrap; }
 .whiteboardMath output, .whiteboardStatus { flex: 1 0 100%; overflow-wrap: anywhere; }
 .whiteboardStatus { margin: 0; padding: 0 9px 8px; }
 .whiteboardStatus:empty { padding: 0; }

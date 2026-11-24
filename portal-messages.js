@@ -1,4 +1,5 @@
 export const portalMessages = {
+  'portal.whiteboardCas': ['白板圈选计算允许 CAS 代数化简', 'Allow CAS simplification for whiteboard selections'],
   'freeStudy.title': ['课程之外自由学习', 'Independent study'],
   'freeStudy.market': ['组件市场', 'Component marketplace'],
   'freeStudy.selectedSubjects': ['已选学科', 'Added subjects'],

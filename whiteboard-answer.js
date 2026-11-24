@@ -8,6 +8,16 @@ export function whiteboardText(value) {
   return fromWhiteboard(value) ? value.slice(prefix.length) : value;
 }
 
+async function recognize(png, request, language, fields) {
+  const image = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(png);
+  });
+  return request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, language, ...fields}});
+}
+
 export function questionWhiteboard({key, editable, current, submit, request, question, language, activePart}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const ocrLanguage = language === 'en' ? 'en' : 'zh';
@@ -27,15 +37,10 @@ export function questionWhiteboard({key, editable, current, submit, request, que
     .slice(0, 7000).join('').toWellFormed();
   return {
     key, editable, isCurrent: current,
+    recognizeSelection: png => recognize(png, request, ocrLanguage, {purpose: 'expression'}),
     submit: async png => {
-      const image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(reader.error);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(png);
-      });
       if (!current()) return '';
-      const result = await request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, question: text, language: ocrLanguage}});
+      const result = await recognize(png, request, ocrLanguage, {question: text});
       if (!current()) return '';
       if (result.status === 'insufficient') return result.feedback;
       if (result.status !== 'ready' || typeof result.answer !== 'string' || !result.answer.trim()) {

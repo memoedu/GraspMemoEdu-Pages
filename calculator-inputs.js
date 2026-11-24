@@ -1,5 +1,5 @@
-import {basedLogKey, constants, expressionCompletions, keypad, keyCompletions, permitsBasedLog, permitsConstant, permitsKey} from './calculator-policy.js?v=1f6616389b6747b9';
-import {setInputCompletions} from './autocomplete.js?v=1f6616389b6747b9';
+import {basedLogKey, constants, expressionCompletions, keypad, keyCompletions, permitsBasedLog, permitsConstant, permitsKey} from './calculator-policy.js?v=41fbccf5f0034dcf';
+import {setInputCompletions} from './autocomplete.js?v=41fbccf5f0034dcf';
 
 const element = (tag, cls = '', text) => {
   const node = document.createElement(tag);
