@@ -14,7 +14,7 @@ export function normalizeVariableName(name) {
 
 export function assignableVariable(name) {
   return /^[\p{L}][\p{L}\p{M}\p{Nd}_⁰¹²³⁴⁵⁶⁷⁸⁹]{0,23}$/u.test(name) && name !== 'π'
-    && !reserved.has(name) && !Object.hasOwn(constants, name) && !Object.hasOwn(functions, name);
+    && !reserved.has(name) && (!Object.hasOwn(constants, name) || name === 'G') && !Object.hasOwn(functions, name);
 }
 
 const baseModules = ['expression'];
@@ -37,6 +37,9 @@ export function permitsModule(config, module) {
 export function permitsKey(config, key, tier = 1) {
   return levels.indexOf(config?.level) >= tier && !config.disable_keys?.includes(key);
 }
+
+export const permitsCustomFunctions = config => permitsKey(config, 'memory_registers')
+  && permitsKey(config, 'define_function', 2) && permitsKey(config, 'open') && permitsKey(config, 'close');
 
 export const constants = {
   pi: ['π', '圆周率', 'Pi', Math.PI, ''],

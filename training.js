@@ -1,23 +1,23 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=3004f7d1851fde75';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=3004f7d1851fde75';
-import {answerReady, answerEmpty} from './question-input.js?v=3004f7d1851fde75';
-import {createLearningCache} from './learning-cache.js?v=3004f7d1851fde75';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=3004f7d1851fde75';
-import {helpableContent} from './content-report.js?v=3004f7d1851fde75';
-import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=3004f7d1851fde75';
-import {pointAssessment} from './point-assessment.js?v=3004f7d1851fde75';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=3004f7d1851fde75';
-import {learningHint} from './beginner-hints.js?v=3004f7d1851fde75';
+import {t, translateMessage, getLanguage} from './i18n.js?v=2469085234b24522';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=2469085234b24522';
+import {answerReady, answerEmpty} from './question-input.js?v=2469085234b24522';
+import {createLearningCache} from './learning-cache.js?v=2469085234b24522';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=2469085234b24522';
+import {helpableContent} from './content-report.js?v=2469085234b24522';
+import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=2469085234b24522';
+import {pointAssessment} from './point-assessment.js?v=2469085234b24522';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=2469085234b24522';
+import {learningHint} from './beginner-hints.js?v=2469085234b24522';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=3004f7d1851fde75';
-import {setQuestionTools} from './question-tools.js?v=3004f7d1851fde75';
-import {voiceAnswerPending} from './voice-input.js?v=3004f7d1851fde75';
-import {questionWhiteboard} from './whiteboard-answer.js?v=3004f7d1851fde75';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=2469085234b24522';
+import {setQuestionTools} from './question-tools.js?v=2469085234b24522';
+import {voiceAnswerPending} from './voice-input.js?v=2469085234b24522';
+import {questionWhiteboard} from './whiteboard-answer.js?v=2469085234b24522';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess} = bridge;
@@ -354,7 +354,6 @@ export function createTrainingView(bridge) {
     if (!embedded && !reviewCard && !group.questions.length && index === pages.length - 1 && bridge.completionAction) {
       const finish = link(t('training.back'), bankPath(group.bank_id), 'primaryButton');
       primary = bridge.completionAction(finish);
-      primary.classList.add('focusCompletionOnly');
     }
     readerNavigation(main, {previous: index > 0 ? pages[index - 1] : null, next: index >= 0 ? pages[index + 1] : null,
       idPrefix: 'training', primary, nextAsPrimary: pages[index]?.kind === 'introduction', extra,
