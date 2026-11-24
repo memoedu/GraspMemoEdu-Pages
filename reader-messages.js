@@ -1,4 +1,8 @@
 // Explicit reader UI catalog. Course text, question titles, answers, and judge feedback are excluded.
+const roundingHint = [
+  '除非题目考查精度，要求保留几位小数时，正确的精确值或多保留几位的正确近似值也可以。',
+  'If the question gives a number of decimal places, a correct exact value or a correct approximation with more decimal places is acceptable unless precision itself is being tested.',
+];
 export const readerMessages = {
   'focus.enter': ['专注模式', 'Focus Mode'],
   'focus.exit': ['退出专注模式', 'Exit Focus Mode'],
@@ -39,7 +43,7 @@ export const readerMessages = {
   "question.slotLabel": ["{side}，位置 {number}", "{side}, slot {number}"],
   "question.matchHint": ["拖动选项到对应框内，也可先点选项再点框。点击已填框可移回候选区。", "Drag an option to a slot, or select an option then a slot. Click a filled slot to return it to the bank."],
   "question.exactHint": ["复刻：请填写准确答案，仅忽略空白和允许的格式差异。", "Exact recall: enter the exact answer. Only whitespace and permitted formatting differences are ignored."],
-  "question.semanticHint": ["复现：按含义判断，可用自己的话表述。Ctrl + Enter 提交。", "Semantic recall: express the meaning in your own words. Ctrl + Enter to submit."],
+  "question.semanticHint": [`复现：按含义判断，可用自己的话表述。${roundingHint[0]} Ctrl + Enter 提交。`, `Semantic recall: express the meaning in your own words. ${roundingHint[1]} Ctrl + Enter to submit.`],
   "question.completeHint": ["完成所有小项后提交；整题全部正确才计为正确。", "Complete every item before submitting. The question is correct only when every item is correct."],
   "question.choiceHint": ["选择答案后提交。Ctrl + Enter 提交。", "Select your answer, then submit. Ctrl + Enter to submit."],
   "question.choiceRequired": ["请先选择答案。", "Select an answer first."],
@@ -474,8 +478,8 @@ export const readerMessages = {
     "Please enter an answer first."
   ],
   "只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。": [
-    "只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。Ctrl + Enter 提交。",
-    "Just describe the form of the correct answer clearly, in any wording—even with informal phrases mixed in. Press Ctrl + Enter to submit."
+    `只要描述清楚正确答案的形式即可，表达方式不限，夹杂口语也没关系。${roundingHint[0]} Ctrl + Enter 提交。`,
+    `Just describe the form of the correct answer clearly, in any wording—even with informal phrases mixed in. ${roundingHint[1]} Press Ctrl + Enter to submit.`
   ],
   "判题未完成，本次未计错": [
     "判题未完成，本次未计错",

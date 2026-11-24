@@ -1,4 +1,4 @@
-import {parsePlatformRoute} from './subjects.js?v=36d1108c892e3873';
+import {parsePlatformRoute} from './subjects.js?v=aa281f8b7310cbd6';
 
 const siteRoot = new URL('./', import.meta.url);
 const freeStudy = {id: 'free-study', directory: 'pwa-free-study/', home: '#/free-study', installLabel: 'pwa.installFreeStudy'};
