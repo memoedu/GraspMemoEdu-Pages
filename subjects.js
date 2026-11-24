@@ -1,4 +1,4 @@
-import { getLanguage, t } from './i18n.js?v=35eedf1f9f75af35';
+import { getLanguage, t } from './i18n.js?v=36d1108c892e3873';
 
 const element = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -193,7 +193,7 @@ export function applySubjectTheme(subject, { home = false } = {}) {
 }
 
 export function subjectLogo(subject) {
-  if (!subject) return new URL('./favicon.svg?v=35eedf1f9f75af35', import.meta.url).href;
+  if (!subject) return new URL('./favicon.svg?v=36d1108c892e3873', import.meta.url).href;
   const color = subjectPalette(subject.id)[subjectMarks[subject.id] ? '--link-color' : '--ma-navy'];
   const mark = subjectMarks[subject.id]
     ? '<g stroke="' + color + '" color="' + color + '" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + subjectMarks[subject.id] + '</g>'

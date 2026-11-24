@@ -1,11 +1,12 @@
-import {inheritVoiceContext} from './voice-context.js?v=35eedf1f9f75af35';
+import {inheritVoiceContext} from './voice-context.js?v=36d1108c892e3873';
 import {assignableVariable, basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
-  normalizeVariableName, permitsBasedLog, permitsConstant, permitsExtension, permitsKey, permitsModule,
-  scientificCategories} from './calculator-policy.js?v=35eedf1f9f75af35';
-import {calculateImmediate} from './calculator-engine.js?v=35eedf1f9f75af35';
-import {toolInputs} from './calculator-inputs.js?v=35eedf1f9f75af35';
-import {setInputCompletions} from './autocomplete.js?v=35eedf1f9f75af35';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=35eedf1f9f75af35';
+  normalizeVariableName, permitsBasedLog, permitsConstant, permitsCustomFunctions, permitsExtension, permitsKey, permitsModule,
+  scientificCategories} from './calculator-policy.js?v=36d1108c892e3873';
+import {calculateImmediate} from './calculator-engine.js?v=36d1108c892e3873';
+import {toolInputs} from './calculator-inputs.js?v=36d1108c892e3873';
+import {setInputCompletions} from './autocomplete.js?v=36d1108c892e3873';
+import {nativeFunctionCompletions} from './formula-catalog.js?v=36d1108c892e3873';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=36d1108c892e3873';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -93,6 +94,9 @@ const resultLabels = {
 const errors = {
   restricted: ['当前题目未开放此运算。', 'This operation is unavailable for this question.'],
   unassigned: ['请点击「变量值」，并填写原式中每个未储存变量的值。', 'Select Variable values and enter the missing values.'],
+  storage_required: ['请先给要更新的变量储存一个数值。', 'Store a value in the variable before updating it.'],
+  function_definition: ['请输入函数定义，例如 F = X + 1 或 F(X, Y) = X + Y。', 'Enter a function definition, such as F = X + 1 or F(X, Y) = X + Y.'],
+  function_arguments: ['请检查函数名与括号中的参数个数。', 'Check the function name and number of arguments.'],
   invalid: ['请检查输入格式及参数。', 'Check the input format and parameters.'],
   domain: ['输入超出定义域，或结果无有限数值。', 'Outside the domain or no finite result.'],
   limit: ['输入或计算规模超出范围。', 'The input or calculation is too large.'],
@@ -164,7 +168,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
   let answer = module === 'expression' ? session.expressionAnswer : null, transferring = false, edit = 0;
   let registerCandidate = answer ? session.expressionRegisterCandidate : null;
   const memory = session.memory;
-  let refreshMemory = () => {}, cancelMemory = () => false, remember = () => {};
+  let refreshMemory = () => {}, cancelMemory = () => false, remember = () => {}, finishDefinition = () => {};
   const workspace = launch.closest('.questionWorkspace');
   inheritVoiceContext(dialog, workspace);
   const target = () => workspace && answerTarget(workspace);
@@ -249,7 +253,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     working = false;
   }
   function startWorker() {
-    return worker ||= new Worker(new URL('./calculator-worker.js?v=35eedf1f9f75af35', import.meta.url), {type: 'module'});
+    return worker ||= new Worker(new URL('./calculator-worker.js?v=36d1108c892e3873', import.meta.url), {type: 'module'});
   }
   function warmOnInput(event, sourceModule) {
     if (warming || event.target.matches('.calculatorStorageName')) return;
@@ -306,12 +310,20 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       if (module === 'expression') {
         const numeric = result.numeric ?? result.complex ?? result.array;
         if (numeric !== undefined) session.previousAnswer = numeric;
-        if (result.register) remember(result.register, {value: numeric, text: result.text});
+        if (result.register) remember(result.register, {value: result.definition ?? numeric, text: result.text});
       }
       if (sourceModule === 'expression' || operation === 'simplify' || operation === 'modular_power') {
-        history.push({expression: input.expression, assignments: input.assignments, result: result.text, modulus: input.modulus});
+        history.push({expression: input.expression, assignments: input.assignments, defineFunction: input.defineFunction,
+          result: result.text, modulus: input.modulus});
         if (history.length > 12) history.shift();
         renderHistory();
+      }
+      if (result.definition) {
+        finishDefinition();
+        setAnswer(null);
+        output.dataset.state = 'success';
+        showText(result.text);
+        return;
       }
       show(result);
       if (control.closest('.calculatorExtensionForm')) {
@@ -324,7 +336,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     }
     if (sourceModule === 'expression' && operation === 'evaluate') {
       try {
-        const result = calculateImmediate(input.expression, config, registers, session.previousAnswer);
+        const result = calculateImmediate(input.expression, config, registers, session.previousAnswer, input.defineFunction);
         if (result) { complete(result); return; }
       } catch (error) { showError(error.code); return; }
     }
@@ -399,10 +411,17 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       input.value = saved.get(module) || '';
       input.placeholder = '2 × (3 + 4)';
       const memoryAllowed = permitsKey(config, 'memory_registers');
-      const candidates = term => memoryAllowed && (memoryRegisters.includes(term) || term && memory.has(normalizeVariableName(term))) ? []
-        : expressionCompletions(config, {previousAnswer: session.previousAnswer != null, extensions: true});
+      const functionsAllowed = permitsCustomFunctions(config);
+      const candidates = term => {
+        const builtins = expressionCompletions(config, {previousAnswer: session.previousAnswer != null, extensions: true});
+        if (!functionsAllowed) return builtins;
+        const names = nativeFunctionCompletions(term, memory);
+        const exactCase = /^[A-Z]/.test(term.replace(/^\\/, ''));
+        const all = exactCase ? [...names, ...builtins] : [...builtins, ...names];
+        return [...new Map(all.map(item => [item.value, item])).values()];
+      };
       setInputCompletions(input, candidates);
-      let focused = input, assign;
+      let focused = input, assign, defining = false;
       const display = create('div', 'calculatorDisplay');
       label(display, local('表达式', 'Expression'), input);
       const variableFields = create('div', 'calculatorAssignments');
@@ -412,7 +431,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       const currentAssignments = () => session.assignmentDraft?.expression === input.value
         ? session.assignmentDraft.values : null;
       function renderAssignments() {
-        const values = currentAssignments();
+        const values = defining ? null : currentAssignments();
         const unstored = [...(values ?? [])].filter(([name]) => !memory.has(name));
         variableFields.replaceChildren();
         variableFields.hidden = !unstored.length;
@@ -438,8 +457,8 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         const start = field.selectionStart ?? field.value.length;
         field.setRangeText(value, start, field.selectionEnd ?? start, 'end');
         if (selection) field.setSelectionRange(start + selection[0], start + selection[1]);
-        field.dispatchEvent(new Event('input'));
         field.focus();
+        field.dispatchEvent(new Event('input', {bubbles: true}));
       };
       const options = create('div', 'calculatorOptions');
       const [logId, logLabel, logInsertion] = basedLogKey;
@@ -499,6 +518,28 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       const numericPad = create('div', 'calculatorNumericPad');
       numericPad.append(options);
       form.append(numericPad);
+      const definitionHint = create('div', 'calculatorDefinitionHint', 'F = X + 1 · F(X,Y) = X + Y');
+      definitionHint.id = 'calculatorDefinitionHint';
+      definitionHint.hidden = true;
+      display.append(definitionHint);
+      const define = button(local('定义函数', 'Define function'), () => {
+        cancelMemory();
+        invalidate();
+        setDefinition(!defining);
+        input.focus();
+      });
+      define.dataset.calculatorKey = 'define_function';
+      define.setAttribute('aria-pressed', 'false');
+      function setDefinition(enabled) {
+        defining = enabled && functionsAllowed;
+        define.setAttribute('aria-pressed', String(defining));
+        definitionHint.hidden = !defining;
+        if (defining) input.setAttribute('aria-describedby', definitionHint.id);
+        else input.removeAttribute('aria-describedby');
+        if (assign) assign.disabled = defining;
+        renderAssignments();
+      }
+      finishDefinition = () => setDefinition(false);
       let modulus, remainder, modularFields, modular;
       if (permitsModule(config, 'modular') && permitsKey(config, 'modular_power')) {
         modularFields = create('div', 'calculatorModular');
@@ -530,11 +571,11 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       for (const [key, name, insertion, minimum = 1] of keypad) {
         if (levels.indexOf(config.level) < minimum) continue;
         const action = key === 'evaluate' ? () => run(module, 'evaluate', {
-          expression: input.value, assignments: Object.fromEntries(currentAssignments() || []),
+          expression: input.value, assignments: Object.fromEntries(currentAssignments() || []), defineFunction: defining,
         }, equals) : () => {
           if (key === 'clear') {
             stop(); equals.disabled = !permitsKey(config, 'evaluate');
-            if (assign) assign.disabled = false;
+            setDefinition(false);
             setAnswer(null);
             const field = activeField();
             if (field === input) session.assignmentDraft = null;
@@ -577,19 +618,25 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         const functions = create('div', 'calculatorExtensionKeys');
         const worksheetSlot = create('div', 'calculatorExtensionForm');
         const category = create('select');
-        for (const [id, zh, en] of [['common', '常用函数', 'Common functions'], ...categories]) {
+        for (const [id, zh, en] of [['common', '一元函数', 'Unary functions'], ['multi', '多元函数', 'Multivariable functions'], ...categories]) {
           const option = create('option', '', local(zh, en)); option.value = id; category.append(option);
         }
         category.value = saved.get('scientific-category') || 'common';
-        if (categories.length) label(extra, local('类别', 'Category'), category);
+        if (!category.value) category.value = 'common';
+        label(extra, local('类别', 'Category'), category);
         function renderCategory() {
           saved.set('scientific-category', category.value);
           functions.replaceChildren(); worksheetSlot.replaceChildren();
-          if (category.value === 'common') {
-            for (const [key, name] of [['sinh', 'sinh'], ['cosh', 'cosh'], ['tanh', 'tanh'], ['cbrt', '∛'],
-              ['floor', 'floor'], ['ceil', 'ceil'], ['round', 'round']]) {
-              const extraKey = button(name, () => insert(key + '('), 'button', 'calculatorKey');
-              extraKey.disabled = !permitsKey(config, key, 2);
+          if (category.value === 'common' || category.value === 'multi') {
+            const specs = category.value === 'common'
+              ? [['sinh', 'sinh'], ['cosh', 'cosh'], ['tanh', 'tanh'], ['cbrt', '∛', 'cbrt'],
+                ['floor', 'floor'], ['ceil', 'ceil'], ['round', 'round']]
+              : [['combinations', 'nCr'], ['permutations', 'nPr'], ['log_base', 'log(x, b)', 'log'], ['round', 'round(x, n)', 'round']];
+            for (const [key, name, native = name] of specs) {
+              const extraKey = button(name, () => insert(native + '('), 'button', 'calculatorKey');
+              extraKey.disabled = !permitsKey(config, key, key === 'log_base' ? 1 : 2)
+                || !permitsKey(config, 'open') || !permitsKey(config, 'close')
+                || category.value === 'multi' && !permitsKey(config, 'comma');
               extraKey.dataset.calculatorKey = key;
               functions.append(extraKey);
             }
@@ -631,17 +678,15 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         const legend = create('span');
         const status = create('div', 'srOnly');
         status.setAttribute('role', 'status');
-        const notice = create('div', 'calculatorInputNotice');
-        notice.setAttribute('role', 'status');
         const letters = create('div', 'calculatorKeys calculatorRegisterKeys');
         const heading = create('div', 'calculatorRegisterHeading');
         const back = button(local('返回', 'Back'), () => cancelMemory());
         heading.append(legend, back);
         memoryPad.id = 'calculatorRegisterPad';
         memoryPad.hidden = true;
-        memoryPad.append(heading, letters, notice);
+        memoryPad.append(heading, letters);
         form.append(memoryPad, status);
-        let mode = '', pending;
+        let mode = '';
         const storageRow = create('div', 'calculatorStorageRow');
         const storageName = create('input', 'calculatorStorageName');
         storageName.type = 'text'; storageName.maxLength = 48; storageName.autocomplete = 'off';
@@ -650,22 +695,15 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         storageName.placeholder = 'α, x₁, v²';
         storageName.setAttribute('aria-label', local('储存变量名', 'Storage variable name'));
         const saveStorage = button(local('保存', 'Save'), storeNamed);
-        const cancelStorage = button(local('取消', 'Cancel'), () => {
-          if (runningControl === saveStorage) {
-            edit++;
-            stop();
-            showText('');
-            delete output.dataset.state;
-          }
-          storageRow.hidden = true;
-          openStorage.focus();
-        });
+        const cancelStorage = button(local('取消', 'Cancel'), () => cancelMemory());
         const openStorage = button(local('储存', 'Store'), () => {
           storageName.setCustomValidity('');
           storageName.value = '';
           storageRow.hidden = false;
+          openPad('store');
           storageName.focus();
         });
+        openStorage.setAttribute('aria-controls', memoryPad.id);
         const arrow = create('span', '', '→');
         arrow.setAttribute('aria-hidden', 'true');
         storageRow.append(arrow, storageName, saveStorage, cancelStorage);
@@ -682,9 +720,10 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           memory.set(name, entry);
           renderAssignments();
           status.textContent = local('已存入 ', 'Stored in ') + name;
-          const refocus = storageRow.contains(document.activeElement);
-          storageRow.hidden = true;
-          if (refocus) input.focus();
+          if (mode === 'store') {
+            closePad();
+            input.focus();
+          }
           refreshMemory();
         };
         function storeNamed() {
@@ -694,25 +733,21 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
             storageName.reportValidity();
             return;
           }
+          storeAs(name, saveStorage);
+        }
+        function storeAs(name, control) {
+          if (working) return;
           if (registerCandidate != null) {
             remember(name, {value: registerCandidate, text: output.textContent});
             return;
           }
           run(module, 'evaluate', {expression: name + '=' + input.value,
-            assignments: Object.fromEntries(currentAssignments() || [])}, saveStorage);
+            assignments: Object.fromEntries(currentAssignments() || [])}, control);
         }
         const copy = button(local('复制', 'Copy'), async () => {
           if (answer == null) return;
-          const snapshot = {value: registerCandidate, text: output.querySelector('dl') ? answer : output.textContent};
-          if (registerCandidate != null) {
-            pending = snapshot;
-            openPad('store');
-          }
-          try { await navigator.clipboard.writeText(snapshot.text); }
-          catch {
-            if (pending === snapshot) notice.textContent = local('剪贴板不可用，仍可储值。', 'Clipboard unavailable. You can still store the result.');
-            else status.textContent = local('剪贴板不可用。', 'Clipboard unavailable.');
-          }
+          try { await navigator.clipboard.writeText(output.querySelector('dl') ? answer : output.textContent); }
+          catch { status.textContent = local('剪贴板不可用。', 'Clipboard unavailable.'); }
         });
         const recall = button('RCL', () => openPad('recall'));
         copy.title = local('复制结果', 'Copy result');
@@ -722,43 +757,50 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
         headerTools.append(copy);
         if (simplify) headerTools.append(simplify);
         headerTools.append(recall);
-        for (const key of [copy, recall]) key.setAttribute('aria-controls', memoryPad.id);
+        recall.setAttribute('aria-controls', memoryPad.id);
         refreshMemory = () => {
           copy.disabled = answer == null || working;
           recall.disabled = !memory.size || working;
-          copy.setAttribute('aria-expanded', String(mode === 'store'));
           recall.setAttribute('aria-expanded', String(mode === 'recall'));
+          openStorage.setAttribute('aria-expanded', String(mode === 'store'));
         };
         cancelMemory = () => {
-          if (!storageRow.hidden) { cancelStorage.click(); return true; }
           if (!mode) return false;
-          const trigger = mode === 'store' ? copy : recall;
-          mode = ''; pending = null;
-          memoryPad.hidden = true;
-          numericPad.hidden = false;
-          refreshMemory();
+          const trigger = mode === 'store' ? openStorage : recall;
+          if (runningControl && (memoryPad.contains(runningControl) || storageRow.contains(runningControl))) {
+            edit++;
+            stop();
+            showText('');
+            delete output.dataset.state;
+          }
+          closePad();
           (trigger.disabled ? input : trigger).focus();
           return true;
         };
+        function closePad() {
+          mode = '';
+          storageRow.hidden = true;
+          memoryPad.hidden = true;
+          numericPad.hidden = false;
+          refreshMemory();
+        }
         function openPad(nextMode) {
           mode = nextMode;
-          notice.textContent = '';
-          if (mode === 'recall') pending = null;
-          legend.textContent = mode === 'store' ? local('将结果存入字母', 'Store result in a letter') : local('调用已存字母', 'Recall a stored letter');
-          const visible = mode === 'store' ? memoryRegisters : [...new Set([...memoryRegisters, ...memory.keys()])];
+          if (mode !== 'store') storageRow.hidden = true;
+          const recalling = mode === 'recall';
+          legend.textContent = recalling ? local('调用已存字母', 'Recall a stored letter') : local('将结果存入字母', 'Store result in a letter');
+          const visible = recalling ? [...new Set([...memoryRegisters, ...memory.keys()])] : memoryRegisters;
           letters.replaceChildren(...visible.map(letter => {
             const entry = memory.get(letter);
             const key = button(letter, () => {
-              if (mode === 'store') {
-                remember(letter, pending);
+              if (mode === 'store') storeAs(letter, key);
+              else {
                 cancelMemory();
-              } else {
-                cancelMemory();
-                insert(letter);
+                insert(letter + (Array.isArray(entry.value?.parameters) ? '(' : ''));
               }
             }, 'button', 'calculatorKey');
-            key.disabled = mode === 'recall' && !entry;
-            key.setAttribute('aria-label', (mode === 'store' ? local('存入 ', 'Store in ') : local('调用 ', 'Recall ')) + letter);
+            key.disabled = recalling && !entry;
+            key.setAttribute('aria-label', (recalling ? local('调用 ', 'Recall ') : local('存入 ', 'Store in ')) + letter);
             if (entry) {
               key.append(create('span', 'calculatorRegisterValue', entry.text));
               key.setAttribute('aria-description', entry.text);
@@ -768,14 +810,15 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
           numericPad.hidden = true;
           memoryPad.hidden = false;
           refreshMemory();
-          (letters.querySelector('button:not(:disabled)') || back).focus();
+          if (mode !== 'store') (letters.querySelector('button:not(:disabled)') || back).focus();
         }
         refreshMemory();
       } else if (simplify) headerTools.append(simplify);
       headerTools.append(closeButton); headline.append(headerTools);
-      if (assign) {
+      if (assign || functionsAllowed) {
         const variableActions = create('div', 'calculatorVariableActions');
-        variableActions.append(assign);
+        if (functionsAllowed) variableActions.append(define);
+        if (assign) variableActions.append(assign);
         form.append(variableActions);
       }
       // Adapted from Calc's renderHistory (Matt, MIT), scoped to the current question.
@@ -784,11 +827,12 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
       historyPane.append(create('summary', '', local('本题计算记录', 'Calculation history')), entries);
       renderHistory = () => {
         historyPane.hidden = history.length === 0;
-        entries.replaceChildren(...history.slice().reverse().map(({expression, assignments, result, modulus: originalModulus}) => {
+        entries.replaceChildren(...history.slice().reverse().map(({expression, assignments, defineFunction, result, modulus: originalModulus}) => {
           const row = create('li');
           const values = Object.entries(assignments || {});
           const reuse = button('', () => {
             session.assignmentDraft = values.length ? {expression, values: new Map(values)} : null;
+            setDefinition(defineFunction);
             if (originalModulus && modulus) {
               modulus.value = originalModulus;
               modulus.dispatchEvent(new Event('input'));

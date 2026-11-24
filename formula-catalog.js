@@ -1,16 +1,17 @@
-import {expressionCompletions} from './calculator-policy.js?v=35eedf1f9f75af35';
+import {expressionCompletions} from './calculator-policy.js?v=36d1108c892e3873';
 
-export const formulaToken = /(\\?[a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
+export const formulaToken = /(\\?[\p{L}_][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*|[+−*×/÷^!(),.π√=\-])$/iu;
 
 const functionTemplate = (name, head = name) => ({
   label: name, keys: [name, '\\' + name],
-  latex: head + '\\left(#?\\right)', sample: head + '()',
+  latex: head + '\\left(#?\\right)', sample: head + '()', value: name + '(',
 });
 const template = (name, latex, sample = latex.replaceAll('#?', '\\square'), keys = [name, '\\' + name]) =>
   ({label: name, keys, latex, sample});
 
+const genericFunctions = ['f', 'g', 'h'].map(name => functionTemplate(name));
 const explicit = [
-  functionTemplate('f'), functionTemplate('g'), functionTemplate('h'),
+  ...genericFunctions,
   template('frac', '\\frac{#?}{#?}'), template('sqrt', '\\sqrt{#?}'),
   template('floor', '\\left\\lfloor#?\\right\\rfloor', '\\lfloor\\square\\rfloor'),
   template('ceil', '\\left\\lceil#?\\right\\rceil', '\\lceil\\square\\rceil'),
@@ -38,11 +39,22 @@ export function nativeFormulaSample(value) {
   return symbols[value] ?? operators[value] ?? (/^[a-z0-9]+$/i.test(value) ? value : '');
 }
 export function matchesCompletion(item, term) {
-  const prefix = term.toLowerCase();
+  const prefix = term.replace(/^\\/, '').toLowerCase();
   if (item.latex === term && term !== '!') return false;
   // Keep the spelled-out function available from "fa". Its postfix operator is keyed only by "!".
-  if (item.label === 'factorial' && prefix.replace(/^\\/, '').length < 2) return false;
-  return (item.keys || [item.value, item.label]).some(key => key.toLowerCase().startsWith(prefix));
+  if (item.label === 'factorial' && prefix.length < 2) return false;
+  return (item.keys || [item.value, item.label]).some(key => key.replace(/^\\/, '').toLowerCase().startsWith(prefix));
+}
+
+export function nativeFunctionCompletions(term, memory) {
+  const entries = [];
+  for (const [name, entry] of memory) {
+    if (Array.isArray(entry.value?.parameters)) entries.push(functionTemplate(name));
+  }
+  const name = term.replace(/^\\/, '');
+  const generic = genericFunctions.find(item => item.label === name.toLowerCase());
+  if (generic && !memory.has(name)) entries.push(name === generic.label ? generic : functionTemplate(name));
+  return entries;
 }
 const shared = expressionCompletions().flatMap(({label, value, keys}) => {
   if (value === 'log_' || special.has(label) || /^\d$/.test(value)) return [];
