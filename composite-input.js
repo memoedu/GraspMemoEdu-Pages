@@ -1,7 +1,7 @@
 // Hallmark · component: composite-answer · genre: editorial · theme: existing learning UI
 // States: default, hover, focus, active, disabled, loading (parent), error, success.
-import {optionUsesMath, prepareMathContent, setOptionContent} from './math-presentation.js?v=41fbccf5f0034dcf';
-import {attachLiteralAnswer} from './formula-input.js?v=41fbccf5f0034dcf';
+import {optionUsesMath, prepareMathContent, setOptionContent} from './math-presentation.js?v=3004f7d1851fde75';
+import {attachLiteralAnswer} from './formula-input.js?v=3004f7d1851fde75';
 
 const node = (tag, cls, text) => {
   const el = document.createElement(tag); el.className = cls;

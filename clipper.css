@@ -105,6 +105,13 @@ body.clipperWindow > .clipperWorkspace, .clipperDock.clipperExpanded {
 }
 .clipperButtons button, .clipperTabs button { white-space: nowrap; }
 .clipperPanels { flex: 1; overflow: auto; min-height: 0; }
+.clipperPanel.clipperSharedPanel { padding: 0; max-width: none; height: calc(100% - 2.4rem); min-height: 220px; }
+.clipperFeatureFrame { display: block; width: 100%; height: 100%; border: 0; }
+.clipperSettings { max-width: 50rem; }
+.clipperSetting { display: grid; grid-template-columns: minmax(10rem,1fr) minmax(0,1.3fr); align-items: start; gap: .8rem; margin: .5rem 0; }
+.clipperSetting input[type=checkbox] { justify-self: start; }
+.clipperSetting :is(textarea,input,select) { max-width: 100%; }
+@media (max-width: 550px) { .clipperSetting { grid-template-columns: 1fr; gap: .15rem; } }
 .clipperTabs {
   display: flex;
   gap: .25rem;
