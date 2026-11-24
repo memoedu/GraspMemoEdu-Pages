@@ -1,5 +1,5 @@
-import {presentationMathSource} from './math-presentation.js?v=a7d489286149768a';
-import {learningSelectionBlock} from './content-report.js?v=a7d489286149768a';
+import {presentationMathSource} from './math-presentation.js?v=dc07b85c3eb4a143';
+import {learningSelectionBlock} from './content-report.js?v=dc07b85c3eb4a143';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';

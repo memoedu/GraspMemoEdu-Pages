@@ -1,9 +1,8 @@
-import {setVoiceContext} from './voice-context.js?v=a7d489286149768a';
-import {getLanguage} from './i18n.js?v=a7d489286149768a';
-import {calculatorToolGroups} from './calculator.js?v=a7d489286149768a';
-import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=a7d489286149768a';
-import {questionWhiteboard} from './whiteboard-answer.js?v=a7d489286149768a';
-import {parsePlatformRoute} from './subjects.js?v=a7d489286149768a';
+import {setVoiceContext} from './voice-context.js?v=dc07b85c3eb4a143';
+import {getLanguage} from './i18n.js?v=dc07b85c3eb4a143';
+import {calculatorToolGroups} from './calculator.js?v=dc07b85c3eb4a143';
+import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=dc07b85c3eb4a143';
+import {questionWhiteboard} from './whiteboard-answer.js?v=dc07b85c3eb4a143';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -94,43 +93,12 @@ function toolButton({id, label, icon: path, open}, message, english, expanded = 
   return button;
 }
 
-export function installToolbars(host, voice, clipper, {request, getScope}) {
+export function installToolbars(host, voice, clipper) {
   const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
   const pageToolbar = createToolbar(label(), 'horizontal');
-  const message = document.createElement('div');
-  message.className = 'questionToolStatus';
-  message.setAttribute('role', 'status');
-  host.classList.add('questionWorkspace');
   host.append(pageToolbar);
-  pageToolbar.append(message);
-  const homeKey = () => {
-    const {path, subjectId} = parsePlatformRoute(location.hash);
-    const scope = getScope();
-    if (scope && (path === '/' && !subjectId || path === '/courses' && subjectId))
-      return JSON.stringify(['home-tools', scope]);
-  };
-  let modalToolbar, pageKey, pageLanguage, launchers = [];
+  let modalToolbar;
   const sync = () => {
-    const key = homeKey(), english = getLanguage() === 'en';
-    if (key !== pageKey || english !== pageLanguage) {
-      configureWhiteboard(host);
-      for (const button of launchers) button.remove();
-      message.textContent = '';
-      launchers = [];
-      pageKey = key;
-      pageLanguage = english;
-      if (key) {
-        const config = {level: 'scientific'};
-        const question = {calculate: config};
-        const session = questionToolSession(key);
-        const options = questionWhiteboard({key, question, editable: true, canSubmit: false, standalone: true,
-          current: () => homeKey() === key, request, language: getLanguage()});
-        const calculator = calculatorToolGroups(config, english, session)[0].tools.find(tool => tool.id === 'expression');
-        launchers = [whiteboardTool(() => host, question, options, session, english), calculator]
-          .map(tool => toolButton(tool, message, english));
-        message.before(...launchers);
-      }
-    }
     const modal = voice.hidden ? null : currentModal();
     if (modalToolbar && modalToolbar.parentElement !== modal) {
       modalToolbar.remove();
@@ -145,7 +113,7 @@ export function installToolbars(host, voice, clipper, {request, getScope}) {
     const questionToolbar = !hasPageTools ? null :
       [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
     const toolbar = modalToolbar || questionToolbar || pageToolbar;
-    const hidePageTools = !key && (!hasPageTools || toolbar !== pageToolbar);
+    const hidePageTools = !hasPageTools || toolbar !== pageToolbar;
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
     for (const button of [voice, clipper].filter(Boolean)) {
       if (button.parentElement === toolbar) continue;
@@ -154,7 +122,6 @@ export function installToolbars(host, voice, clipper, {request, getScope}) {
       if (previous) setTabStop(previous);
       setTabStop(toolbar);
     }
-    if (key) setTabStop(pageToolbar);
     if (pageToolbar.getAttribute('aria-label') !== label()) pageToolbar.setAttribute('aria-label', label());
     if (modalToolbar && modalToolbar.getAttribute('aria-label') !== label()) modalToolbar.setAttribute('aria-label', label());
   };
@@ -166,15 +133,22 @@ export function installToolbars(host, voice, clipper, {request, getScope}) {
     childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden'],
   });
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
-  addEventListener('hashchange', sync);
 }
 
-export function setQuestionTools(anchor, question, whiteboard) {
+export function setQuestionTools(anchor, question, whiteboard, topicBody) {
   toolbars.get(anchor)?.remove();
   toolbars.delete(anchor);
+  const language = getLanguage();
+  const reading = topicBody && !question?.question_id && !question?.card_id && !question?.interaction &&
+    !['question', 'example', 'practice'].includes(question?.kind);
+  if (topicBody) {
+    if (reading) question = {...question, calculate: question?.calculate ?? {level: 'scientific'}};
+    whiteboard ||= questionWhiteboard({...topicBody, key: JSON.stringify([topicBody.key, question.calculate]),
+      language, question: {}, editable: true, canSubmit: false});
+  }
   configureWhiteboard(anchor.parentElement, whiteboard);
   if (!anchor.parentNode || !question) return;
-  const english = getLanguage() === 'en';
+  const english = language === 'en';
   const session = questionToolSession(whiteboard?.key);
   const groups = calculatorToolGroups(question.calculate, english, session);
   if (whiteboard) {
@@ -184,10 +158,10 @@ export function setQuestionTools(anchor, question, whiteboard) {
   if (!groups.length) return;
   const rail = document.createElement('aside');
   rail.className = 'questionToolRail';
-  rail.setAttribute('aria-label', english ? 'Tools for this question' : '当前题目的工具');
+  rail.setAttribute('aria-label', reading ? (english ? 'Topic tools' : 'Topic 正文工具') : (english ? 'Tools for this question' : '当前题目的工具'));
   const row = document.createElement('div');
   row.className = 'questionToolRow';
-  const toolbar = createToolbar(english ? 'Question tools' : '题目工具', 'vertical');
+  const toolbar = createToolbar(reading ? (english ? 'Topic tools' : '正文工具') : (english ? 'Question tools' : '题目工具'), 'vertical');
   const groupList = document.createElement('div');
   groupList.className = 'questionToolGroups';
   const message = document.createElement('div');

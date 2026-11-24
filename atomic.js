@@ -1,21 +1,21 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=a7d489286149768a';
-import {attachFormulaEditing} from './formula-input.js?v=a7d489286149768a';
-import {setQuestionTools} from './question-tools.js?v=a7d489286149768a';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=a7d489286149768a';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=a7d489286149768a';
-import {mountAnswerConversion} from './answer-conversion.js?v=a7d489286149768a';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=a7d489286149768a';
-import {reportableContent} from './content-report.js?v=a7d489286149768a';
-import {createLearningCache} from './learning-cache.js?v=a7d489286149768a';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=a7d489286149768a';
-import {enhanceSourceContent} from './topic-content.js?v=a7d489286149768a';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=a7d489286149768a';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=a7d489286149768a';
-import {pointAssessment} from './point-assessment.js?v=a7d489286149768a';
-import {trainingAudio} from './training-audio.js?v=a7d489286149768a';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=a7d489286149768a';
-import {learningHint} from './beginner-hints.js?v=a7d489286149768a';
-import {questionWhiteboard, whiteboardText} from './whiteboard-answer.js?v=a7d489286149768a';
+import {t, translateMessage, getLanguage} from './i18n.js?v=dc07b85c3eb4a143';
+import {attachFormulaEditing} from './formula-input.js?v=dc07b85c3eb4a143';
+import {setQuestionTools} from './question-tools.js?v=dc07b85c3eb4a143';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=dc07b85c3eb4a143';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=dc07b85c3eb4a143';
+import {mountAnswerConversion} from './answer-conversion.js?v=dc07b85c3eb4a143';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=dc07b85c3eb4a143';
+import {reportableContent} from './content-report.js?v=dc07b85c3eb4a143';
+import {createLearningCache} from './learning-cache.js?v=dc07b85c3eb4a143';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=dc07b85c3eb4a143';
+import {enhanceSourceContent} from './topic-content.js?v=dc07b85c3eb4a143';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=dc07b85c3eb4a143';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=dc07b85c3eb4a143';
+import {pointAssessment} from './point-assessment.js?v=dc07b85c3eb4a143';
+import {trainingAudio} from './training-audio.js?v=dc07b85c3eb4a143';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=dc07b85c3eb4a143';
+import {learningHint} from './beginner-hints.js?v=dc07b85c3eb4a143';
+import {questionWhiteboard, whiteboardText} from './whiteboard-answer.js?v=dc07b85c3eb4a143';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -366,26 +366,33 @@ export function createAtomicView(bridge) {
     if (!answering) main.append(node('p', 'eyebrow', trainingTitle));
     main.append(node('h1', 'lessonTitle', answering ? trainingTitle : state.title), topicProgress(state.topic_progress));
     const status = node('p', 'fieldError', failure || ''); status.id = 'atomicNotice'; status.hidden = !failure; status.setAttribute('role', 'status'); main.append(status);
+    const ticket = epoch, revision = state.revision, stepId = state.active_step_id;
+    const viewing = () => active(ticket) && state.revision === revision;
+    const topicBody = state.mode !== 'review' ? {
+      key: JSON.stringify(['topic-body', bridge.getApiOrigin(), learner, topic]), current: viewing, request: bridge.request,
+    } : null;
+    const reading = topicBody ? node('div') : main;
+    if (topicBody) main.append(reading);
     const appendQuestion = (question, history) => {
       const card = renderQuestion(question, history);
       main.append(card);
-      const ticket = epoch, revision = state.revision, stepId = state.active_step_id;
-      const current = () => active(ticket) && !selected && !busy && !state.pending_submission_id && state.revision === revision &&
+      const current = () => viewing() && !selected && !busy && !state.pending_submission_id &&
         state.active_step_id === stepId && state.current?.phase === 'answer' && state.can_submit;
+      const canSubmit = !history && !question.revealed && current();
       const questionId = question.question_id || question.id;
       setQuestionTools(card, question, questionWhiteboard({
         key: questionId ? JSON.stringify([bridge.getApiOrigin(), learner, topic, questionId]) : null, question,
-        editable: !history && !question.revealed && current(),
-        current, language: getLanguage(), request: bridge.request,
+        editable: Boolean(topicBody) || canSubmit, canSubmit,
+        current: canSubmit || !topicBody ? current : viewing, language: getLanguage(), request: bridge.request,
         submit: answer => submit(null, null, answer),
-      }));
+      }), topicBody);
     };
     if (selected) {
       const previous = selected === 'introduction' ? null : state.history.find(r => r.id === selected && r.viewable);
       const section = state.unified_history?.find(item => item.id === selected);
-      if (selected === 'introduction' && state.introduction) main.append(...introductionContent(state.introduction));
+      if (selected === 'introduction' && state.introduction) reading.append(...introductionContent(state.introduction));
       else if (previous) appendQuestion(previous, true);
-      else if (section) main.append(node('h2', '', section.title), ...introductionContent(section, false));
+      else if (section) reading.append(node('h2', '', section.title), ...introductionContent(section, false));
       else selected = null;
       if (selected) {
         const back = button(t('atomic.backCurrent'), () => { selected = null; render(); });
@@ -394,17 +401,21 @@ export function createAtomicView(bridge) {
     }
     if (!selected) {
       if (state.phase === 'introduction') {
-        main.append(...introductionContent(state.introduction), node('p', 'atomicIntroPrompt', t('atomic.introPrompt')),
+        reading.append(...introductionContent(state.introduction), node('p', 'atomicIntroPrompt', t('atomic.introPrompt')),
           button(t('atomic.understood'), () => mutate('choose', {choice: 'learn'}), 'primaryButton'));
-      } else if (state.chunk) main.append(renderChunk(state.chunk));
+      } else if (state.chunk) reading.append(renderChunk(state.chunk));
       else if (state.current) appendQuestion(state.current);
       else if (state.phase === 'completed') {
-        main.append(node('p', 'atomicComplete', t(state.mode === 'review' ? 'atomic.reviewCompleted' : 'atomic.completed')));
+        reading.append(node('p', 'atomicComplete', t(state.mode === 'review' ? 'atomic.reviewCompleted' : 'atomic.completed')));
         const review = node('a', 'primaryButton', t('atomic.reviewTitle')); review.href = bridge.reviewHref();
-        main.append(!state.pause && bridge.completionAction ? bridge.completionAction(review) : review);
-      } else main.append(node('p', 'atomicWaiting', t('atomic.waiting')),
+        reading.append(!state.pause && bridge.completionAction ? bridge.completionAction(review) : review);
+      } else reading.append(node('p', 'atomicWaiting', t('atomic.waiting')),
         ...(state.next_available_at ? [node('p', '', t('atomic.availableAt', {time: bridge.formatDate(state.next_available_at)}))] : []),
         button(t('atomic.refresh'), () => mutate('continue')));
+    }
+    if (topicBody) {
+      if (reading.hasChildNodes()) setQuestionTools(reading, undefined, undefined, topicBody);
+      else reading.remove();
     }
     if (state.pause) main.append(node('p', 'atomicPaused', t('atomic.paused')));
     for (const control of main.querySelectorAll('button')) {
