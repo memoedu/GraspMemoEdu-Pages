@@ -1,31 +1,31 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=d338291713395108";
-import {attachFormulaEditing} from './formula-input.js?v=d338291713395108';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=d338291713395108';
-import { createReviewView } from "./review.js?v=d338291713395108";
-import { renderCourseGraph } from "./course-graph.js?v=d338291713395108";
-import {questionInput, choiceTypeField} from './question-input.js?v=d338291713395108';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=d338291713395108';
-import {enhanceTopicContent} from './topic-content.js?v=d338291713395108';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=d338291713395108';
-import {createCatalogPicker} from './catalog-picker.js?v=d338291713395108';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=d338291713395108';
-import {createAtomicView} from './atomic.js?v=d338291713395108';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=d338291713395108';
-import {sourceAttributions} from './memory-chunk.js?v=d338291713395108';
-import {createTrainingView} from './training.js?v=d338291713395108';
-import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=d338291713395108';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=d338291713395108";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=d78db3c9b6ac003a";
+import {attachFormulaEditing} from './formula-input.js?v=d78db3c9b6ac003a';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=d78db3c9b6ac003a';
+import { createReviewView } from "./review.js?v=d78db3c9b6ac003a";
+import { renderCourseGraph } from "./course-graph.js?v=d78db3c9b6ac003a";
+import {questionInput, choiceTypeField} from './question-input.js?v=d78db3c9b6ac003a';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=d78db3c9b6ac003a';
+import {enhanceTopicContent} from './topic-content.js?v=d78db3c9b6ac003a';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=d78db3c9b6ac003a';
+import {createCatalogPicker} from './catalog-picker.js?v=d78db3c9b6ac003a';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=d78db3c9b6ac003a';
+import {createAtomicView} from './atomic.js?v=d78db3c9b6ac003a';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=d78db3c9b6ac003a';
+import {sourceAttributions} from './memory-chunk.js?v=d78db3c9b6ac003a';
+import {createTrainingView} from './training.js?v=d78db3c9b6ac003a';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=d78db3c9b6ac003a';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=d78db3c9b6ac003a";
 
-import {createPaperView} from './review-papers.js?v=d338291713395108';
-import {createFreeStudyView} from './free-study.js?v=d338291713395108';
-import {createContextLibraryView} from './context-library.js?v=d338291713395108';
+import {createPaperView} from './review-papers.js?v=d78db3c9b6ac003a';
+import {createFreeStudyView} from './free-study.js?v=d78db3c9b6ac003a';
+import {createContextLibraryView} from './context-library.js?v=d78db3c9b6ac003a';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=d338291713395108';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=d338291713395108';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=d338291713395108';
-import {createStudentDashboard} from './student-dashboard.js?v=d338291713395108';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=d338291713395108';
-import {currentPwa, isStandalone, installEntry, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=d338291713395108';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=d78db3c9b6ac003a';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=d78db3c9b6ac003a';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=d78db3c9b6ac003a';
+import {createStudentDashboard} from './student-dashboard.js?v=d78db3c9b6ac003a';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=d78db3c9b6ac003a';
+import {currentPwa, isStandalone, installEntry, routeInPwaScope, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=d78db3c9b6ac003a';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -45,7 +45,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=d338291713395108').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=d78db3c9b6ac003a').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -2064,6 +2064,8 @@ export function initPortal(bridge) {
   setInterval(() => { void refreshHelpSummary(true); }, 30000);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) saveLearningLocation();
+    // On Android the launcher can bring an existing app window forward without loading its start URL.
+    else if (installed && currentRoute && !routeInPwaScope(currentPwa, parseRoute())) void navigate(currentPwa.home, true);
     else void refreshHelpSummary(true);
   });
   window.addEventListener('pagehide', saveLearningLocation);

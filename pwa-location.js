@@ -1,4 +1,4 @@
-import {parsePlatformRoute} from './subjects.js?v=d338291713395108';
+import {parsePlatformRoute} from './subjects.js?v=d78db3c9b6ac003a';
 
 const siteRoot = new URL('./', import.meta.url);
 const freeStudy = {id: 'free-study', directory: 'pwa-free-study/', home: '#/free-study', installLabel: 'pwa.installFreeStudy'};
@@ -25,6 +25,10 @@ export function installEntry(route) {
   return {url: new URL(app.directory + (app === site ? 'download.html' : 'install.html'), siteRoot), label: app.installLabel};
 }
 
+export function routeInPwaScope(app, route) {
+  return app === site || sectionFor(route) === app;
+}
+
 export function pwaLocationKey(app, apiOrigin, access) {
   const identity = [apiOrigin, access.role, access.learner_id];
   // Keep the published site's existing saved locations compatible.
@@ -36,7 +40,7 @@ export function restorableHash(app, hash) {
   if (!hash?.startsWith('#/')) return false;
   const route = parsePlatformRoute(hash);
   const {subjectId, path, params} = route;
-  if (app !== site && sectionFor(route) !== app) return false;
+  if (!routeInPwaScope(app, route)) return false;
   if (!subjectId) return /^\/(?:free-study|settings|progress|help|qa(?:\/[^/]+)?|admin\/(?:pauses|students))?$/.test(path);
   // A review without an existing session can start new work on open.
   if (reviewPage(path)) return !path.endsWith('/atomic') && Boolean(params.get('session'));
