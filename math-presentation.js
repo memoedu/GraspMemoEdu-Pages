@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=06a0f801bfc16166';
+import {escapedAt, mathSpans} from './math-syntax.js?v=a7d489286149768a';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -80,7 +80,7 @@ const glyphCodepoints = new WeakMap();
 let fragmentNumber = 0, renderer;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=06a0f801bfc16166').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=a7d489286149768a').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -181,6 +181,62 @@ export function presentationMathSource(node) {
   if (!latex) return '';
   const display = node.matches('[display="true"],[display="block"]');
   return display ? '\\[' + latex + '\\]' : '\\(' + latex + '\\)';
+}
+
+function storedLatex(math) {
+  const source = math.closest('[data-tex]');
+  const tex = source && source.querySelectorAll('mjx-container').length <= 1
+    ? source.getAttribute('data-tex')
+    : math.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+  const value = tex?.trim();
+  if (!value) return '';
+  const first = mathSpans(value).next().value;
+  return first?.raw === value ? first.latex : value;
+}
+
+// Archived lessons include SVG glyph paths. Render their stored TeX with
+// the same selectable KaTeX HTML used for plain TeX and Thread UI.
+export function installSelectableMath(root = document.body) {
+  const archived = 'mjx-container[jax="SVG"]';
+  const seen = new WeakSet();
+  function candidates(node, batch) {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.matches(archived)) batch.add(node);
+    for (const math of node.querySelectorAll(archived)) batch.add(math);
+  }
+  function render(batch) {
+    const pending = [...batch].filter(math => !seen.has(math));
+    if (!pending.length) return;
+    pending.forEach(math => seen.add(math));
+    void loadRenderer().then(({renderLatex}) => {
+      for (const math of pending) {
+        if (!root.contains(math) || !math.matches(archived)) continue;
+        const source = storedLatex(math);
+        const display = math.getAttribute('display') === 'true';
+        const content = document.createElement('span');
+        if (!source || !renderLatex(content, source, display)) {
+          const semantic = math.querySelector('mjx-assistive-mml math');
+          const recovered = presentationMathSource(math);
+          if (semantic) {
+            const native = semantic.cloneNode(true);
+            if (display) native.setAttribute('display', 'block');
+            content.append(native);
+          } else if (!recovered || !renderLatex(content, recovered.slice(2, -2), display)) continue;
+          if (!source && recovered) math.dataset.mathSource = recovered;
+        }
+        math.setAttribute('jax', 'HTML');
+        math.replaceChildren(...content.childNodes);
+      }
+    }).catch(() => pending.forEach(math => seen.delete(math)));
+  }
+  const initial = new Set();
+  candidates(root, initial);
+  render(initial);
+  new MutationObserver(records => {
+    const batch = new Set();
+    for (const record of records) for (const node of record.addedNodes) candidates(node, batch);
+    render(batch);
+  }).observe(root, {childList: true, subtree: true});
 }
 
 // Some older imports put the matrix in a display node between two paragraphs

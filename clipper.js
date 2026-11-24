@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=06a0f801bfc16166';
-import {learningSelectionBlock} from './content-report.js?v=06a0f801bfc16166';
-import {captureSelection, formulaAt, formulaAtPoint, formulaSelector} from './clipper-selection.js?v=06a0f801bfc16166';
-import {currentModal} from './question-tools.js?v=06a0f801bfc16166';
+import {getLanguage} from './i18n.js?v=a7d489286149768a';
+import {learningSelectionBlock} from './content-report.js?v=a7d489286149768a';
+import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=a7d489286149768a';
+import {currentModal} from './question-tools.js?v=a7d489286149768a';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -20,7 +20,6 @@ export function setClipperEnabled(owner, enabled) {
   try {localStorage.setItem(enabledKey(owner), enabled ? 'yes' : 'no');} catch {}
   window.dispatchEvent(new CustomEvent('clipper-toggle', {detail:{owner, enabled}}));
 }
-const touchLayout = () => window.matchMedia?.('(pointer: coarse) and (max-width: 800px)').matches;
 export function openClipperPopup(explicit = false) {
   if (!explicit) return null;
   let popup;
@@ -35,16 +34,6 @@ export function openClipperPopup(explicit = false) {
   } catch {}
   try { popup?.close(); } catch {}
   return null;
-}
-
-function expandedRange(selection) {
-  const raw = selection.getRangeAt(0).cloneRange();
-  const start = formulaAt(raw.startContainer), end = formulaAt(raw.endContainer);
-  if (!start && !end) return raw;
-  const range = raw;
-  if (start) range.setStartBefore(start);
-  if (end) range.setEndAfter(end);
-  return range;
 }
 
 function usable(node) {
@@ -67,7 +56,7 @@ function clipRoute() {
 function capture() {
   const selection = getSelection();
   if (!selection?.rangeCount || selection.isCollapsed) return null;
-  return captureRange(expandedRange(selection));
+  return captureRange(selection.getRangeAt(0).cloneRange());
 }
 
 function captureRange(range) {
@@ -112,7 +101,7 @@ export function installClipper({request, identity}) {
   actions.hidden = true;
   document.body.append(actions);
   let prefs, pending, imageSelection;
-  let owner, enabled = false, selection, app, hover, downOnMath, touch, loading = false, frame = 0;
+  let owner, enabled = false, selection, app, hover, loading = false, frame = 0;
 
   function guardedRequest(...args) {
     const scope = owner;
@@ -141,7 +130,6 @@ export function installClipper({request, identity}) {
     toggle.setAttribute('aria-label', label);
     toggle.setAttribute('aria-pressed', String(enabled));
     if (toggle.hidden === Boolean(owner)) toggle.hidden = !owner;
-    document.body.classList.toggle('clipperSelectionEnabled', enabled);
     actions.setAttribute('aria-label', label);
     renderActions();
   }
@@ -160,16 +148,11 @@ export function installClipper({request, identity}) {
   function showSelection() {
     if (!enabled || !owner || currentModal()) selection = null;
     else {
-      const next = capture() || imageSelection || touch?.selection;
+      const next = capture() || imageSelection;
       if (next || !actions.contains(document.activeElement)) selection = next;
     }
     renderActions();
     positionSelection();
-  }
-
-  function clearTouch() {
-    touch?.formula.classList.remove('clipperTouchedFormula');
-    touch = null;
   }
 
   function queueSelection() {
@@ -178,7 +161,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=06a0f801bfc16166').then(module => {
+    return import('./clipper-workspace.js?v=a7d489286149768a').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -208,23 +191,10 @@ export function installClipper({request, identity}) {
     const source = selection && captureSource(selection);
     if (source) return openSource(id, {...source, originalExcerpt});
   }
-  function canExcerptFormula(node) {
-    return !!(enabled && owner && owner === identity() && usable(node) && !currentModal() &&
-      prefs?.workflow.text.some(action => action.id === 'excerpt'));
-  }
-  function excerptFormula(node, latex) {
-    if (!latex || !canExcerptFormula(node)) return;
-    const range = document.createRange();
-    range.selectNode(node);
-    const captured = captureRange(range);
-    const source = captured && captureSource(captured);
-    if (source) void openSource('excerpt', {...source, text: limit('\\(' + latex + '\\)', 18000)});
-  }
   function refresh() {
     const next = identity();
     if (owner !== next) {
       app?.close(); app=null; prefs=pending=null; imageSelection=null;
-      clearTouch();
       owner = next;
       enabled = clipperEnabled(owner);
     }
@@ -234,7 +204,7 @@ export function installClipper({request, identity}) {
   }
   const updateEnabled = value => {
     enabled = value;
-    if (!enabled) { app?.close(); clearTouch(); }
+    if (!enabled) app?.close();
     refresh();
   };
   toggle.addEventListener('click', () => setClipperEnabled(owner, !enabled));
@@ -250,34 +220,13 @@ export function installClipper({request, identity}) {
   document.addEventListener('pointerover', event => { hover = event.target; }, true);
   document.addEventListener('pointerdown', event => {
     if(!actions.contains(event.target))imageSelection=null;
-    if (touch && !actions.contains(event.target)) { clearTouch(); queueSelection(); }
-    downOnMath = enabled && event.button === 0 && usable(event.target) ? formulaAtPoint(event) : null;
   }, true);
   document.addEventListener('pointerup', event => {
-    if (downOnMath && formulaAtPoint(event) === downOnMath && getSelection()?.isCollapsed) select(downOnMath);
-    downOnMath = null;
     const picture=elementOf(event.target)?.closest('img');
     if(enabled && picture && usable(picture) && !formulaAt(picture) && !picture.closest('a,button,label') && getSelection()?.isCollapsed){
       const range=document.createRange();range.selectNode(picture);
       const captured=captureRange(range);
       if(captured){imageSelection={...captured,image:picture};showSelection();}
-    }
-  }, true);
-  document.addEventListener('click', event => {
-    if (!enabled || (!touchLayout() && event.pointerType !== 'touch') || !usable(event.target) ||
-        elementOf(event.target)?.closest('a,label')) return;
-    const formula = formulaAtPoint(event);
-    if (formula) {
-      event.preventDefault();
-      clearTouch();
-      // Some mobile engines remove the native selection after the tap dispatch.
-      const range = select(formula).cloneRange();
-      const captured = captureRange(range);
-      if (captured) {
-        touch = {formula, selection: captured};
-        formula.classList.add('clipperTouchedFormula');
-      }
-      showSelection();
     }
   }, true);
   document.addEventListener('keydown', event => {
@@ -303,12 +252,12 @@ export function installClipper({request, identity}) {
       if (!actions.hidden) { event.preventDefault(); actions.firstElementChild.focus({preventScroll: true}); }
     }
   }, true);
-  window.addEventListener('hashchange', () => { clearTouch(); imageSelection=null; selection = null; actions.hidden = true; });
+  window.addEventListener('hashchange', () => { imageSelection=null; selection = null; actions.hidden = true; });
   window.addEventListener('resize', positionSelection);
   window.addEventListener('scroll', positionSelection, {capture: true, passive: true});
   const invalidate=()=>{prefs=pending=null;refresh();};
   window.addEventListener('clipper-settings-changed',invalidate);
   try {const channel=new BroadcastChannel('clipper-settings');channel.onmessage=invalidate;window.addEventListener('pagehide',()=>channel.close(),{once:true});}catch{}
   refresh();
-  return {toggle, refresh, canExcerptFormula, excerptFormula};
+  return {toggle, refresh};
 }

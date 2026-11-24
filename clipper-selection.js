@@ -1,5 +1,5 @@
-import {presentationMathSource} from './math-presentation.js?v=06a0f801bfc16166';
-import {learningSelectionBlock} from './content-report.js?v=06a0f801bfc16166';
+import {presentationMathSource} from './math-presentation.js?v=a7d489286149768a';
+import {learningSelectionBlock} from './content-report.js?v=a7d489286149768a';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';
@@ -22,17 +22,18 @@ export function formulaAt(node) {
   return formula;
 }
 
-export function formulaAtPoint(event) {
-  const direct = formulaAt(event.target);
-  if (direct) return direct;
-  // Between painted glyphs, the hit target can be the containing paragraph.
-  const row = asElement(event.target)?.closest('p,li,td,th,summary,label,button,h1,h2,h3,h4');
-  if (!row) return null;
-  for (const node of row.querySelectorAll(formulaSelector)) {
-    if ([...node.getClientRects()].some(rect => event.clientX >= rect.left && event.clientX < rect.right &&
-        event.clientY >= rect.top && event.clientY < rect.bottom)) return formulaAt(node);
-  }
-  return null;
+function formulaFragment(formula, range) {
+  if (!formula.contains(range.startContainer) && !formula.contains(range.endContainer)) return null;
+  const visible = formula.querySelector('.katex-html') || formula;
+  const walker = document.createTreeWalker(visible, NodeFilter.SHOW_TEXT, {
+    acceptNode: node => node.data && !node.parentElement.closest('.katex-mathml,annotation,annotation-xml,svg,[hidden]')
+      ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  const first = nodes[0], last = nodes.at(-1);
+  if (!first || range.comparePoint(first, 0) === 0 && range.comparePoint(last, last.length) === 0) return null;
+  return nodes;
 }
 
 // Assign each emitted character to its original DOM range. Occurrences with identical text retain distinct offsets.
@@ -42,7 +43,7 @@ export function captureSelection(range,root){
   let container=a.closest(paragraph);
   if(!container?.contains(b)) {
     const block=learningSelectionBlock(a);
-    container=block?.contains(b)?block:common;
+    container=block?.contains(b)?block:formulaAt(common)||common;
   }
   const pieces=[], assets=[];
   const emit=(s,zone,kind='literal',inlineMath=false)=>{if(s)pieces.push({s,zone,kind,inlineMath});};
@@ -65,6 +66,11 @@ export function captureSelection(range,root){
     if(style.display==='none'||style.visibility==='hidden')return;
     const zone=location(n);
     if(n.matches(formulaSelector)){
+      const fragment = zone === 0 && formulaFragment(n, range);
+      if (fragment) {
+        for (const text of fragment) visit(text, true);
+        return;
+      }
       const formula=mathSource(n);
       emit(formula,zone,'literal',!formula.startsWith('\\[')&&!formula.startsWith('$$'));return;
     }
