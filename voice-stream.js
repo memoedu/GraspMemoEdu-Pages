@@ -1,4 +1,4 @@
-import {recordMicrophone} from './microphone-recorder.js?v=d703cbf2a73e0061';
+import {recordMicrophone} from './microphone-recorder.js?v=90073ee663f3a496';
 
 function wave(frames, size) {
   if (!size) return null;
@@ -158,7 +158,7 @@ async function prepareGraph(device) {
   const audio = device.audio ||= new AudioContext(options);
   if (audio.sampleRate !== 16000) throw Error('Unsupported microphone sample rate');
   // Start both while the click still carries user activation, alongside the permission request.
-  await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=d703cbf2a73e0061', import.meta.url))]);
+  await Promise.all([audio.resume(), audio.audioWorklet.addModule(new URL('./voice-pcm.js?v=90073ee663f3a496', import.meta.url))]);
 }
 
 export async function segmentMicrophone({signal, scope, maxDurationMs, request}) {
