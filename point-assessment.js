@@ -1,7 +1,7 @@
 // Hallmark · component: answer feedback · theme: existing learning UI.
 // Read-only states: submitted item results and point results; absent results stay absent.
 // Shared feedback for optional item-to-point assessment. Content labels stay authored.
-import {t} from './i18n.js?v=3640ba1c30e4dfd9';
+import {t} from './i18n.js?v=96d6ac0e64adb146';
 
 // Server-produced display evidence also covers questions without point mappings.
 export function answerAssessment(source) {
