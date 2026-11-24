@@ -1,12 +1,11 @@
-import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=41fbccf5f0034dcf';
-import {matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=41fbccf5f0034dcf';
-import previews from './vendor/formula/previews.mjs?v=41fbccf5f0034dcf';
+import {Editor, Textcomplete, caretCoordinates} from './vendor/calculator/completion.mjs?v=36d1108c892e3873';
+import {formulaToken, matchesCompletion, nativeFormulaSample} from './formula-catalog.js?v=36d1108c892e3873';
+import previews from './vendor/formula/previews.mjs?v=36d1108c892e3873';
 
 export const autocompleteGroups = ['calculator', 'answer', 'other'];
 const preferenceKey = 'graspmemoedu:autocomplete';
 const sources = new WeakMap();
 const surfaces = new WeakMap();
-const token = /([a-z_][a-z_0-9]*|[+−*×/÷^!(),.π√=\-])$/i;
 const wholeValue = /^(.+)$/s;
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
@@ -26,7 +25,7 @@ export function setAutocompleteEnabled(group, enabled) {
 
 // Source items may be strings or {label, value, keys}. The provider is evaluated
 // as the user types so live worksheet state can determine what is offered.
-export function setInputCompletions(field, provider, {whole = false, match = token, apply} = {}) {
+export function setInputCompletions(field, provider, {whole = false, match = formulaToken, apply} = {}) {
   sources.set(field, {provider, whole, match: whole ? wholeValue : match, apply});
 }
 
@@ -77,8 +76,9 @@ export function installAutocomplete(defaultCandidates) {
       if (!match) return;
       const {value} = result.data;
       const after = field.value.slice(match.end);
-      const tail = /^[\\a-z_]/i.test(before[match.start]) ? after.match(/^[a-z_0-9]*/i)[0] : '';
-      const existingOpen = value.endsWith('(') && after[tail.length] === '(';
+      const tail = /^[\\\p{L}_]/u.test(before.slice(match.start))
+        ? after.match(/^[\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*/u)[0] : '';
+      const existingOpen = value.endsWith('(') && /^[（(]/.test(after.slice(tail.length));
       const end = source?.whole ? field.value.length : match.end + tail.length + Number(existingOpen);
       if (source?.apply?.(result.data, match.start, end)) return;
       if (field.maxLength >= 0 && field.value.length - (end - match.start) + value.length > field.maxLength) return;
@@ -90,7 +90,7 @@ export function installAutocomplete(defaultCandidates) {
   const editor = new NativeFieldEditor();
   const parent = document.createElement('div');
   const completion = new Textcomplete(editor, [{
-    match: text => (source?.match || token).exec(text),
+    match: text => (source?.match || formulaToken).exec(text),
     search(term, receive) {
       if (snapshot) { receive(snapshot.candidates); return; }
       const candidates = source ? source.provider(term) : defaultCandidates;

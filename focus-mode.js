@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=41fbccf5f0034dcf';
+import {t} from './i18n.js?v=36d1108c892e3873';
 
 export function focusReaderRoute({path, params}) {
   return /^\/(?:topic\/[^/]+|review\/[^/]+\/[^/]+)$/.test(path)
@@ -35,21 +35,26 @@ export function createFocusMode({toolbar, toggle, fullscreen, fullscreenNotice, 
   function syncAction(action) {
     if (action.closest('[hidden]')) return;
     const [fallback, next, retry] = action.children;
-    if (!enabled) {
-      fallback.hidden = false;
-      next.hidden = retry.hidden = true;
-      return;
-    }
-    const request = pending ||= nextHref();
-    const current = () => enabled && pending === request && action.isConnected;
-    request.then(href => {
-      if (!current()) return;
+    const showNext = href => {
       if (href) next.href = readerHref(href);
+      else next.removeAttribute('href');
       // Keep the return action if the learner has already tabbed to it.
-      fallback.hidden = Boolean(href) && document.activeElement !== fallback;
+      fallback.hidden = enabled && Boolean(href) && document.activeElement !== fallback;
+      fallback.classList.toggle('primaryButton', enabled || !href);
+      fallback.classList.toggle('secondaryButton', !enabled && Boolean(href));
       next.hidden = !href;
-      retry.hidden = true;
-    }, () => { if (current()) retry.hidden = false; });
+    };
+    showNext(next.getAttribute('href'));
+    retry.hidden = true;
+    const request = pending ||= nextHref();
+    const current = () => pending === request && action.isConnected;
+    request.then(href => {
+      if (current()) showNext(href);
+    }, () => {
+      if (!current()) return;
+      showNext(null);
+      retry.hidden = false;
+    });
   }
   function setEnabled(active) {
     enabled = active;
