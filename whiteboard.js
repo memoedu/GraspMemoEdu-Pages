@@ -1,7 +1,7 @@
-import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=dc07b85c3eb4a143';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=dc07b85c3eb4a143';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=dc07b85c3eb4a143';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=dc07b85c3eb4a143';
+import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=f528844848c87ac9';
+import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=f528844848c87ac9';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=f528844848c87ac9';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=f528844848c87ac9';
 
 const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v3/whiteboard.html';
 const boards = new WeakMap();
@@ -108,6 +108,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   const loading = local('正在打开白板…', 'Opening whiteboard…');
   let ready = false, loadFailed = false, busy = false, closed = false, shown = true, hydrated = false, share = 55, swapped = false;
   let selected, identified, selectionBusy = false, voiceSubstitute = false;
+  let selectionOcr;
   const state = {options, dispose, toggle, refresh};
   boards.set(workspace, state);
 
@@ -267,20 +268,25 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
 
   function selectionChanged({id, count}) {
     if (!(stores || evaluates) || !state.options.recognizeSelection || closed) return;
+    cancelSelectionOcr();
     selected = count ? id : undefined;
     identified = undefined;
     selectedFormula.value = '';
     voiceSubstitute = false;
     selectionMessage.textContent = '';
-    refreshSelection();
-    refreshVoiceInput();
+    refresh();
+  }
+
+  function cancelSelectionOcr() {
+    selectionOcr?.abort();
+    selectionOcr = undefined;
   }
 
   function refreshSelection() {
     if (!(stores || evaluates)) return;
     const active = selected !== undefined && state.options.editable;
     const hasFormula = active && identified === selected;
-    const disabled = busy || selectionBusy || !ready;
+    const disabled = busy || selectionBusy || !!selectionOcr || !ready;
     selectionTools.hidden = !active;
     if (manualStore) manualStore.hidden = active;
     variable.toggleAttribute('data-whiteboard-voice-selection', active && stores);
@@ -288,23 +294,27 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     selectedFormula.hidden = !hasFormula;
     storeSelection.hidden = substitute.hidden = !stores || !hasFormula;
     selectedFormula.disabled = storeSelection.disabled = substitute.disabled = disabled || !hasFormula;
-    if (evaluateButton) evaluateButton.disabled ||= selectionBusy;
+    if (evaluateButton) evaluateButton.disabled ||= selectionBusy || !!selectionOcr;
     submit.disabled ||= selectionBusy;
   }
 
   async function recognizeSelected(focus = true) {
-    if (busy || selectionBusy || selected === undefined || !state.options.isCurrent()) return;
+    if (busy || selectionBusy || selectionOcr || selected === undefined || !state.options.isCurrent()) return;
     const id = selected;
-    selectionBusy = true;
+    const attempt = new AbortController();
+    selectionOcr = attempt;
+    const current = () => selectionOcr === attempt && !closed && selected === id && state.options.isCurrent();
     selectionMessage.textContent = local('正在识别圈选公式…', 'Reading the selected formula…');
     refresh();
     let recognized = false;
     try {
       const snapshot = await port.send('snapshotSelection');
-      if (closed || selected !== id) return;
+      if (!current()) return;
       if (!snapshot?.png || snapshot.id !== id) throw Error(local('请重新圈选一段可见公式。', 'Select a visible formula again.'));
-      const response = await state.options.recognizeSelection(snapshot.png);
-      if (closed || selected !== id || !state.options.isCurrent()) return;
+      const response = typeof snapshot.expression === 'string' && snapshot.expression.length <= 64
+        ? {status: 'ready', answer: snapshot.expression}
+        : await state.options.recognizeSelection(snapshot.png, attempt.signal);
+      if (!current()) return;
       if (response.status !== 'ready' || typeof response.answer !== 'string' || !response.answer.trim()) {
         throw Error(response.feedback || local('未识别到清晰公式。', 'No clear formula was recognized.'));
       }
@@ -314,10 +324,12 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
         local('核对公式后，输入或读出变量名。', 'Check the formula, then type or say the variable name.');
       recognized = true;
     } catch (error) {
-      if (!closed && selected === id) selectionMessage.textContent = error.message || ioError();
+      if (current()) selectionMessage.textContent = error.message || ioError();
     } finally {
-      selectionBusy = false;
-      if (!closed) refresh();
+      if (selectionOcr === attempt) {
+        selectionOcr = undefined;
+        if (!closed) refresh();
+      }
     }
     if (recognized && focus && stores && shown && selected === id && !voiceFieldPending(variable)) {
       variable.focus();
@@ -326,7 +338,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   }
 
   async function evaluateSelection() {
-    if (busy || selectionBusy || selected === undefined || !state.options.isCurrent()) return;
+    if (busy || selectionBusy || selectionOcr || selected === undefined || !state.options.isCurrent()) return;
     const id = selected;
     if (identified !== id) await recognizeSelected(false);
     if (closed || selected !== id || identified !== id || !state.options.isCurrent()) return;
@@ -469,6 +481,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       return;
     }
     const current = state.options;
+    cancelSelectionOcr();
     busy = true;
     refresh();
     try {
@@ -486,11 +499,15 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
         status.textContent = local('白板上还没有作答。', 'There is no answer on the whiteboard yet.');
         return;
       }
-      await saveWhiteboard(root, current.key, snapshot, session.memory);
+      if (closed || !state.options.submit || !current.isCurrent()) return;
+      status.textContent = local('正在保存白板并识别作答…', 'Saving the board and reading your work…');
+      const archive = saveWhiteboard(root, current.key, snapshot, session.memory);
+      const [saved, outcome] = await Promise.allSettled([archive, current.submit(snapshot.png, archive)]);
+      if (saved.status === 'rejected') throw saved.reason;
       hydrated = true;
       if (closed || !state.options.submit || !current.isCurrent()) return;
-      status.textContent = local('已保存白板，正在识别并判题…', 'Board saved. Reading and grading your work…');
-      status.textContent = await current.submit(snapshot.png) || '';
+      if (outcome.status === 'rejected') throw outcome.reason;
+      status.textContent = outcome.value || '';
     } catch (error) { status.textContent = error.message || ioError(); }
     finally {
       busy = false;
@@ -500,6 +517,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
 
   function dispose() {
     if (closed) return;
+    cancelSelectionOcr();
     closed = true;
     boards.delete(workspace);
     show(false);

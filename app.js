@@ -1,25 +1,25 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=dc07b85c3eb4a143";
-import {answerReady} from './question-input.js?v=dc07b85c3eb4a143';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=dc07b85c3eb4a143';
-import {startPresence} from './presence.js?v=dc07b85c3eb4a143';
-import {createLearningCache} from './learning-cache.js?v=dc07b85c3eb4a143';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=dc07b85c3eb4a143';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=f528844848c87ac9";
+import {answerReady} from './question-input.js?v=f528844848c87ac9';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=f528844848c87ac9';
+import {startPresence} from './presence.js?v=f528844848c87ac9';
+import {createLearningCache} from './learning-cache.js?v=f528844848c87ac9';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=f528844848c87ac9';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=dc07b85c3eb4a143';
-import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=dc07b85c3eb4a143';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=dc07b85c3eb4a143';
-import {renderSourceReader} from './learning-ui.js?v=dc07b85c3eb4a143';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=dc07b85c3eb4a143';
-import {createTrainingView} from './training.js?v=dc07b85c3eb4a143';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=dc07b85c3eb4a143';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=dc07b85c3eb4a143';
-import {installClipper} from './clipper.js?v=dc07b85c3eb4a143';
-import {installSelectableMath} from './math-presentation.js?v=dc07b85c3eb4a143';
-import {installAutocomplete} from './autocomplete.js?v=dc07b85c3eb4a143';
-import {expressionCompletions} from './calculator-policy.js?v=dc07b85c3eb4a143';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=dc07b85c3eb4a143';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=dc07b85c3eb4a143';
-import {questionWhiteboard} from './whiteboard-answer.js?v=dc07b85c3eb4a143';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=f528844848c87ac9';
+import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=f528844848c87ac9';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=f528844848c87ac9';
+import {renderSourceReader} from './learning-ui.js?v=f528844848c87ac9';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=f528844848c87ac9';
+import {createTrainingView} from './training.js?v=f528844848c87ac9';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=f528844848c87ac9';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=f528844848c87ac9';
+import {installClipper} from './clipper.js?v=f528844848c87ac9';
+import {installSelectableMath} from './math-presentation.js?v=f528844848c87ac9';
+import {installAutocomplete} from './autocomplete.js?v=f528844848c87ac9';
+import {expressionCompletions} from './calculator-policy.js?v=f528844848c87ac9';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=f528844848c87ac9';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=f528844848c87ac9';
+import {questionWhiteboard} from './whiteboard-answer.js?v=f528844848c87ac9';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -285,7 +285,8 @@ async function request(path, options = {}) {
     } finally { if (mutation) invalidateReads(); }
 }
 
-async function requestNetwork(path, { method = "GET", body, bootstrap = false, timeout = REQUEST_TIMEOUT, reauthenticated = false, skipIdentity = false, suppressIdentity = false, identityOverride, identityOperation = false, deploymentRetried = false, keepalive = false, contentRetried = false, stateRetried = false } = {}) {
+async function requestNetwork(path, { method = "GET", body, bootstrap = false, timeout = REQUEST_TIMEOUT, signal, reauthenticated = false, skipIdentity = false, suppressIdentity = false, identityOverride, identityOperation = false, deploymentRetried = false, keepalive = false, contentRetried = false, stateRetried = false } = {}) {
+  signal?.throwIfAborted();
   const identityEpoch = identityGeneration;
   if (!deploymentReady) await ensureDeployment();
   if (!bootstrap && !skipIdentity) await ensureIdentity();
@@ -320,7 +321,7 @@ async function requestNetwork(path, { method = "GET", body, bootstrap = false, t
       keepalive,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
-      signal: controller.signal,
+      signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
       credentials: local ? "same-origin" : "omit",
       cache: "no-store",
       redirect: "error",
@@ -335,7 +336,7 @@ async function requestNetwork(path, { method = "GET", body, bootstrap = false, t
       if (local && !bootstrap && !reauthenticated && response.status === 401 && ["authentication_required", "invalid_session"].includes(detail?.code)) {
         sessionToken = null;
         await ensureSession();
-        return request(path, { method, body, timeout, skipIdentity, suppressIdentity, identityOverride, identityOperation, reauthenticated: true });
+        return request(path, { method, body, timeout, signal, skipIdentity, suppressIdentity, identityOverride, identityOperation, reauthenticated: true });
       }
       const message = ["authentication_required", "invalid_session"].includes(detail?.code) ? t("服务暂不可用，请稍后重试。") : typeof detail === "string" ? detail : detail?.message || t("操作未完成，请刷新学习进度后重试。");
       throw new ApiError(message, response.status, detail?.code || "request_error");
@@ -346,12 +347,13 @@ async function requestNetwork(path, { method = "GET", body, bootstrap = false, t
     } catch (error) {
       if (!['content_cache_miss', 'state_cache_miss', 'access_cache_miss'].includes(error.message)
           || stateRetried || method !== 'GET') throw error;
-      return requestNetwork(path, {method, body, timeout, skipIdentity, suppressIdentity, identityOverride,
+      return requestNetwork(path, {method, body, timeout, signal, skipIdentity, suppressIdentity, identityOverride,
         identityOperation, contentRetried: true, stateRetried: true});
     }
     if (!bootstrap && !skipIdentity) identityRecoveryAllowed = true;
     return result;
   } catch (error) {
+    signal?.throwIfAborted();
     const failure = error instanceof ApiError ? error : error.name === "AbortError"
       ? new ApiError(t("等待服务响应超时。已保存的进度不会丢失，请重试。"), 0, "timeout")
       : new ApiError(t("服务暂不可用，请稍后重试。"), 0, "network_error");
@@ -360,7 +362,7 @@ async function requestNetwork(path, { method = "GET", body, bootstrap = false, t
       // A failed write may already have reached the backend. Only reads can be
       // replayed here; existing submission reconciliation handles uncertain writes.
       if (method === "GET" && identityEpoch === identityGeneration) {
-        return request(path, { method, body, bootstrap, timeout, reauthenticated, skipIdentity, suppressIdentity, identityOverride, identityOperation, deploymentRetried: true });
+        return request(path, { method, body, bootstrap, timeout, signal, reauthenticated, skipIdentity, suppressIdentity, identityOverride, identityOperation, deploymentRetried: true });
       }
     }
     throw failure;
@@ -1828,7 +1830,7 @@ installSelectableMath();
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, getAccountScope: () => identityGeneration, request}), clipper.toggle);
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=dc07b85c3eb4a143");
+const { initPortal } = await import("./portal.js?v=f528844848c87ac9");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
