@@ -1,6 +1,6 @@
-import {getLanguage} from './i18n.js?v=783abd1bfadc97a5';
-import {formulaAtPoint, formulaAt, formulaSelector, mathSource} from './clipper-selection.js?v=783abd1bfadc97a5';
-import {mathSpans} from './math-syntax.js?v=783abd1bfadc97a5';
+import {getLanguage} from './i18n.js?v=06a0f801bfc16166';
+import {formulaAtPoint, formulaAt, formulaSelector, mathSource} from './clipper-selection.js?v=06a0f801bfc16166';
+import {mathSpans} from './math-syntax.js?v=06a0f801bfc16166';
 
 const interactive = 'math-field,input,textarea,select,[contenteditable="true"],[inert],[hidden]';
 const elementOf = node => node?.nodeType === 1 ? node : node?.parentElement;
@@ -130,7 +130,7 @@ export function installFormulaSelection({canExcerpt, excerpt} = {}) {
     field = fallbackField();
     mountField();
     try {
-      const {isLatexFragment} = await import('./vendor/formula/editor.mjs?v=783abd1bfadc97a5');
+      const {isLatexFragment} = await import('./vendor/formula/editor.mjs?v=06a0f801bfc16166');
       if (generation !== attempt || !candidate.isConnected || !isLatexFragment(latex)) return;
       // Keep a selection already made on the source while the editor was loading.
       if (field.selectionStart !== field.selectionEnd) return;
