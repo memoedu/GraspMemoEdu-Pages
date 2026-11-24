@@ -1,15 +1,15 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=783abd1bfadc97a5';
-import {attachFormulaEditing} from './formula-input.js?v=783abd1bfadc97a5';
-import {setQuestionTools} from './question-tools.js?v=783abd1bfadc97a5';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=783abd1bfadc97a5';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=783abd1bfadc97a5';
-import {mountAnswerConversion} from './answer-conversion.js?v=783abd1bfadc97a5';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=783abd1bfadc97a5';
-import {reportableContent} from './content-report.js?v=783abd1bfadc97a5';
-import {createLearningCache} from './learning-cache.js?v=783abd1bfadc97a5';
-import {enhanceTopicContent} from './topic-content.js?v=783abd1bfadc97a5';
-import {practiceHint} from './beginner-hints.js?v=783abd1bfadc97a5';
-import {questionWhiteboard} from './whiteboard-answer.js?v=783abd1bfadc97a5';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=06a0f801bfc16166';
+import {attachFormulaEditing} from './formula-input.js?v=06a0f801bfc16166';
+import {setQuestionTools} from './question-tools.js?v=06a0f801bfc16166';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=06a0f801bfc16166';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=06a0f801bfc16166';
+import {mountAnswerConversion} from './answer-conversion.js?v=06a0f801bfc16166';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=06a0f801bfc16166';
+import {reportableContent} from './content-report.js?v=06a0f801bfc16166';
+import {createLearningCache} from './learning-cache.js?v=06a0f801bfc16166';
+import {enhanceTopicContent} from './topic-content.js?v=06a0f801bfc16166';
+import {practiceHint} from './beginner-hints.js?v=06a0f801bfc16166';
+import {questionWhiteboard} from './whiteboard-answer.js?v=06a0f801bfc16166';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -31,6 +31,7 @@ export function createReviewView(bridge) {
   const write = (key, value) => cache.write(sessionStorage, key, value);
   const json = key => { try { return JSON.parse(read(key)); } catch { return null; } };
   let state = null, topic = null, module = null, epoch = 0, timer = null, busy = false;
+  let refreshing = false, checkedAt = -Infinity;
   let selected = null, failure = null, learner = null, clock = { key: null, total: 0, started: null };
   let rendered = null, historyOpen = true;
   const root = bridge.root;
@@ -56,6 +57,7 @@ export function createReviewView(bridge) {
   }
   function stop() {
     tick(true); epoch++; clearTimeout(timer); timer = null; topic = null; state = null;
+    refreshing = false; checkedAt = -Infinity;
     busy = false; selected = null; rendered = null; failure = null;
   }
   function notice(message) {
@@ -70,6 +72,7 @@ export function createReviewView(bridge) {
   function accept(next, force = false) {
     if (!next || next.learner_id !== learner || next.topic_id !== topic || !next.practice) throw new Error(t('review.invalidState'));
     if (state?.session_id === next.session_id && next.revision < state.revision) return;
+    checkedAt = performance.now();
     tick(true);
     const changed = JSON.stringify([next.revision, next.dependency_ready, next.access?.features, next.access?.topics]) !== rendered;
     const oldQuestion = state?.practice.id;
@@ -85,10 +88,14 @@ export function createReviewView(bridge) {
     if (changed || force) render();
     schedule(); tick();
   }
-  async function refresh() {
-    if (!topic || !state || busy) return;
+  async function refresh(force = false) {
+    if (!topic || !state || busy || refreshing) return;
     if (document.hidden) { schedule(); return; }
+    if (!force && !state.pending_submission_id && performance.now() - checkedAt < 1000) return;
     const ticket = epoch;
+    clearTimeout(timer);
+    refreshing = true;
+    checkedAt = performance.now();
     try {
       const pending = state.pending_submission_id;
       const result = await call(pending ? `submissions/${encodeURIComponent(pending)}` : sessionPath());
@@ -101,7 +108,12 @@ export function createReviewView(bridge) {
         failure = translateMessage(error.message); notice(failure);
         if (error.status === 403 || error.status === 404) { clearTimeout(timer); renderUnavailable(failure); return; }
       }
-    } finally { if (active(ticket)) schedule(); }
+    } finally {
+      if (ticket === epoch) {
+        refreshing = false;
+        if (active(ticket)) schedule();
+      }
+    }
   }
   function renderUnavailable(message) {
     state = null;
@@ -150,7 +162,7 @@ export function createReviewView(bridge) {
       failure = translateMessage(error.message);
       if (['stale_revision', 'already_answered', 'submission_pending', 'review_inactive', 'topic_paused'].includes(error.code)) {
         if (action === 'submit') write(submissionKey(), null);
-        busy = false; await refresh();
+        busy = false; await refresh(true);
       }
     } finally { if (active(ticket)) { busy = false; if (state) render(); notice(failure); schedule(); tick(); } }
   }
@@ -323,7 +335,7 @@ export function createReviewView(bridge) {
   window.addEventListener('focus', () => { tick(); if (topic) refresh(); });
   window.addEventListener('blur', () => tick(true));
   window.addEventListener('pagehide', () => tick(true));
-  window.addEventListener('online', () => { if (topic) refresh(); });
+  window.addEventListener('online', () => { if (topic) refresh(true); });
   document.addEventListener('visibilitychange', () => { tick(document.hidden); if (!document.hidden && topic) refresh(); });
   document.getElementById('guestDemoCheckbox').addEventListener('change', prefill);
   return {open, stop, reset() { stop(); cache.clear(); clock = {key: null, total: 0, started: null}; }};

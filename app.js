@@ -1,25 +1,25 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=783abd1bfadc97a5";
-import {answerReady} from './question-input.js?v=783abd1bfadc97a5';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=783abd1bfadc97a5';
-import {startPresence} from './presence.js?v=783abd1bfadc97a5';
-import {createLearningCache} from './learning-cache.js?v=783abd1bfadc97a5';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=783abd1bfadc97a5';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=06a0f801bfc16166";
+import {answerReady} from './question-input.js?v=06a0f801bfc16166';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=06a0f801bfc16166';
+import {startPresence} from './presence.js?v=06a0f801bfc16166';
+import {createLearningCache} from './learning-cache.js?v=06a0f801bfc16166';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=06a0f801bfc16166';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=783abd1bfadc97a5';
-import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=783abd1bfadc97a5';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=783abd1bfadc97a5';
-import {renderSourceReader} from './learning-ui.js?v=783abd1bfadc97a5';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=783abd1bfadc97a5';
-import {createTrainingView} from './training.js?v=783abd1bfadc97a5';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=783abd1bfadc97a5';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=783abd1bfadc97a5';
-import {installClipper} from './clipper.js?v=783abd1bfadc97a5';
-import {installFormulaSelection} from './formula-selection.js?v=783abd1bfadc97a5';
-import {installAutocomplete} from './autocomplete.js?v=783abd1bfadc97a5';
-import {expressionCompletions} from './calculator-policy.js?v=783abd1bfadc97a5';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=783abd1bfadc97a5';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=783abd1bfadc97a5';
-import {questionWhiteboard} from './whiteboard-answer.js?v=783abd1bfadc97a5';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=06a0f801bfc16166';
+import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=06a0f801bfc16166';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=06a0f801bfc16166';
+import {renderSourceReader} from './learning-ui.js?v=06a0f801bfc16166';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=06a0f801bfc16166';
+import {createTrainingView} from './training.js?v=06a0f801bfc16166';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=06a0f801bfc16166';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=06a0f801bfc16166';
+import {installClipper} from './clipper.js?v=06a0f801bfc16166';
+import {installFormulaSelection} from './formula-selection.js?v=06a0f801bfc16166';
+import {installAutocomplete} from './autocomplete.js?v=06a0f801bfc16166';
+import {expressionCompletions} from './calculator-policy.js?v=06a0f801bfc16166';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=06a0f801bfc16166';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=06a0f801bfc16166';
+import {questionWhiteboard} from './whiteboard-answer.js?v=06a0f801bfc16166';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -34,6 +34,8 @@ const STATE_TIMEOUT = 9000;
 // Source reading responses contain the Topic's original SVGs and all sections.
 const CONTENT_TIMEOUT = 60000;
 const DEPLOYMENT_REFRESH_INTERVAL = 30000;
+const ACCESS_CHECK_INTERVAL = 5000;
+const FOREGROUND_CHECK_GAP = 1000;
 
 function storageRead(storage, key, fallback = null) {
   return learningCache.read(storage, STORAGE_PREFIX + key, fallback);
@@ -86,6 +88,7 @@ function setLearnerAccess(next) {
   const beginner = next?.beginner_mode_enabled === true;
   if (!beginner || next.learner_id !== access?.learner_id) clearLearningHint();
   access = next;
+  accessCheckedAt = next ? performance.now() : -Infinity;
   document.documentElement.toggleAttribute('data-beginner-mode', beginner);
 }
 const learningCache = createLearningCache(() => access);
@@ -106,6 +109,8 @@ let state = null;
 let actionBusy = false;
 let pauseBusy = false;
 let stateBusy = false;
+let stateCheckedAt = -Infinity;
+let visibleRefreshBusy = false;
 let connectionGeneration = 0;
 let pollTimer = null;
 let pollBusy = false;
@@ -125,7 +130,7 @@ let pageActive = document.hasFocus();
 let answerClock = { key: null, total: 0, started: null };
 let historyOpen = true;
 let localStep = null;
-let accessRefresh = null, accessCheckedAt = 0;
+let accessRefresh = null, accessCheckedAt = -Infinity;
 const narrowLayout = window.matchMedia("(max-width: 1000px)");
 const drafts = new Map();
 
@@ -473,7 +478,9 @@ async function ensureIdentity() {
       for (const token of candidates) {
         try {
           const currentAccess = await request("access", { skipIdentity: true, identityOverride: token, timeout: STATE_TIMEOUT, identityOperation: true });
-          if (currentAccess.role === "account") {
+          // An already saved guest is validated when the account switches
+          // back. Only discover and migrate a guest when this scope lacks one.
+          if (currentAccess.role === "account" && !storageRead(localStorage, guestIdentityKey(), "")) {
             const guest = await obtainGuestIdentity({ createIfMissing: false });
             if (guest) storageWrite(localStorage, guestIdentityKey(), guest.identity_token);
           }
@@ -602,6 +609,7 @@ function clearLearningView() {
   actionBusy = false;
   pauseBusy = false;
   stateBusy = false;
+  stateCheckedAt = -Infinity;
   pollBusy = false;
   $("courseShell").hidden = true;
   setQuestionTools($("stepCard"));
@@ -704,12 +712,18 @@ function renderAccessUnavailable() {
 
 async function refreshAccess(fresh = false) {
   if (accessRefresh) return accessRefresh;
-  if (!fresh && access && Date.now() - accessCheckedAt < 5000) return;
+  if (!fresh && access && performance.now() - accessCheckedAt < ACCESS_CHECK_INTERVAL) return;
   accessRefresh = (async () => {
     const previous = access;
     const next = await request("access", { skipIdentity: true, timeout: STATE_TIMEOUT, fresh: true });
     if (next.learner_id !== access?.learner_id && access) throw new ApiError(t("当前身份已更新，请重新读取。"), 0, "connection_changed");
-    accessCheckedAt = Date.now();
+    if (next.access_revision && next.access_revision === access?.access_revision) {
+      accessCheckedAt = performance.now();
+      return;
+    }
+    // A state or action response may have verified newer permissions while
+    // this request was in flight. Keep the more recent projection.
+    if (access !== previous) return;
     setLearnerAccess(next);
     renderIdentity();
     if (previous?.access_revision && next.access_revision !== previous.access_revision) {
@@ -794,6 +808,7 @@ function applyState(next, { force = false, announceChange = false, deferRender =
   if (!next || !Array.isArray(next.steps) || !Array.isArray(next.modules)) throw new ApiError(t("课程数据不完整，请重新连接。"), 0, "invalid_state");
   if (access?.learner_id && next.learner_id !== access.learner_id) throw new ApiError(t("此学习记录不属于当前身份，请刷新。"), 0, "identity_mismatch");
   if (state && next.course_version === state.course_version && next.revision < state.revision) return;
+  stateCheckedAt = performance.now();
   const accessChanged = next.access && JSON.stringify(next.access) !== JSON.stringify(access);
   if (next.access) setLearnerAccess(next.access);
   if (force || next.course_version !== state?.course_version || !can('review_history')
@@ -827,16 +842,17 @@ function applyState(next, { force = false, announceChange = false, deferRender =
   if (announceChange && changed && previousStep !== state.current_step_id) announce(readerStepTitle(selectedStep()) || t("学习进度已更新"));
 }
 
-async function refreshState({ quiet = true, force = false } = {}) {
+async function refreshState({ quiet = true, force = false, background = false } = {}) {
   if (!topicId || stateBusy || identityProblem) return;
+  if (background && performance.now() - stateCheckedAt < FOREGROUND_CHECK_GAP) return;
   const generation = connectionGeneration;
   stateBusy = true;
+  stateCheckedAt = performance.now();
   try {
     const next = await topicRequest("state", { timeout: CONTENT_TIMEOUT });
     if (generation !== connectionGeneration) return;
     if (!quiet) pageMessage = null;
     applyState(next, { force });
-    renderConnectionNotice();
   } catch (error) {
     if (generation !== connectionGeneration) return;
     if (await recoverIdentity(error)) return;
@@ -853,6 +869,21 @@ async function refreshState({ quiet = true, force = false } = {}) {
   } finally { if (generation === connectionGeneration) stateBusy = false; }
 }
 
+async function refreshVisibleLearning() {
+  if (document.hidden || visibleRefreshBusy) return;
+  visibleRefreshBusy = true;
+  try {
+    if (!actionBusy && !pauseBusy && !state?.pending_submission_id) {
+      await refreshState({background: true});
+    }
+    // Topic state carries the same access projection. Other pages and
+    // failed state reads still get their scheduled access check.
+    if (!document.hidden && access && !identityProblem) await refreshAccess();
+  } catch (error) {
+    if (identityFailure(error)) void recoverIdentity(error);
+  } finally { visibleRefreshBusy = false; }
+}
+
 function renderConnectionNotice() {
   const notice = $("connectionNotice");
   notice.replaceChildren();
@@ -864,7 +895,7 @@ function renderConnectionNotice() {
   notice.append(p, el("p", "", connectionIssue.message));
   if (state) notice.append(el("p", "", t("已显示的内容仍可阅读，恢复后会同步已保存的进度。")));
   const actions = el("div", "noticeActions");
-  actions.append(button(t("重试"), "textButton", () => window.location.reload()));
+  actions.append(button(t("重试"), "textButton", () => refreshState({force: true})));
   notice.append(actions);
   if (state) $("saveStatus").textContent = t("等待服务恢复");
 }
@@ -1726,11 +1757,13 @@ setHistoryOpen(!narrowLayout.matches);
 $("pauseButton").addEventListener("click", () => {
   if (readingStatus() === "in_progress" && !pauseBusy) mutate("skip", mutationPayload(), { pause: true });
 });
-window.addEventListener("focus", () => { pageActive = true; syncAnswerClock(); scheduleIdentitySync(); if (!actionBusy && !pauseBusy) refreshState(); });
+window.addEventListener("focus", () => {
+  pageActive = true; syncAnswerClock(); scheduleIdentitySync(); void refreshVisibleLearning();
+});
 window.addEventListener("blur", () => { pageActive = false; syncAnswerClock(); });
 window.addEventListener("pagehide", () => syncAnswerClock(true));
 window.addEventListener("online", () => { responseCache.clear(); refreshState({ force: true }); });
-document.addEventListener("visibilitychange", () => { syncAnswerClock(); if (!document.hidden && !actionBusy && !pauseBusy) refreshState(); });
+document.addEventListener("visibilitychange", () => { syncAnswerClock(); void refreshVisibleLearning(); });
 try {
   channel = new BroadcastChannel("graspmemoedu-progress");
   channel.onmessage = (event) => {
@@ -1745,12 +1778,7 @@ try {
 window.addEventListener("storage", (event) => {
   if (deploymentReady && [identityKey(), identityProblemKey()].some((key) => event.key === STORAGE_PREFIX + key)) scheduleIdentitySync();
 });
-setInterval(() => {
-  if (!document.hidden && !actionBusy && !pauseBusy && !state?.pending_submission_id) refreshState();
-  if (!document.hidden && access && !identityProblem) void refreshAccess().catch(error => {
-    if (identityFailure(error)) void recoverIdentity(error);
-  });
-}, 5000);
+setInterval(refreshVisibleLearning, ACCESS_CHECK_INTERVAL);
 $("skipContent").addEventListener("click", (event) => { event.preventDefault(); (topicId ? $("lessonContent") : $("portalContent")).focus(); });
 $("topicFeedbackButton").addEventListener("click", () => portal?.showFeedback({ topic_id: topicId, question_id: selectedStep()?.question_id }));
 
@@ -1794,7 +1822,7 @@ installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProble
   request, getScope: () => !identityProblem && access && JSON.stringify([scope(), access.learner_id]),
 });
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=783abd1bfadc97a5");
+const { initPortal } = await import("./portal.js?v=06a0f801bfc16166");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
