@@ -8,21 +8,22 @@ export function whiteboardText(value) {
   return fromWhiteboard(value) ? value.slice(prefix.length) : value;
 }
 
-async function recognize(png, request, language, fields) {
+async function recognize(png, request, language, fields, signal) {
   const image = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
     reader.onload = () => resolve(reader.result.split(',')[1]);
     reader.readAsDataURL(png);
   });
-  return request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, language, ...fields}});
+  signal?.throwIfAborted();
+  return request('whiteboard/recognize', {method: 'POST', timeout: 38000, signal, body: {image, language, ...fields}});
 }
 
 export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const ocrLanguage = language === 'en' ? 'en' : 'zh';
   const options = {key, editable, isCurrent: current,
-    recognizeSelection: png => recognize(png, request, ocrLanguage, {purpose: 'expression'})};
+    recognizeSelection: (png, signal) => recognize(png, request, ocrLanguage, {purpose: 'expression'}, signal)};
   if (!canSubmit) return options;
   const content = document.createElement('template');
   content.innerHTML = [question.html, activePart?.html].filter(Boolean).join('<br>');
@@ -40,9 +41,9 @@ export function questionWhiteboard({key, editable, canSubmit = editable, current
     .slice(0, 7000).join('').toWellFormed();
   return {
     ...options,
-    submit: async png => {
+    submit: async (png, archive) => {
       if (!current()) return '';
-      const result = await recognize(png, request, ocrLanguage, {question: text});
+      const [result] = await Promise.all([recognize(png, request, ocrLanguage, {question: text}), archive]);
       if (!current()) return '';
       if (result.status === 'insufficient') return result.feedback;
       if (result.status !== 'ready' || typeof result.answer !== 'string' || !result.answer.trim()) {
