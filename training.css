@@ -1,4 +1,29 @@
 /* The bank tree and reader use the existing course/lesson styles unchanged. */
+/* Hallmark · reader component · site accent · heading, outline, recording controls */
+.duckExercise {
+  margin-block: 1.5rem;
+  padding: clamp(.9rem, 3vw, 1.5rem);
+  background: var(--answer-background);
+  border: 1px solid var(--control-border);
+  border-radius: .65rem;
+}
+.duckHeading, .duckActions { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; }
+.duckHeading { justify-content: space-between; }
+.duckTitle, .duckStatus, .duckHelp, .duckSpoken { margin: 0; }
+.duckTitle { color: var(--ma-navy); font-size: 1rem; }
+.duckProgress, .duckHelp { color: var(--muted); font-size: .875rem; }
+.duckTree, .duckBranches { margin: 0; list-style: none; padding: 0; }
+.duckTree { margin-block: 1rem; }
+.duckBranches { border-inline-start: 1px solid var(--muted-accent-border); padding-inline-start: clamp(.4rem, 2vw, .95rem); }
+.duckNodeText { display: block; padding-block: .24rem; overflow-wrap: anywhere; }
+.duckNode[data-kind="heading"] > .duckNodeText { color: var(--ma-navy); font-weight: 650; }
+.duckNode[data-kind="point"] > .duckNodeText { color: var(--green); }
+.duckNode[data-kind="hidden"] > .duckNodeText { color: var(--muted); font-size: .875rem; }
+.duckActions, .duckStatus, .duckTranscript { margin-top: .7rem; }
+.duckActions button { min-block-size: 44px; }
+.duckTranscript { border-top: 1px solid var(--control-border); padding-top: .55rem; }
+.duckTranscript summary { color: var(--ma-blue); cursor: pointer; }
+.duckSpoken { white-space: pre-wrap; overflow-wrap: anywhere; }
 .trainingSectionTitle { margin: 28px 0 18px; font-size: 20px; }
 .trainingRatings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 22px; }
 .trainingRating { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; border: 1px solid transparent; border-radius: 3px; padding: 10px 5px; color: #fff; }
