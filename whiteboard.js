@@ -1,11 +1,12 @@
-import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=f528844848c87ac9';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=f528844848c87ac9';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=f528844848c87ac9';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=f528844848c87ac9';
+import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=512895d8baae36be';
+import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=512895d8baae36be';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=512895d8baae36be';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=512895d8baae36be';
 
 const editorUrl = 'https://rowan-memoedu.github.io/AnnotationCapture/whiteboard/v3/whiteboard.html';
 const boards = new WeakMap();
 const work = new Map();
+let preparedBoard;
 const casPreference = 'graspmemoedu:whiteboard-cas';
 
 export function whiteboardCasEnabled() {
@@ -82,14 +83,26 @@ function bridge(frame, onSelection) {
   };
 }
 
-export function openWhiteboard(workspace, launcher, question, options, session, english) {
+export function prepareWhiteboard(workspace, launcher, question, options, session, english, priority = false) {
+  if (!workspace?.isConnected || !launcher.isConnected || boards.has(workspace)) return;
+  if (preparedBoard?.connected() && !priority) return;
+  preparedBoard?.dispose();
+  preparedBoard = openWhiteboard(workspace, launcher, question, options, session, english, false);
+}
+
+export function openWhiteboard(workspace, launcher, question, options, session, english, initiallyOpen = true) {
   const previous = boards.get(workspace);
-  if (previous) return previous.toggle(launcher);
+  if (previous) {
+    if (!initiallyOpen) return previous;
+    if (!previous.unopenedFailure()) return previous.toggle(launcher);
+    previous.dispose();
+  }
   const local = (zh, en) => english ? en : zh;
   const panel = node('section', 'whiteboardPanel');
   const header = node('header');
   header.append(node('strong', '', local('白板', 'Whiteboard')));
   const frame = node('iframe');
+  frame.inert = true;
   frame.title = local('批注画布', 'Annotation canvas');
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
   frame.referrerPolicy = 'no-referrer';
@@ -106,10 +119,10 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   status.setAttribute('role', 'status');
   const ioError = () => local('无法读写白板。请检查目录授权或重试。', 'Could not access the whiteboard. Check folder access or try again.');
   const loading = local('正在打开白板…', 'Opening whiteboard…');
-  let ready = false, loadFailed = false, busy = false, closed = false, shown = true, hydrated = false, share = 55, swapped = false;
+  let ready = false, loadFailed = false, busy = false, closed = false, shown = false, used = false, hydrated = false, share = 55, swapped = false;
   let selected, identified, selectionBusy = false, voiceSubstitute = false;
   let selectionOcr;
-  const state = {options, dispose, toggle, refresh};
+  const state = {options, dispose, toggle, refresh, connected: () => workspace.isConnected, unopenedFailure: () => !shown && loadFailed};
   boards.set(workspace, state);
 
   function control(parent, zh, en, handler, className = 'secondaryButton') {
@@ -264,7 +277,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   math.append(result);
   panel.append(header, frame, math, status);
   workspace.append(divider, panel);
-  show(true);
+  show(initiallyOpen);
 
   function selectionChanged({id, count}) {
     if (!(stores || evaluates) || !state.options.recognizeSelection || closed) return;
@@ -420,12 +433,17 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   });
 
   function show(value) {
+    const changed = shown !== value;
     shown = value;
+    if (shown) {
+      used = true;
+      if (preparedBoard === state) preparedBoard = undefined;
+    }
     workspace.classList.toggle('whiteboardOpen', value);
     workspace.classList.toggle('whiteboardFirst', value && swapped);
     divider.hidden = panel.hidden = !value;
     (workspace.querySelector('[data-question-tool=whiteboard]') || launcher).setAttribute('aria-expanded', String(value));
-    refreshVoiceInput();
+    if (changed) refreshVoiceInput();
   }
 
   function toggle(button) {
@@ -446,8 +464,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   }
 
   async function loadSaved() {
-    const root = await whiteboardFolder({readOnly: true});
-    await session.whiteboardCapture;
+    const [root] = await Promise.all([whiteboardFolder({readOnly: true}), session.whiteboardCapture]);
     if (closed) return;
     let imageMissing = false;
     if (session.whiteboardScene) {
@@ -519,25 +536,29 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     if (closed) return;
     cancelSelectionOcr();
     closed = true;
+    if (preparedBoard === state) preparedBoard = undefined;
     boards.delete(workspace);
     show(false);
     divider.remove();
     panel.hidden = true;
     // Keep the frame attached until the unsent scene has been read.
     const finish = () => { port.dispose(); panel.remove(); };
-    if (ready && !busy && frame.isConnected) {
-      const capture = port.send('snapshot').then(snapshot => { session.whiteboardScene = snapshot.scene; }).catch(() => {}).finally(finish);
+    if (used && ready && !busy && frame.isConnected) {
+      const capture = port.send('scene')
+        .catch(async () => (await port.send('snapshot')).scene)
+        .then(scene => { session.whiteboardScene = scene; })
+        .catch(() => {}).finally(finish);
       session.whiteboardCapture = capture;
     } else finish();
   }
 
   status.textContent = loading;
   refresh();
-  void port.ready.then(async () => {
-    if (closed) return;
-    try { await loadSaved(); } catch { status.textContent = ioError(); }
+  const restored = loadSaved().catch(() => { status.textContent = ioError(); });
+  void Promise.all([port.ready, restored]).then(() => {
     if (closed) return;
     ready = true;
+    frame.inert = false;
     refresh();
     if (!state.options.submit && shown && document.activeElement === launcher) expression.focus({preventScroll: true});
   }).catch(() => {

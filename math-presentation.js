@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=f528844848c87ac9';
+import {escapedAt, mathSpans} from './math-syntax.js?v=512895d8baae36be';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -72,7 +72,8 @@ function formula(segment) {
   return math;
 }
 
-const protectedContent = 'mjx-container,math,svg,code,pre,kbd,samp,a,script,style,textarea,input,select,[data-tex],[data-math-source],.katex,[contenteditable="true"]';
+const archivedMath = 'mjx-container[jax="SVG"],.mjpage:has(> svg)';
+const protectedContent = 'mjx-container,.mjpage,math,svg,code,pre,kbd,samp,a,script,style,textarea,input,select,[data-tex],[data-math-source],.katex,[contenteditable="true"]';
 const pendingText = new WeakSet();
 const pendingDisplays = new WeakSet();
 const mountedSvg = new WeakSet();
@@ -80,7 +81,7 @@ const glyphCodepoints = new WeakMap();
 let fragmentNumber = 0, renderer;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=f528844848c87ac9').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=512895d8baae36be').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -185,24 +186,93 @@ export function presentationMathSource(node) {
 
 function storedLatex(math) {
   const source = math.closest('[data-tex]');
-  const tex = source && source.querySelectorAll('mjx-container').length <= 1
+  const tex = source && source.querySelectorAll(archivedMath).length <= 1
     ? source.getAttribute('data-tex')
-    : math.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+    : math.querySelector('annotation[encoding="application/x-tex"],:scope.mjpage > svg > title')?.textContent;
   const value = tex?.trim();
   if (!value) return '';
   const first = mathSpans(value).next().value;
   return first?.raw === value ? first.latex : value;
 }
 
-// Archived lessons include SVG glyph paths. Render their stored TeX with
-// the same selectable KaTeX HTML used for plain TeX and Thread UI.
+function archivedArgument(source, start) {
+  if (source[start] !== '{') {
+    const token = /^(?:\\(?:[a-z]+|.)|[^\\\s{}])/i.exec(source.slice(start))?.[0];
+    return token ? {body: token, end: start + token.length} : null;
+  }
+  let depth = 1;
+  for (let end = start + 1; end < source.length; end++) {
+    if (source[end] === '\\') end++;
+    else if (source[end] === '{') depth++;
+    else if (source[end] === '}' && --depth === 0) {
+      return {body: source.slice(start + 1, end), end: end + 1};
+    }
+  }
+  return null;
+}
+
+function archivedBox(options, body) {
+  const color = /(?:^|\s)(#[\da-f]{3,8}|[a-z]+)$/i;
+  const fields = options.split(',').map(field => field.trim());
+  const background = fields.find(field => /^(?:#[\da-f]{3,8}|[a-z]+)$/i.test(field));
+  const border = fields.find(field => field.startsWith('border:'));
+  const stroke = border?.match(color)?.[1];
+  if (border) return '\\fcolorbox{' + (stroke === 'solid' || !stroke ? 'currentColor' : stroke)
+    + '}{' + (background || 'transparent') + '}{$' + body + '$}';
+  if (background) return '\\colorbox{' + background + '}{$' + body + '$}';
+  return '{' + body + '}';
+}
+
+// MathJax 2 exports retain the original TeX including its box commands and
+// the nested math markers used in the imported authoring text.
+function normalizeArchivedLatex(source, display) {
+  const commands = /\\(bbox|fbox|text|textrm|eqalign|matrix)\b(?:\s*\[([^\]]*)\])?\s*/g;
+  let result = '', from = 0, match;
+  while ((match = commands.exec(source))) {
+    if (escapedAt(source, match.index)) continue;
+    const argument = archivedArgument(source, commands.lastIndex);
+    if (!argument) continue;
+    const [command, name, options] = match;
+    const body = argument.body;
+    let replacement;
+    if (name === 'bbox') replacement = archivedBox(options || '', normalizeArchivedLatex(body, display));
+    else if (name === 'eqalign' || name === 'matrix') {
+      const environment = name === 'eqalign' ? 'aligned' : 'matrix';
+      replacement = '\\begin{' + environment + '}' + normalizeArchivedLatex(body, display) + '\\end{' + environment + '}';
+    } else if (name === 'text' || name === 'textrm') {
+      const runs = body.split(/(\[math\][\s\S]*?\[\/math\]|\$(?:\\.|[^$\\])+\$)/g);
+      const text = name === 'textrm' && runs.length === 1 && /[_^]\\[a-z]+/i.test(body)
+        ? '$' + normalizeArchivedLatex(body, false) + '$'
+        : runs.map((part, index) => {
+          if (!(index % 2)) return part.replace(/(^|[^\\])([#_]+)/g, (_, prefix, symbols) =>
+            prefix + symbols.replace(/./g, '\\$&'));
+          return part[0] === '$' ? part : '$' + normalizeArchivedLatex(part.slice(6, -7), false) + '$';
+        }).join('');
+      replacement = '\\' + name + '{' + text + '}';
+    } else if (body.includes('[math]')) {
+      replacement = '\\fbox{$' + normalizeArchivedLatex(body, display) + '$}';
+    } else replacement = command + '{' + normalizeArchivedLatex(body, display) + '}';
+    result += source.slice(from, match.index) + replacement;
+    from = commands.lastIndex = argument.end;
+  }
+  result = (result + source.slice(from)).replace(/\\?\[\/?math\]/g, '').replace(/\\require\{cancel\}/g, '')
+    .replace(/_\\limits\b/g, '\\limits_').replace(/(?:\\!){4,}/g, run => '\\mkern-' + (run.length * 1.5) + 'mu ');
+  if (!display) result = result.replace(/\\(begin|end)\{align\*?\}/g, '\\$1{aligned}');
+  return result.replace(/\\color\[rgb\]\{\s*((?:\d*\.)?\d+)\s*,\s*((?:\d*\.)?\d+)\s*,\s*((?:\d*\.)?\d+)\s*\}/g,
+    (original, ...channels) => {
+      const values = channels.slice(0, 3).map(Number);
+      if (values.some(value => value > 1)) return original;
+      return '\\color{#' + values.map(value => Math.round(value * 255).toString(16).padStart(2, '0')).join('') + '}';
+    });
+}
+
+// Use the same visible, selectable HTML for current and archived formulas.
 export function installSelectableMath(root = document.body) {
-  const archived = 'mjx-container[jax="SVG"]';
   const seen = new WeakSet();
   function candidates(node, batch) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
-    if (node.matches(archived)) batch.add(node);
-    for (const math of node.querySelectorAll(archived)) batch.add(math);
+    if (node.matches(archivedMath)) batch.add(node);
+    for (const math of node.querySelectorAll(archivedMath)) batch.add(math);
   }
   function render(batch) {
     const pending = [...batch].filter(math => !seen.has(math));
@@ -210,11 +280,13 @@ export function installSelectableMath(root = document.body) {
     pending.forEach(math => seen.add(math));
     void loadRenderer().then(({renderLatex}) => {
       for (const math of pending) {
-        if (!root.contains(math) || !math.matches(archived)) continue;
+        if (!root.contains(math) || !math.matches(archivedMath)) continue;
+        const legacy = math.matches('.mjpage');
         const source = storedLatex(math);
-        const display = math.getAttribute('display') === 'true';
+        const display = math.matches('[display="true"],.mjpage__block');
         const content = document.createElement('span');
-        if (!source || !renderLatex(content, source, display)) {
+        const latex = legacy && source.length <= 4000 ? normalizeArchivedLatex(source, display) : source;
+        if (!latex || !renderLatex(content, latex, display)) {
           const semantic = math.querySelector('mjx-assistive-mml math');
           const recovered = presentationMathSource(math);
           if (semantic) {
@@ -224,7 +296,10 @@ export function installSelectableMath(root = document.body) {
           } else if (!recovered || !renderLatex(content, recovered.slice(2, -2), display)) continue;
           if (!source && recovered) math.dataset.mathSource = recovered;
         }
-        math.setAttribute('jax', 'HTML');
+        if (legacy) {
+          math.dataset.mathSource = (display ? '\\[' : '\\(') + latex + (display ? '\\]' : '\\)');
+          math.classList.add(display ? 'mathDisplay' : 'mathInline');
+        } else math.setAttribute('jax', 'HTML');
         math.replaceChildren(...content.childNodes);
       }
     }).catch(() => pending.forEach(math => seen.delete(math)));
