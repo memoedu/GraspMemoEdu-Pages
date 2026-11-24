@@ -1,12 +1,12 @@
-import {inheritVoiceContext} from './voice-context.js?v=6472887ae33cd079';
+import {inheritVoiceContext} from './voice-context.js?v=783abd1bfadc97a5';
 import {assignableVariable, basedLogKey, constants, expressionCompletions, expressionExtensions, keypad, levels, memoryRegisters,
   normalizeVariableName, permitsBasedLog, permitsConstant, permitsCustomFunctions, permitsExtension, permitsKey, permitsModule,
-  scientificCategories} from './calculator-policy.js?v=6472887ae33cd079';
-import {calculateImmediate} from './calculator-engine.js?v=6472887ae33cd079';
-import {toolInputs} from './calculator-inputs.js?v=6472887ae33cd079';
-import {setInputCompletions} from './autocomplete.js?v=6472887ae33cd079';
-import {nativeFunctionCompletions} from './formula-catalog.js?v=6472887ae33cd079';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=6472887ae33cd079';
+  scientificCategories} from './calculator-policy.js?v=783abd1bfadc97a5';
+import {calculateImmediate} from './calculator-engine.js?v=783abd1bfadc97a5';
+import {toolInputs} from './calculator-inputs.js?v=783abd1bfadc97a5';
+import {setInputCompletions} from './autocomplete.js?v=783abd1bfadc97a5';
+import {nativeFunctionCompletions} from './formula-catalog.js?v=783abd1bfadc97a5';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=783abd1bfadc97a5';
 
 let active = null;
 const create = (tag, className = '', text) => {
@@ -253,7 +253,7 @@ export function openCalculator(launch, config, [module, zh, en, operations], eng
     working = false;
   }
   function startWorker() {
-    return worker ||= new Worker(new URL('./calculator-worker.js?v=6472887ae33cd079', import.meta.url), {type: 'module'});
+    return worker ||= new Worker(new URL('./calculator-worker.js?v=783abd1bfadc97a5', import.meta.url), {type: 'module'});
   }
   function warmOnInput(event, sourceModule) {
     if (warming || event.target.matches('.calculatorStorageName')) return;
