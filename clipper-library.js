@@ -1,5 +1,5 @@
-import {clipText as tx} from './clipper.js?v=d78db3c9b6ac003a';
-import {renderPlainMath} from './math-presentation.js?v=d78db3c9b6ac003a';
+import {clipText as tx} from './clipper.js?v=d036b80b4dda8dbf';
+import {renderPlainMath} from './math-presentation.js?v=d036b80b4dda8dbf';
 
 export function mountClipperLibrary({root, request, node, control, link, isCurrent}) {
   const active = () => isCurrent() && root.isConnected;
