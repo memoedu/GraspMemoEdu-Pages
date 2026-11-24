@@ -10,6 +10,7 @@ export function whiteboardText(value) {
 
 export function questionWhiteboard({key, editable, current, submit, request, question, language, activePart}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
+  const ocrLanguage = language === 'en' ? 'en' : 'zh';
   const content = document.createElement('template');
   content.innerHTML = [question.html, activePart?.html].filter(Boolean).join('<br>');
   for (const element of content.content.querySelectorAll('script,style,template,[hidden],[inert],[aria-hidden="true"]')) element.remove();
@@ -34,11 +35,11 @@ export function questionWhiteboard({key, editable, current, submit, request, que
         reader.readAsDataURL(png);
       });
       if (!current()) return '';
-      const result = await request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, question: text, language}});
+      const result = await request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, question: text, language: ocrLanguage}});
       if (!current()) return '';
       if (result.status === 'insufficient') return result.feedback;
       if (result.status !== 'ready' || typeof result.answer !== 'string' || !result.answer.trim()) {
-        throw Error(language === 'en' ? 'The whiteboard could not be read.' : '未能读取白板作答。');
+        throw Error(ocrLanguage === 'en' ? 'The whiteboard could not be read.' : '未能读取白板作答。');
       }
       await submit(prefix + result.answer);
       return '';
