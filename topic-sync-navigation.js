@@ -1,8 +1,10 @@
-import {getLanguage} from './i18n.js?v=0fbc589f2ae710fc';
-import {installBodyEditor} from './topic-body-editor.js?v=0fbc589f2ae710fc';
+import {getLanguage} from './i18n.js?v=96d6ac0e64adb146';
+import {installBodyEditor} from './topic-body-editor.js?v=96d6ac0e64adb146';
+import {toolbarAction} from './question-tools.js?v=96d6ac0e64adb146';
 
 const channel = 'graspmemoedu-remnote-v1';
 const tr = (zh, en) => getLanguage() === 'en' ? en : zh;
+const installErrors = new Set(['navigator_missing', 'topic_sync_extension_offline', 'topic_sync_companion_offline']);
 const returning = document.querySelector('[data-topic-return]');
 const download = document.querySelector('[data-navigator-download]');
 if (download) download.addEventListener('click', async () => {
@@ -75,23 +77,26 @@ export function topicBindingPath(deviceId, topicId) {
 }
 
 export function installTopicNavigation({target, request, current, apiOrigin}) {
-  const area = document.createElement('section');
-  area.className = 'lessonToolbar';
-  area.hidden = true;
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'textButton';
+  const tools = document.createElement('div');
+  tools.className = 'questionToolGroup topicSyncTools';
+  tools.setAttribute('role', 'group');
+  tools.hidden = true;
+  const button = toolbarAction('open-remnote', 'M14 3h7v7m0-7L10 14m-1-9H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4');
   const status = document.createElement('p');
-  status.className = 'pauseHint';
+  status.className = 'topicSyncStatus';
+  status.id = 'topicSyncStatus';
   status.setAttribute('role', 'status');
-  const edit = document.createElement('button');
-  edit.type = 'button'; edit.className = 'textButton'; edit.hidden = true;
+  status.setAttribute('data-content-actions', '');
+  const edit = toolbarAction('edit-topic', 'm14 5 5 5M4 20l5-1L21 7a2 2 0 0 0-5-5L4 14z');
+  edit.hidden = true;
   const panel = document.createElement('section');
+  panel.id = 'topicBodyEditor';
   panel.hidden = true;
-  const editor = installBodyEditor({button: edit, panel, status, request, current, companion, apiOrigin});
-  area.append(edit, button, status);
-  target.after(area);
-  area.after(panel);
+  edit.setAttribute('aria-controls', panel.id);
+  for (const control of [edit, button]) control.setAttribute('aria-describedby', status.id);
+  const editor = installBodyEditor({button: edit, panel, status, request, current, companion, apiOrigin, installErrors});
+  tools.append(edit, button);
+  target.after(status, panel);
   let key, generation = 0;
 
   async function refresh() {
@@ -100,16 +105,19 @@ export function installTopicNavigation({target, request, current, apiOrigin}) {
     if (next === key) return;
     key = next;
     const requestGeneration = ++generation;
-    area.hidden = true;
+    tools.hidden = true;
     editor.reset();
     button.disabled = false;
+    button.removeAttribute('aria-busy');
     status.textContent = '';
     if (!scope) return;
     try {
       const state = await request('topic-sync/device-state', {fresh: true});
       if (generation === requestGeneration) {
-        button.textContent = tr('在本地 RemNote 中打开', 'Open in local RemNote');
-        area.hidden = false;
+        button.title = tr('在本地 RemNote 中打开', 'Open in local RemNote');
+        button.setAttribute('aria-label', button.title);
+        tools.setAttribute('aria-label', tr('Topic 正文与 RemNote', 'Topic body and RemNote'));
+        tools.hidden = false;
         if (state.editor) {
           try { await editor.open(scope); }
           catch (error) {
@@ -130,6 +138,7 @@ export function installTopicNavigation({target, request, current, apiOrigin}) {
     const requestGeneration = generation;
     const isCurrent = () => generation === requestGeneration && key === JSON.stringify(current());
     button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
     status.textContent = tr('正在连接本地 RemNote…', 'Connecting to local RemNote…');
     let mismatch = false;
     try {
@@ -158,7 +167,7 @@ export function installTopicNavigation({target, request, current, apiOrigin}) {
     } catch (error) {
       if (!isCurrent()) return;
       mismatch = error.code === 'topic_sync_account_mismatch';
-      if (error.code === 'navigator_missing') {
+      if (installErrors.has(error.code)) {
         const install = new URL('./remnote-install.html', import.meta.url);
         install.hash = location.hash.slice(1);
         location.assign(install);
@@ -166,8 +175,11 @@ export function installTopicNavigation({target, request, current, apiOrigin}) {
         status.textContent = error.message || tr('暂时无法打开 RemNote。', 'Could not open RemNote.');
       }
     } finally {
-      if (isCurrent()) button.disabled = mismatch;
+      if (isCurrent()) {
+        button.disabled = mismatch;
+        button.removeAttribute('aria-busy');
+      }
     }
   });
-  return {refresh};
+  return {refresh, tools};
 }

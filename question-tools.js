@@ -1,8 +1,8 @@
-import {setVoiceContext} from './voice-context.js?v=0fbc589f2ae710fc';
-import {getLanguage} from './i18n.js?v=0fbc589f2ae710fc';
-import {calculatorToolGroups} from './calculator.js?v=0fbc589f2ae710fc';
-import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=0fbc589f2ae710fc';
-import {questionWhiteboard} from './whiteboard-answer.js?v=0fbc589f2ae710fc';
+import {setVoiceContext} from './voice-context.js?v=96d6ac0e64adb146';
+import {getLanguage} from './i18n.js?v=96d6ac0e64adb146';
+import {calculatorToolGroups} from './calculator.js?v=96d6ac0e64adb146';
+import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=96d6ac0e64adb146';
+import {questionWhiteboard} from './whiteboard-answer.js?v=96d6ac0e64adb146';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -25,13 +25,24 @@ function icon(path) {
 }
 
 function toolbarButtons(toolbar) {
-  return [...toolbar.querySelectorAll('.questionToolButton')].filter(button => !button.closest('[hidden]'));
+  return [...toolbar.querySelectorAll('.questionToolButton')].filter(button => !button.disabled && !button.closest('[hidden]'));
 }
 
 function setTabStop(toolbar, selected) {
+  if (!toolbar) return;
   const buttons = toolbarButtons(toolbar);
-  const active = selected || buttons.find(button => button.tabIndex === 0) || buttons[0];
-  for (const button of buttons) button.tabIndex = button === active ? 0 : -1;
+  const active = buttons.includes(selected) ? selected : buttons.find(button => button.tabIndex === 0) || buttons[0];
+  for (const button of toolbar.querySelectorAll('.questionToolButton')) button.tabIndex = button === active ? 0 : -1;
+}
+
+export function toolbarAction(id, path) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'questionToolButton';
+  button.dataset.questionTool = id;
+  button.tabIndex = -1;
+  button.append(icon(path));
+  return button;
 }
 
 function createToolbar(label, orientation) {
@@ -93,7 +104,7 @@ function toolButton({id, label, icon: path, open}, message, english, expanded = 
   return button;
 }
 
-export function installToolbars(host, voice, clipper) {
+export function installToolbars(host, voice, clipper, topicTools) {
   const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
   const pageToolbar = createToolbar(label(), 'horizontal');
   host.append(pageToolbar);
@@ -109,11 +120,20 @@ export function installToolbars(host, voice, clipper) {
       modalToolbar.classList.add('dialogTools');
       modal.prepend(modalToolbar);
     }
-    const hasPageTools = !voice.hidden || Boolean(clipper && !clipper.hidden);
+    const hasGlobalTools = !voice.hidden || Boolean(clipper && !clipper.hidden);
+    const hasTopicTools = Boolean(topicTools && !topicTools.hidden);
+    const hasPageTools = hasGlobalTools || hasTopicTools;
     const questionToolbar = !hasPageTools ? null :
       [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
     const toolbar = modalToolbar || questionToolbar || pageToolbar;
-    const hidePageTools = !hasPageTools || toolbar !== pageToolbar;
+    const lessonToolbar = questionToolbar?.closest('#lessonContent') ? questionToolbar : pageToolbar;
+    const topicShelf = lessonToolbar.querySelector('.questionToolGroups') || lessonToolbar;
+    if (topicTools && topicTools.parentElement !== topicShelf) {
+      const previous = topicTools.closest('.questionTools');
+      topicShelf.prepend(topicTools);
+      setTabStop(previous);
+    }
+    const hidePageTools = !(hasGlobalTools && toolbar === pageToolbar || hasTopicTools && lessonToolbar === pageToolbar && !modal);
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
     for (const button of [voice, clipper].filter(Boolean)) {
       if (button.parentElement === toolbar) continue;
@@ -124,13 +144,16 @@ export function installToolbars(host, voice, clipper) {
     }
     if (pageToolbar.getAttribute('aria-label') !== label()) pageToolbar.setAttribute('aria-label', label());
     if (modalToolbar && modalToolbar.getAttribute('aria-label') !== label()) modalToolbar.setAttribute('aria-label', label());
+    setTabStop(pageToolbar);
+    setTabStop(toolbar);
+    if (lessonToolbar !== toolbar) setTabStop(lessonToolbar);
   };
   sync();
   // Route changes can replace a question rail or open a native modal.
   // Always transfer the one voice control to the currently usable toolbar.
   const observer = new MutationObserver(sync);
   observer.observe(document.body, {
-    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden'],
+    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden', 'disabled'],
   });
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
 }

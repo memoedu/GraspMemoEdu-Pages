@@ -1,11 +1,11 @@
-import {getLanguage} from './i18n.js?v=0fbc589f2ae710fc';
+import {getLanguage} from './i18n.js?v=96d6ac0e64adb146';
 
 const say = (zh, en) => getLanguage() === 'en' ? en : zh;
-const enabledKey = learner => 'graspmemoedu:topic-edit:' + learner;
+const enabledKey = scope => 'graspmemoedu:topic-edit:' + scope;
 const drafts = new Map();
 const keyOf = document => JSON.stringify(document);
 
-export function installBodyEditor({button, panel, status, request, current, companion, apiOrigin}) {
+export function installBodyEditor({button, panel, status, request, current, companion, apiOrigin, installErrors}) {
   let active;
   const live = session => active === session && session.scopeKey === keyOf(current());
   function notice(session, text) { if (live(session)) status.textContent = text; }
@@ -121,7 +121,7 @@ export function installBodyEditor({button, panel, status, request, current, comp
     active = session;
     let device;
     try { device = await companion('device'); }
-    catch (error) { if (error.code !== 'navigator_missing') throw error; }
+    catch (error) { if (!installErrors.has(error.code)) throw error; }
     if (!live(session)) return;
     if (device?.device_id) session.deviceQuery = '?' + new URLSearchParams({device_id: device.device_id});
     const query = new URLSearchParams(session.deviceQuery);
@@ -131,7 +131,7 @@ export function installBodyEditor({button, panel, status, request, current, comp
     Object.assign(session, {saved: state.document, revision: state.revision, baseline: state.baseline_revision,
       official: state.official_version, editable: state.editable});
     let preferred = false;
-    try { preferred = localStorage.getItem(enabledKey(scope.learnerId)) === 'yes'; } catch {}
+    try { preferred = localStorage.getItem(enabledKey(session.draftKey)) === 'yes'; } catch {}
     session.editing = preferred && state.editable;
     const draft = drafts.get(session.draftKey);
     if (draft && state.editable) {
@@ -148,8 +148,9 @@ export function installBodyEditor({button, panel, status, request, current, comp
     button.hidden = false;
     button.disabled = !state.editable;
     button.setAttribute('aria-pressed', String(session.editing));
-    button.textContent = session.editing ? say('关闭编辑', 'Finish editing') : say('开启编辑', 'Enable editing');
-    button.title = state.editable ? '' : say('管理员尚未开放此 Topic 的编辑权限。', 'Editing is disabled by your administrator.');
+    const label = session.editing ? say('关闭编辑', 'Finish editing') : say('开启编辑', 'Enable editing');
+    button.setAttribute('aria-label', label);
+    button.title = state.editable ? label : say('管理员尚未开放此 Topic 的编辑权限。', 'Editing is disabled by your administrator.');
     if (session.editing || state.revision || state.baseline_revision) show(session, session.pending ?? session.saved);
     if (session.pending && !session.blocked) void save(session).catch(() => {});
     if (session.blocked) notice(session, say('正文已有新版本，此页保留了未保存的改动。', 'A newer revision exists. Your draft is still here.'));
@@ -172,8 +173,9 @@ export function installBodyEditor({button, panel, status, request, current, comp
         await save(session);
       }
       if (!live(session)) return;
-      try {localStorage.setItem(enabledKey(session.scope.learnerId), session.editing ? 'no' : 'yes');} catch {}
+      try {localStorage.setItem(enabledKey(session.draftKey), session.editing ? 'no' : 'yes');} catch {}
       await open(session.scope);
+      if (active?.editing && live(active)) panel.scrollIntoView({block: 'nearest'});
     } catch (error) { notice(session, error.message); }
     finally { if (active?.editable) button.disabled = false; }
   });
