@@ -23,8 +23,6 @@
 .whiteboardPanel > :is(header, .whiteboardMath) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 9px; }
 .whiteboardPanel button { font: inherit; }
 .whiteboardPanel .whiteboardSubmit:disabled { background: var(--ma-border); border-color: var(--ma-border); color: var(--muted); opacity: 1; }
-.pageTools.whiteboardOpen { flex-direction: column; gap: 8px; }
-.pageTools.whiteboardOpen > .questionTools { align-self: end; }
 .whiteboardPanel > header strong { margin-inline-end: auto; }
 .whiteboardPanel iframe { border: 0; width: 100%; height: clamp(330px, 66dvh, 850px); display: block; background: #f5f7fa; }
 .whiteboardMath input {

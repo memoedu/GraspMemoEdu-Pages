@@ -1,25 +1,25 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=a7d489286149768a";
-import {answerReady} from './question-input.js?v=a7d489286149768a';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=a7d489286149768a';
-import {startPresence} from './presence.js?v=a7d489286149768a';
-import {createLearningCache} from './learning-cache.js?v=a7d489286149768a';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=a7d489286149768a';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=dc07b85c3eb4a143";
+import {answerReady} from './question-input.js?v=dc07b85c3eb4a143';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=dc07b85c3eb4a143';
+import {startPresence} from './presence.js?v=dc07b85c3eb4a143';
+import {createLearningCache} from './learning-cache.js?v=dc07b85c3eb4a143';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=dc07b85c3eb4a143';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=a7d489286149768a';
-import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=a7d489286149768a';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=a7d489286149768a';
-import {renderSourceReader} from './learning-ui.js?v=a7d489286149768a';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=a7d489286149768a';
-import {createTrainingView} from './training.js?v=a7d489286149768a';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=a7d489286149768a';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=a7d489286149768a';
-import {installClipper} from './clipper.js?v=a7d489286149768a';
-import {installSelectableMath} from './math-presentation.js?v=a7d489286149768a';
-import {installAutocomplete} from './autocomplete.js?v=a7d489286149768a';
-import {expressionCompletions} from './calculator-policy.js?v=a7d489286149768a';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=a7d489286149768a';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=a7d489286149768a';
-import {questionWhiteboard} from './whiteboard-answer.js?v=a7d489286149768a';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=dc07b85c3eb4a143';
+import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=dc07b85c3eb4a143';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=dc07b85c3eb4a143';
+import {renderSourceReader} from './learning-ui.js?v=dc07b85c3eb4a143';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=dc07b85c3eb4a143';
+import {createTrainingView} from './training.js?v=dc07b85c3eb4a143';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=dc07b85c3eb4a143';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=dc07b85c3eb4a143';
+import {installClipper} from './clipper.js?v=dc07b85c3eb4a143';
+import {installSelectableMath} from './math-presentation.js?v=dc07b85c3eb4a143';
+import {installAutocomplete} from './autocomplete.js?v=dc07b85c3eb4a143';
+import {expressionCompletions} from './calculator-policy.js?v=dc07b85c3eb4a143';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=dc07b85c3eb4a143';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=dc07b85c3eb4a143';
+import {questionWhiteboard} from './whiteboard-answer.js?v=dc07b85c3eb4a143';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1024,19 +1024,26 @@ async function sendSubmission(payload) {
   }
 }
 
+function topicBodyTools() {
+  const topic = state.topic_id, learner = learnerScope(), generation = connectionGeneration;
+  return {key: JSON.stringify(['topic-body', scope(), learner, topic]), request: topicRequest,
+    current: () => connectionGeneration === generation && state?.topic_id === topic && learnerScope() === learner};
+}
+
 function lessonWhiteboard(step, actions) {
   if (!step.question_id || !['example', 'practice'].includes(step.kind)) return;
   const topic = state.topic_id, attempt = state.attempt_id, revision = state.revision;
   const learner = learnerScope();
-  const current = () => state?.topic_id === topic && state?.attempt_id === attempt && state?.revision === revision &&
-    state?.active_step_id === step.id && selectedStep()?.id === step.id && learnerScope() === learner &&
-    !state.pending_submission_id && !actionBusy && can('submit_answer');
+  const viewing = () => state?.topic_id === topic && state?.attempt_id === attempt && state?.revision === revision &&
+    selectedStep()?.id === step.id && learnerScope() === learner;
   const canSubmit = step.phase === 'answer' && !step.revealed && actions.includes('submit') &&
-    step.id === state.active_step_id && can('submit_answer');
+    step.id === state.active_step_id && !state.pending_submission_id && can('submit_answer');
   return questionWhiteboard({
     key: JSON.stringify([apiBase, learner, topic, step.question_id]), question: step,
-    editable: canSubmit || actions.includes('mastered') || actions.includes('unmastered'), canSubmit,
-    current, request: topicRequest, language: getLanguage(),
+    editable: true, canSubmit,
+    current: canSubmit ? () => viewing() && state.active_step_id === step.id && !state.pending_submission_id &&
+      !actionBusy && can('submit_answer') : viewing,
+    request: topicRequest, language: getLanguage(),
     submit: answer => sendSubmission(mutationPayload({answer, elapsed_ms: syncAnswerClock()})),
   });
 }
@@ -1383,6 +1390,7 @@ function renderStep(step) {
       renderSourceReader($('stepCard'), state, index, show, {
         value: storageRead(sessionStorage, draftKey, ''),
         save: value => storageWrite(sessionStorage, draftKey, value),
+        topicBody: topicBodyTools(),
       });
     };
     show(Number(storageRead(sessionStorage, key, '0')) || 0);
@@ -1398,13 +1406,13 @@ function renderStep(step) {
     const bankKey = JSON.stringify([state.course_version, reference.version, step.id, access?.learner_id, access?.features]);
     if (topicTrainingKey !== bankKey) {
       stopTopicTraining(); target.replaceChildren(); target.dataset.stepId = step.id;
-      setQuestionTools(target);
+      setQuestionTools(target, undefined, undefined, topicBodyTools());
       const heading = readingSectionHeading(step.section); if (heading) target.append(heading);
       const host = el('div', 'topicBankQuestion'); target.append(host);
       topicTrainingKey = bankKey;
       topicTraining = createTrainingView({root: host, request: (path, options) => request(path +
         (path.includes('?') ? '&' : '?') + new URLSearchParams({subject_id: topicSubjectId}), options),
-        getAccess: () => access, href: path => '#/subjects/' + topicSubjectId + path,
+        getAccess: () => access, topicBody: topicBodyTools(), href: path => '#/subjects/' + topicSubjectId + path,
         formatDate: value => new Date(value).toLocaleString(), progressChanged: () => portal?.progressChanged()});
       void topicTraining.mount(reference, host, () => refreshState({force: true}), target);
     }
@@ -1434,7 +1442,7 @@ function renderStep(step) {
     return;
   }
   if (step.kind === "completion") {
-    setQuestionTools(target);
+    setQuestionTools(target, step, undefined, topicBodyTools());
     renderCompletion(target);
     renderStepNavigation(target, step, []);
     mountTopicBacklinks(target, state.content_references);
@@ -1453,7 +1461,7 @@ function renderStep(step) {
   }
   const selfRated = ['example', 'practice'].includes(step.kind) && isCourseSelfRating(step.feedback?.reason);
   const {stem} = renderReaderStep(target, step, {title: readerStepTitle(step), counter, references: state.content_references,
-    whiteboard: lessonWhiteboard(step, actions),
+    whiteboard: lessonWhiteboard(step, actions), topicBody: topicBodyTools(),
     showSubmittedInteraction: !actions.includes('submit'),
     submittedValue: step.answer || (step.id === state.active_step_id ? draftValue(step) : ''),
     showAnswer: selfRated ? false : undefined,
@@ -1818,11 +1826,9 @@ void ensureDeployment().catch(() => {});
 clipper = installClipper({request, identity: () => !identityProblem && access?.role === 'account' ? access.learner_id : null});
 installSelectableMath();
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
-  getIdentity: () => `${identityGeneration}:${connectionGeneration}`, getAccountScope: () => identityGeneration, request}), clipper.toggle, {
-  request, getScope: () => !identityProblem && access && JSON.stringify([scope(), access.learner_id]),
-});
+  getIdentity: () => `${identityGeneration}:${connectionGeneration}`, getAccountScope: () => identityGeneration, request}), clipper.toggle);
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=a7d489286149768a");
+const { initPortal } = await import("./portal.js?v=dc07b85c3eb4a143");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {

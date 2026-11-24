@@ -18,10 +18,10 @@ async function recognize(png, request, language, fields) {
   return request('whiteboard/recognize', {method: 'POST', timeout: 38000, body: {image, language, ...fields}});
 }
 
-export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart, standalone = false}) {
+export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const ocrLanguage = language === 'en' ? 'en' : 'zh';
-  const options = {key, editable, standalone, isCurrent: current,
+  const options = {key, editable, isCurrent: current,
     recognizeSelection: png => recognize(png, request, ocrLanguage, {purpose: 'expression'})};
   if (!canSubmit) return options;
   const content = document.createElement('template');

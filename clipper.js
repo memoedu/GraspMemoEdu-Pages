@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=a7d489286149768a';
-import {learningSelectionBlock} from './content-report.js?v=a7d489286149768a';
-import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=a7d489286149768a';
-import {currentModal} from './question-tools.js?v=a7d489286149768a';
+import {getLanguage} from './i18n.js?v=dc07b85c3eb4a143';
+import {learningSelectionBlock} from './content-report.js?v=dc07b85c3eb4a143';
+import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=dc07b85c3eb4a143';
+import {currentModal} from './question-tools.js?v=dc07b85c3eb4a143';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -161,7 +161,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=a7d489286149768a').then(module => {
+    return import('./clipper-workspace.js?v=dc07b85c3eb4a143').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
