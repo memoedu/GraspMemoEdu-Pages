@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=b166183de20b7ca0';
+import {t} from './i18n.js?v=7bb5e54ec4db0048';
 
 export function focusReaderRoute({path, params}) {
   return /^\/(?:topic\/[^/]+|review\/[^/]+\/[^/]+)$/.test(path)
@@ -61,7 +61,17 @@ export function createFocusMode({toolbar, toggle, fullscreen, fullscreenNotice, 
     syncActions();
   }
   function closeFullscreen() {
-    if (nativeActive && document.fullscreenElement === surface) void document.exitFullscreen().catch(() => {});
+    if (nativeActive && document.fullscreenElement === surface) {
+      void document.exitFullscreen().then(syncNativeFullscreen, () => {});
+    }
+  }
+  function syncNativeFullscreen() {
+    const active = document.fullscreenElement === surface;
+    if (active === nativeActive) return;
+    nativeActive = active;
+    if (!active && enabled) setEnabled(false);
+    else if (active && !enabled) closeFullscreen();
+    else render();
   }
   async function openFullscreen() {
     if (!enabled || requesting || !canFullscreen() || document.fullscreenElement === surface) return;
@@ -70,8 +80,7 @@ export function createFocusMode({toolbar, toggle, fullscreen, fullscreenNotice, 
     render();
     try {
       await surface.requestFullscreen({navigationUI: 'hide'});
-      nativeActive = document.fullscreenElement === surface;
-      if (!enabled) closeFullscreen();
+      syncNativeFullscreen();
     } catch {
       fullscreenFailed = enabled;
     } finally {
@@ -79,12 +88,13 @@ export function createFocusMode({toolbar, toggle, fullscreen, fullscreenNotice, 
       render();
     }
   }
-  document.addEventListener('fullscreenchange', () => {
-    const wasActive = nativeActive;
-    nativeActive = document.fullscreenElement === surface && (requesting || wasActive);
-    if (nativeActive && !enabled) closeFullscreen();
-    else if (wasActive && !nativeActive && enabled) setEnabled(false);
-    else render();
+  document.addEventListener('fullscreenchange', syncNativeFullscreen, true);
+  window.addEventListener('resize', syncNativeFullscreen);
+  window.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || event.defaultPrevented || !enabled || !(nativeActive || requesting)
+        || document.querySelector('dialog[open]')) return;
+    setEnabled(false);
+    closeFullscreen();
   });
   toggle.addEventListener('click', () => {
     setEnabled(!enabled);

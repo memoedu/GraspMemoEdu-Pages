@@ -29,6 +29,8 @@ body.learningFocus {
   --focus-wide-width: 96rem;
   --focus-rail-width: 64px;
   --focus-rail-gap: 12px;
+  --focus-rail-reserve: 0px;
+  --focus-reader-offset: 0px;
   --focus-dock-offset: 0px;
   --site-header-height: calc(44px + env(safe-area-inset-top));
   padding-top: 0;
@@ -71,7 +73,8 @@ body.learningFocus.historyDrawerOpen:not(.portalModalOpen) { overflow: visible; 
 .learningFocus :is(.appLayout .pageShell, .atomicLayout > .atomicMain, .reviewLayout > .reviewMain) {
   inline-size: fit-content;
   min-inline-size: min(100%, 32rem);
-  max-inline-size: var(--focus-reader-width);
+  max-inline-size: min(var(--focus-reader-width),
+    calc(100% - 2 * (var(--focus-rail-reserve) + var(--focus-reader-offset))));
   margin: auto;
 }
 
@@ -118,8 +121,14 @@ body.learningFocus.historyDrawerOpen:not(.portalModalOpen) { overflow: visible; 
   .learningFocus .questionWorkspace:not(.whiteboardOpen) > .questionToolRail .questionToolGroup { flex-direction: column; }
 
   .learningFocus :is(.pageShell, .atomicMain, .reviewMain):has(.questionWorkspace:not(.whiteboardOpen) > .questionToolRail) {
-    max-inline-size: min(var(--focus-reader-width),
-      calc(100% - 2 * max(0px, var(--focus-rail-width) + var(--focus-rail-gap) - var(--focus-gutter))));
+    --focus-rail-reserve: max(0px, var(--focus-rail-width) + var(--focus-rail-gap) - var(--focus-gutter));
+  }
+
+  .learningFocus:not(:has(.questionCalculator[open]))
+      :is(.pageShell, .atomicMain, .reviewMain):has(.questionToolRail, .contentReportToggle):not(:has(.whiteboardOpen)) {
+    --focus-reader-offset: clamp(24px, 3.5vw, 56px);
+    position: relative;
+    inset-inline-start: var(--focus-reader-offset);
   }
 
   .learningFocus .passageWorkspace:has(> .passageQuestionPane) > :is(.passageQuestionPane, form, .questionInteraction) {
