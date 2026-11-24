@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsCustomFunctions, permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=e4f0b61b1957cdae';
+  from './calculator-policy.js?v=74b96f499bbe2fdf';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=e4f0b61b1957cdae');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=e4f0b61b1957cdae');
-const applied = () => import('./vendor/calculator/applied.mjs?v=e4f0b61b1957cdae');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=e4f0b61b1957cdae');
+const core = () => import('./vendor/calculator/core.mjs?v=74b96f499bbe2fdf');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=74b96f499bbe2fdf');
+const applied = () => import('./vendor/calculator/applied.mjs?v=74b96f499bbe2fdf');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=74b96f499bbe2fdf');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
@@ -294,6 +294,11 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
         return Number(operations.every((test, index) => test(values[index], values[index + 1])));
       });
     }
+    if (selectionArithmetic && node.isOperatorNode && node.fn === 'mod' && node.op === 'mod') {
+      checkKey(config, 'mod', 2);
+      const operands = node.args.map(child => compile(child, depth + 1));
+      return compose(operands, values => selectionRemainder(...values));
+    }
     if (node.isOperatorNode) {
       ensure(Object.hasOwn(operators, node.op) && !node.isPercentage, 'restricted');
       checkKey(config, operators[node.op], node.op === '!' ? 2 : 1);
@@ -337,12 +342,7 @@ function expressionPlan(math, value, config, {variable, answer, degrees = false,
       const implementation = {ln: 'log', nCr: 'combinations', nPr: 'permutations'}[name] || name;
       return compose(args, values => {
         ensure(values.every(value => !Array.isArray(value)), 'domain');
-        if (remainder) {
-          const [dividend, divisor] = values;
-          ensure(Number.isFinite(dividend) && Number.isFinite(divisor) && divisor !== 0, 'domain');
-          const residue = dividend % divisor;
-          return residue && Math.sign(residue) !== Math.sign(divisor) ? residue + divisor : residue;
-        }
+        if (remainder) return selectionRemainder(...values);
         if (basedLog) {
           const [argument, base] = name === 'logBase' ? values.reverse() : values;
           ensure(Number.isFinite(base) && base > 0 && base !== 1, 'domain');
@@ -596,6 +596,12 @@ export async function calculate({config, module, operation, input = {}, degrees 
   const text = formatted(math, value);
   if (Array.isArray(value)) return {text, array: value};
   return {text, ...(Number.isFinite(value) ? {numeric: value} : {})};
+}
+
+function selectionRemainder(dividend, divisor) {
+  ensure(Number.isFinite(dividend) && Number.isFinite(divisor) && divisor !== 0, 'domain');
+  const residue = dividend % divisor;
+  return residue && Math.sign(residue) !== Math.sign(divisor) ? residue + divisor : residue;
 }
 
 export async function calculateSelectedFormula({expression, config = {level: 'cas'}, cas = true, memory}) {

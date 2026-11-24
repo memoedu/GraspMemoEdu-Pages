@@ -1,8 +1,8 @@
-import {calculate, calculateSelectedFormula, storedExpression} from './calculator-engine.js?v=e4f0b61b1957cdae';
-import {assignableVariable, normalizeVariableName, permitsKey} from './calculator-policy.js?v=e4f0b61b1957cdae';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=e4f0b61b1957cdae';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=e4f0b61b1957cdae';
-import {whiteboardDocument} from './whiteboard-editor.js?v=e4f0b61b1957cdae';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=74b96f499bbe2fdf';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=74b96f499bbe2fdf';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=74b96f499bbe2fdf';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=74b96f499bbe2fdf';
+import {whiteboardDocument} from './whiteboard-editor.js?v=74b96f499bbe2fdf';
 
 const boards = new WeakMap();
 const work = new Map();
@@ -439,6 +439,10 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     if (shown) {
       used = true;
       if (preparedBoard === state) preparedBoard = undefined;
+      if (evaluates) {
+        const mode = whiteboardCasEnabled() && permitsModule(question.calculate, 'symbolic') ? 'symbolic' : 'expression';
+        void warmCalculator(mode).catch(() => {});
+      }
     }
     workspace.classList.toggle('whiteboardOpen', value);
     workspace.classList.toggle('whiteboardFirst', value && swapped);
