@@ -1,8 +1,8 @@
-import {t, locale, learningTitle, translateMessage} from './i18n.js?v=67f23779c47825ad';
-import {renderTaskTree, createOutlineGroup} from './task-tree.js?v=67f23779c47825ad';
-import {questionInput, choiceTypeField} from './question-input.js?v=67f23779c47825ad';
-import {submittedAnswer, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=67f23779c47825ad';
-import {enhanceTopicContent} from './topic-content.js?v=67f23779c47825ad';
+import {t, locale, learningTitle, translateMessage} from './i18n.js?v=6472887ae33cd079';
+import {renderTaskTree, createOutlineGroup} from './task-tree.js?v=6472887ae33cd079';
+import {questionInput, choiceTypeField} from './question-input.js?v=6472887ae33cd079';
+import {submittedAnswer, referenceAnswer, prepareAnswerContent} from './self-assessment.js?v=6472887ae33cd079';
+import {enhanceTopicContent} from './topic-content.js?v=6472887ae33cd079';
 
 const el = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; };
 const button = (text, action, cls = 'secondaryButton') => { const n = el('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };

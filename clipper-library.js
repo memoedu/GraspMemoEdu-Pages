@@ -1,5 +1,6 @@
-import {clipText as tx} from './clipper.js?v=67f23779c47825ad';
-import {renderPlainMath} from './math-presentation.js?v=67f23779c47825ad';
+import {clipText as tx} from './clipper.js?v=6472887ae33cd079';
+const shared=new URL('./vendor/knowledge-clipper/',import.meta.url);
+let renderer;
 
 export function mountClipperLibrary({root, request, node, control, link, isCurrent}) {
   const active = () => isCurrent() && root.isConnected;
@@ -16,9 +17,30 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
     ['excerpt', tx('摘录', 'Excerpts')],
   ];
   let epoch = 0, labels = null;
-  const clipText = value => {
-    const block = node('div', 'clipperText', value);
-    renderPlainMath(block, value);
+  const clipText = (value,item,side) => {
+    const block = node('div','clipperText',value);
+    const display=async()=>{
+      if(!active()||!block.isConnected)return;
+      const [{renderMaterial},{blobFrom}]=await Promise.all([renderer||=import(new URL('chat/material.js',shared)),import(new URL('storage.js',shared))]);
+      const attachments=(item?.media||[]).filter(m=>m.side===side);
+      const files=await Promise.all(attachments.map(async m=>{const bytes=await request('clipper/media?'+new URLSearchParams({item:item.id,digest:m.hash}));
+        return {...m,url:URL.createObjectURL(blobFrom(bytes.data,bytes.mime))};}));
+      if(!active()||!block.isConnected){files.forEach(f=>URL.revokeObjectURL(f.url));return;}
+      const shadow=block.attachShadow({mode:'open'}),style=node('link');style.rel='stylesheet';style.href=new URL('material.css',shared);
+      const content=node('div'), byHash=new Map(files.map(f=>[f.hash,f.url]));shadow.append(style,content);
+      const dispose=renderMaterial(content,value,d=>byHash.get(d)||'');
+      for(const f of files)if(!value.includes('asset:'+f.hash)){
+        const el=node(f.mime.startsWith('audio/')?'audio':'img');el.src=f.url;
+        if(el.tagName==='AUDIO'){el.controls=true;el.preload='none';}else{el.alt=tx('剪藏图片','Clipped image');el.style.maxWidth='100%';}
+        shadow.append(el);
+      }
+      const cleanup=new MutationObserver(()=>{if(!block.isConnected){cleanup.disconnect();dispose();files.forEach(f=>URL.revokeObjectURL(f.url));}});
+      cleanup.observe(root,{childList:true,subtree:true});cleanup.observe(root.parentElement||document.body,{childList:true});
+    };
+    if('IntersectionObserver' in window){
+      const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();void display().catch(e=>{if(active())status.textContent=e.message;});}});
+      observer.observe(block);
+    }else requestAnimationFrame(()=>void display().catch(e=>{if(active())status.textContent=e.message;}));
     return block;
   };
   const itemSource = item => item.source.route ? link(item.source.title || tx('查看来源', 'Open source'), item.source.route) : '';
@@ -26,7 +48,7 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
   function bibliography(item, doc) {
     const source = itemSource(item);
     if (source) doc.append(source);
-    if (item.back) doc.append(clipText(item.back));
+    if (item.back||item.media?.some(m=>m.side==='back')) doc.append(clipText(item.back,item,'back'));
   }
 
   async function select(mode) {
@@ -45,16 +67,16 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
         const button = control(label, 'textButton', async () => {
           button.disabled = true;
           try {
-            const {markdown, count} = await request('clipper/excerpts?period=' + period);
+            const {markdown, count,zip} = await request('clipper/excerpts?period=' + period);
             if (!current()) return;
             if (!count) {
               status.textContent = tx('这个范围没有摘录。', 'No excerpts in this range.');
               return;
             }
-            const url = URL.createObjectURL(new Blob([markdown], {type: 'text/markdown;charset=utf-8'}));
+            const url = URL.createObjectURL(zip?(await import(new URL('storage.js',shared))).blobFrom(zip,'application/zip'):new Blob([markdown], {type: 'text/markdown;charset=utf-8'}));
             const anchor = node('a');
             anchor.href = url;
-            anchor.download = (period === 'today' ? '零碎知识简藏-今日摘录' : '零碎知识简藏-全部摘录') + '.md';
+            anchor.download = (period === 'today' ? '零碎知识简藏-今日摘录' : '零碎知识简藏-全部摘录') + (zip?'.zip':'.md');
             document.body.append(anchor);
             anchor.click();
             anchor.remove();
@@ -87,14 +109,14 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
       }
       if (mode === 'excerpt') {
         const excerpt = node('article', 'clipperLibraryItem');
-        excerpt.append(clipText(item.front));
+        excerpt.append(clipText(item.front,item,'front'));
         const source = itemSource(item);
         if (source) excerpt.append(source);
         days.get(dayKey).append(excerpt);
       } else {
         const clip = node('details', 'clipperLibraryItem');
         const summary = node('summary');
-        summary.append(clipText(item.front));
+        summary.append(clipText(item.front,item,'front'));
         clip.append(summary);
         bibliography(item, clip);
         days.get(dayKey).append(clip);
@@ -105,10 +127,10 @@ export function mountClipperLibrary({root, request, node, control, link, isCurre
       const attempt = crypto.randomUUID(), section = node('section', 'clipperReview');
       const grades = node('div', 'clipperButtons');
       const next = control(tx('翻看背面', 'Show back'), 'primaryButton', () => {
-        next.replaceWith(clipText(card.back), grades);
+        next.replaceWith(clipText(card.back,card,'back'), grades);
         grades.firstElementChild.focus();
       });
-      section.append(node('p', 'inputHint', labels.get(card.type_id) || card.type_id), clipText(card.front), next);
+      section.append(node('p', 'inputHint', labels.get(card.type_id) || card.type_id), clipText(card.front,card,'front'), next);
       for (const [rating, label] of [
         [1, tx('重来', 'Again')], [2, tx('困难', 'Hard')], [3, tx('良好', 'Good')], [4, tx('简单', 'Easy')],
       ]) {

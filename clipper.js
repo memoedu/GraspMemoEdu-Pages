@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=67f23779c47825ad';
-import {learningSelectionBlock} from './content-report.js?v=67f23779c47825ad';
-import {presentationMathSource} from './math-presentation.js?v=67f23779c47825ad';
-import {currentModal} from './question-tools.js?v=67f23779c47825ad';
+import {getLanguage} from './i18n.js?v=6472887ae33cd079';
+import {learningSelectionBlock} from './content-report.js?v=6472887ae33cd079';
+import {captureSelection,formulaSelector} from './clipper-selection.js?v=6472887ae33cd079';
+import {currentModal} from './question-tools.js?v=6472887ae33cd079';
 
-const FORMULA = '[data-math-source],[data-tex],.katex,math,mjx-container';
+const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
 const EXCLUDED = 'script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.clipperActions,' + EDITING;
 const CONTENT = '#portalContent,#lessonContent';
@@ -11,13 +11,27 @@ const TEXT_BLOCK = 'p,li,td,th,pre,blockquote,h1,h2,h3,h4,.courseContent,.answer
 const limit = (text, length) => [...text].slice(0, length).join('');
 const elementOf = node => node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
 export const clipText = (zh, en) => getLanguage() === 'en' ? en : zh;
+const enabledKey = owner => 'graspmemoedu:clipper:enabled:' + owner;
+export function clipperEnabled(owner) {
+  try {return Boolean(owner) && localStorage.getItem(enabledKey(owner)) === 'yes';} catch {return false;}
+}
+export function setClipperEnabled(owner, enabled) {
+  if (!owner) return;
+  try {localStorage.setItem(enabledKey(owner), enabled ? 'yes' : 'no');} catch {}
+  window.dispatchEvent(new CustomEvent('clipper-toggle', {detail:{owner, enabled}}));
+}
 const touchLayout = () => window.matchMedia?.('(pointer: coarse) and (max-width: 800px)').matches;
 export function openClipperPopup(explicit = false) {
-  if (!explicit && touchLayout()) return null;
+  if (!explicit) return null;
   let popup;
   try {
     popup = window.open('', '_blank', 'popup,width=790,height=660');
-    if (popup && !popup.closed && popup.document.head && popup.document.body) return popup;
+    if (popup && !popup.closed && popup.document.head && popup.document.body) {
+      if(popup.document.compatMode!=='CSS1Compat'){
+        popup.document.open();popup.document.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');popup.document.close();
+      }
+      return popup;
+    }
   } catch {}
   try { popup?.close(); } catch {}
   return null;
@@ -29,16 +43,6 @@ function formulaOf(node) {
   return math;
 }
 
-function mathText(node) {
-  const raw = node.getAttribute('data-math-source');
-  if (raw) return raw;
-  const tex = node.getAttribute('data-tex') ||
-    node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
-  if (tex) return '\\(' + tex + '\\)';
-  const spoken = node.getAttribute('aria-label') || node.querySelector('svg[aria-label]')?.getAttribute('aria-label');
-  return presentationMathSource(node) || spoken || node.textContent;
-}
-
 function expandedRange(selection) {
   const raw = selection.getRangeAt(0).cloneRange();
   const start = formulaOf(raw.startContainer), end = formulaOf(raw.endContainer);
@@ -47,41 +51,6 @@ function expandedRange(selection) {
   if (start) range.setStartBefore(start);
   if (end) range.setEndAfter(end);
   return range;
-}
-
-// Read live DOM so omitted answers and collapsed content do not enter context.
-function snapshot(root, range) {
-  const output = [];
-  const visit = node => {
-    if (range && !range.intersectsNode(node)) return;
-    if (node.nodeType === Node.TEXT_NODE) {
-      const start = node === range?.startContainer ? range.startOffset : 0;
-      const end = node === range?.endContainer ? range.endOffset : node.length;
-      output.push(node.data.slice(start, end));
-      return;
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE || node.matches(EXCLUDED)) return;
-    if (node.hidden || getComputedStyle(node).display === 'none' ||
-        getComputedStyle(node).visibility === 'hidden') return;
-    if (node.matches(FORMULA)) {
-      output.push(' ', mathText(node), ' ');
-      return;
-    }
-    if (node.getAttribute('aria-hidden') === 'true') return;
-    if (node.matches('img')) {
-      if (node.alt) output.push(node.alt);
-      return;
-    }
-    if (node.matches('details:not([open])')) {
-      const summary = node.querySelector(':scope > summary');
-      if (summary) visit(summary);
-      return;
-    }
-    for (const child of node.childNodes) visit(child);
-    if (node.matches(TEXT_BLOCK + ',br,div,tr,section')) output.push('\n');
-  };
-  visit(root);
-  return output.join('').replace(/[^\S\n]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function usable(node) {
@@ -116,15 +85,10 @@ function captureRange(range) {
 
 function captureSource({range, common, root}) {
   if (!root.isConnected || !root.contains(common)) return null;
-  const text = snapshot(common, range);
-  if (!text) return null;
-  const a = learningSelectionBlock(range.startContainer);
-  const b = learningSelectionBlock(range.endContainer);
-  const block = a && a === b ? a : common.closest(TEXT_BLOCK);
-  const context = block ? snapshot(block) : text;
+  const selection = captureSelection(range,root);
+  if (!selection) return null;
   const title = [...root.querySelectorAll('h1')].find(node => node.getClientRects().length)?.textContent || document.title;
-  return {text: limit(text, 18000), context: limit(context, 18000),
-    title: limit(title.trim(), 400), route: clipRoute()};
+  return {...selection, title:limit(title.trim(),400),route:clipRoute()};
 }
 
 function select(node) {
@@ -153,9 +117,8 @@ export function installClipper({request, identity}) {
   actions.setAttribute('role', 'group');
   actions.hidden = true;
   document.body.append(actions);
-  const definitions = [['card', '卡', 'Card'], ['excerpt', '摘', 'Excerpt'], ['ask', '问', 'Ask'], ['read', '读', 'Read']];
+  let prefs, pending, imageSelection;
   let owner, enabled = false, selection, app, hover, downOnMath, touch, loading = false, frame = 0;
-  const storageKey = () => 'graspmemoedu:clipper:enabled:' + owner;
 
   function guardedRequest(...args) {
     const scope = owner;
@@ -167,6 +130,17 @@ export function installClipper({request, identity}) {
     });
   }
 
+  async function preferences() {
+    if(prefs)return prefs;
+    if(!pending){
+      const task=guardedRequest('clipper/settings').then(value=>{
+        if(task!==pending)throw new Error(clipText('设置已更新，请重新选择。','Settings changed. Select again.'));
+        prefs=value;return value;
+      }).finally(()=>{if(task===pending)pending=null;});
+      pending=task;
+    }
+    return pending;
+  }
   function sync() {
     const label = clipText('零碎知识简藏', 'Knowledge Clipper');
     toggle.title = label;
@@ -175,14 +149,12 @@ export function installClipper({request, identity}) {
     if (toggle.hidden === Boolean(owner)) toggle.hidden = !owner;
     document.body.classList.toggle('clipperSelectionEnabled', enabled);
     actions.setAttribute('aria-label', label);
-    for (const [index, definition] of definitions.entries()) {
-      actions.children[index].textContent = clipText(...definition.slice(1));
-    }
+    renderActions();
   }
 
   function positionSelection() {
     const rect = selection && !currentModal() && selection.range.getBoundingClientRect();
-    actions.hidden = !rect || rect.bottom <= 0 || rect.top >= innerHeight || (!rect.width && !rect.height);
+    actions.hidden = !actions.childElementCount || !rect || rect.bottom <= 0 || rect.top >= innerHeight || (!rect.width && !rect.height);
     if (actions.hidden) return;
     const left = Math.max(8, Math.min(rect.left, innerWidth - actions.offsetWidth - 8));
     const bottom = rect.bottom + actions.offsetHeight + 12;
@@ -194,9 +166,10 @@ export function installClipper({request, identity}) {
   function showSelection() {
     if (!enabled || !owner || currentModal()) selection = null;
     else {
-      const next = capture() || touch?.selection;
+      const next = capture() || imageSelection || touch?.selection;
       if (next || !actions.contains(document.activeElement)) selection = next;
     }
+    renderActions();
     positionSelection();
   }
 
@@ -211,71 +184,76 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=67f23779c47825ad').then(module => {
-      if (!app) app = module.createClipperWorkspace({request: guardedRequest});
+    return import('./clipper-workspace.js?v=6472887ae33cd079').then(module => {
+      if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
   }
 
-  for (const [id] of definitions) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.addEventListener('click', async () => {
-      if (!selection || loading || !enabled || !owner) return;
-      const source = captureSource(selection);
-      if (!source) { actions.hidden = true; return; }
-      const scope = owner;
-      if (app) {
-        app.open(id, source);
-        return;
-      }
-      // Acquire the browser window during the action's trusted activation.
-      const popup = openClipperPopup();
-      loading = true;
-      try {
-        const workspace = await preload();
-        if (!enabled || !owner || owner !== scope) { popup?.close(); return; }
-        workspace.open(id, source, popup);
-      } catch {
-        popup?.close();
-      } finally { loading = false; }
-    });
-    actions.append(button);
+  function renderActions(){
+    const image=!!selection?.image;
+    const definitions=!prefs||image&&!prefs.values.clipboardImageDotEnabled?[]:prefs.workflow[image?'image':'text'];
+    const signature=definitions.map(d=>d.id).join(',')+getLanguage();
+    if(actions.dataset.signature===signature)return;
+    actions.dataset.signature=signature;
+    actions.replaceChildren(...definitions.map(def=>{
+      const button=document.createElement('button');button.type='button';button.dataset.action=def.id;
+      button.textContent=clipText(def.label,def.englishLabel);button.onclick=()=>invoke(def.id);return button;
+    }));
   }
-
+  async function invoke(id, originalExcerpt=false){
+    if (!selection || loading || !enabled || !owner) return;
+    const source=captureSource(selection);
+    if(!source)return;
+    source.originalExcerpt=originalExcerpt;
+    const scope=owner;loading=true;
+    try {
+      const workspace=await preload();
+      if(enabled&&scope===owner)workspace.open(id,source);
+    } finally {loading=false;}
+  }
   function refresh() {
     const next = identity();
     if (owner !== next) {
-      app?.close();
+      app?.close(); app=null; prefs=pending=null; imageSelection=null;
       clearTouch();
       owner = next;
-      enabled = false;
-      if (owner) {
-        try { enabled = localStorage.getItem(storageKey()) === 'yes'; } catch {}
-      }
+      enabled = clipperEnabled(owner);
     }
     sync();
     showSelection();
-    if (enabled) void preload().catch(() => {});
+    if(enabled && !prefs)void preferences().then(()=>{sync();showSelection();}).catch(()=>{});
   }
-  toggle.addEventListener('click', () => {
-    if (!owner) return;
-    enabled = !enabled;
-    try { localStorage.setItem(storageKey(), enabled ? 'yes' : 'no'); } catch {}
+  const updateEnabled = value => {
+    enabled = value;
     if (!enabled) { app?.close(); clearTouch(); }
     refresh();
+  };
+  toggle.addEventListener('click', () => setClipperEnabled(owner, !enabled));
+  window.addEventListener('clipper-toggle', event => {
+    if (owner && event.detail?.owner === owner) updateEnabled(event.detail.enabled);
+  });
+  window.addEventListener('storage', event => {
+    if (owner && event.key === enabledKey(owner)) updateEnabled(clipperEnabled(owner));
   });
   actions.addEventListener('pointerdown', event => event.preventDefault());
   actions.addEventListener('focusout', queueSelection);
   document.addEventListener('selectionchange', queueSelection);
   document.addEventListener('pointerover', event => { hover = event.target; }, true);
   document.addEventListener('pointerdown', event => {
+    if(!actions.contains(event.target))imageSelection=null;
     if (touch && !actions.contains(event.target)) { clearTouch(); queueSelection(); }
     downOnMath = enabled && event.button === 0 && usable(event.target) ? formulaOf(event.target) : null;
   }, true);
   document.addEventListener('pointerup', event => {
     if (downOnMath && formulaOf(event.target) === downOnMath && getSelection()?.isCollapsed) select(downOnMath);
     downOnMath = null;
+    const picture=elementOf(event.target)?.closest('img');
+    if(enabled && picture && usable(picture) && !formulaOf(picture) && !picture.closest('a,button,label') && getSelection()?.isCollapsed){
+      const range=document.createRange();range.selectNode(picture);
+      const captured=captureRange(range);
+      if(captured){imageSelection={...captured,image:picture};showSelection();}
+    }
   }, true);
   document.addEventListener('click', event => {
     if (!enabled || (!touchLayout() && event.pointerType !== 'touch') || !usable(event.target) ||
@@ -295,6 +273,15 @@ export function installClipper({request, identity}) {
     }
   }, true);
   document.addEventListener('keydown', event => {
+    if(enabled&&owner&&!event.isComposing&&!elementOf(event.target)?.closest(EDITING)&&prefs){
+      const match=(key)=>{
+        const parts=(key||'').toLowerCase().split('+'), last=parts.pop();
+        return event.altKey===parts.includes('alt')&&event.shiftKey===parts.includes('shift')&&event.ctrlKey===parts.includes('ctrl')&&
+          event.metaKey===parts.includes('meta')&&(event.key.toLowerCase()===last||({'《':'Comma','<':'Comma','/':'Slash'})[last]===event.code);
+      };
+      if(match(prefs.values.originalExcerptHotkey)&&selection){event.preventDefault();void invoke('excerpt',true);return;}
+      if(match(prefs.values.replayLastHotkey)){event.preventDefault();void preload().then(workspace=>workspace.replay());return;}
+    }
     if (!enabled || !owner || !event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey ||
         event.isComposing || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
     if (event.code === 'KeyS') {
@@ -308,9 +295,12 @@ export function installClipper({request, identity}) {
       if (!actions.hidden) { event.preventDefault(); actions.firstElementChild.focus({preventScroll: true}); }
     }
   }, true);
-  window.addEventListener('hashchange', () => { clearTouch(); selection = null; actions.hidden = true; });
+  window.addEventListener('hashchange', () => { clearTouch(); imageSelection=null; selection = null; actions.hidden = true; });
   window.addEventListener('resize', positionSelection);
   window.addEventListener('scroll', positionSelection, {capture: true, passive: true});
+  const invalidate=()=>{prefs=pending=null;refresh();};
+  window.addEventListener('clipper-settings-changed',invalidate);
+  try {const channel=new BroadcastChannel('clipper-settings');channel.onmessage=invalidate;window.addEventListener('pagehide',()=>channel.close(),{once:true});}catch{}
   refresh();
   return {toggle, refresh};
 }

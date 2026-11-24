@@ -1,32 +1,32 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=67f23779c47825ad";
-import {attachFormulaEditing} from './formula-input.js?v=67f23779c47825ad';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=67f23779c47825ad';
-import { createReviewView } from "./review.js?v=67f23779c47825ad";
-import { renderCourseGraph } from "./course-graph.js?v=67f23779c47825ad";
-import {questionInput, choiceTypeField} from './question-input.js?v=67f23779c47825ad';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=67f23779c47825ad';
-import {enhanceTopicContent} from './topic-content.js?v=67f23779c47825ad';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=67f23779c47825ad';
-import {createCatalogPicker} from './catalog-picker.js?v=67f23779c47825ad';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=67f23779c47825ad';
-import {createAtomicView} from './atomic.js?v=67f23779c47825ad';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=67f23779c47825ad';
-import {sourceAttributions} from './memory-chunk.js?v=67f23779c47825ad';
-import {createTrainingView} from './training.js?v=67f23779c47825ad';
-import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=67f23779c47825ad';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=67f23779c47825ad";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=6472887ae33cd079";
+import {attachFormulaEditing} from './formula-input.js?v=6472887ae33cd079';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=6472887ae33cd079';
+import { createReviewView } from "./review.js?v=6472887ae33cd079";
+import { renderCourseGraph } from "./course-graph.js?v=6472887ae33cd079";
+import {questionInput, choiceTypeField} from './question-input.js?v=6472887ae33cd079';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=6472887ae33cd079';
+import {enhanceTopicContent} from './topic-content.js?v=6472887ae33cd079';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=6472887ae33cd079';
+import {createCatalogPicker} from './catalog-picker.js?v=6472887ae33cd079';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=6472887ae33cd079';
+import {createAtomicView} from './atomic.js?v=6472887ae33cd079';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=6472887ae33cd079';
+import {sourceAttributions} from './memory-chunk.js?v=6472887ae33cd079';
+import {createTrainingView} from './training.js?v=6472887ae33cd079';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=6472887ae33cd079';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=6472887ae33cd079";
 
-import {createPaperView} from './review-papers.js?v=67f23779c47825ad';
-import {createFreeStudyView} from './free-study.js?v=67f23779c47825ad';
-import {createContextLibraryView} from './context-library.js?v=67f23779c47825ad';
+import {createPaperView} from './review-papers.js?v=6472887ae33cd079';
+import {createFreeStudyView} from './free-study.js?v=6472887ae33cd079';
+import {createContextLibraryView} from './context-library.js?v=6472887ae33cd079';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=67f23779c47825ad';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=67f23779c47825ad';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=67f23779c47825ad';
-import {createStudentDashboard} from './student-dashboard.js?v=67f23779c47825ad';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=67f23779c47825ad';
-import {whiteboardCasEnabled, setWhiteboardCasEnabled} from './whiteboard.js?v=67f23779c47825ad';
-import {currentPwa, isStandalone, installEntry, routeInPwaScope, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=67f23779c47825ad';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=6472887ae33cd079';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=6472887ae33cd079';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=6472887ae33cd079';
+import {createStudentDashboard} from './student-dashboard.js?v=6472887ae33cd079';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=6472887ae33cd079';
+import {whiteboardCasEnabled, setWhiteboardCasEnabled} from './whiteboard.js?v=6472887ae33cd079';
+import {currentPwa, isStandalone, installEntry, routeInPwaScope, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=6472887ae33cd079';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -46,7 +46,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=67f23779c47825ad').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=6472887ae33cd079').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -507,6 +507,11 @@ export function initPortal(bridge) {
       } else if (path === '/progress') {
         document.title = pageTitle(t('students.personalTitle'));
         await renderStudents(ticket, bridge.getAccess()?.learner_id, true);
+      } else if (path === "/settings/knowledge-clipper" && bridge.getAccess()?.role === "account") {
+        const {clipperSettings} = await import('./clipper-settings.js?v=6472887ae33cd079');
+        document.title = pageTitle(getLanguage() === 'en' ? 'Knowledge Clipper' : '零碎知识简藏');
+        const page = await clipperSettings({request:call,node,owner:bridge.getAccess()?.learner_id,current:()=>ticket===sequence});
+        if (page && ticket===sequence) root.replaceChildren(page);
       } else if (path === "/settings") {
         document.title = pageTitle(t("nav.settings")); await renderSettings();
       } else if (/^\/courses\/[^/]+\/progress$/.test(path)) {
@@ -1329,6 +1334,7 @@ export function initPortal(bridge) {
     if (ticket !== sequence) return;
     const page = node("section", "settingsPage"), form = node("form", "profileForm");
     page.append(node("h1", "portalPageTitle", t("portal.settings.115")));
+    if (bridge.getAccess()?.role === 'account') page.append(link(getLanguage() === 'en' ? 'Knowledge Clipper' : '零碎知识简藏', '#/settings/knowledge-clipper', 'secondaryButton'));
     const displayLabel = node("label", "", t("portal.display.name.116")), display = node("input"); display.id = "profileDisplayName"; displayLabel.htmlFor = display.id; const defaultGuestName = bridge.getAccess()?.role === "guest" && (!profile.display_name || profile.display_name === "游客"); display.value = defaultGuestName ? t("portal.guest.12") : profile.display_name || ""; display.maxLength = 100; display.required = true;
     const zoneLabel = node("label", "", t("portal.time.zone.117")), zone = node("input"); zone.id = "profileTimezone"; zoneLabel.htmlFor = zone.id; zone.value = timezone(); zone.required = true;
     const zones = [...new Set([timezone(), 'UTC', ...(Intl.supportedValuesOf?.('timeZone') || [])])];

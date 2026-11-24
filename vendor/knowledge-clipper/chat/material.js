@@ -1,0 +1,7 @@
+import"./assets/rolldown-runtime-qXqUbbKo.js";import{S as e,b as t,c as n,n as r,r as i,t as a,y as o}from"./assets/katex.min-VlmGiIC6.js";e();var s=t(),c=o(),l=r({singleDollarTextMath:!0}),u=new WeakMap,d=/^(?:asset:([a-f0-9]{64})|https:\/\/clipper-media\.local\/([a-f0-9]{64})\.png)$/,f=e=>i.renderToString(e,{output:`mathml`,throwOnError:!0,trust:!1,strict:`ignore`}).replace(/^<span[^>]*>|<\/span>$/g,``).replace(/<annotation encoding="application\/x-tex">[\s\S]*?<\/annotation>/g,``);function p(e){return e.replace(/(`+)[\s\S]*?\1|(^|\n)(~{3,})[^\n]*\n[\s\S]*?\n\3[^\n]*|\\\[([\s\S]+?)\\\]|\\\(([^\n]+?)\\\)|(!\[(?:\\.|[^\]\\])*\])\(asset:([a-f0-9]{64})\)/g,(e,t,n,r,i,a,o,s)=>i===void 0?a===void 0?s?o+`(https://clipper-media.local/`+s+`.png)`:e:`$`+a+`$`:`
+
+$$
+`+i+`
+$$
+
+`)}function m(e,t,r=()=>``){e.classList.add(`message-body`,`clipperMaterial`);let i=u.get(e);return i||(i=(0,s.createRoot)(e),u.set(e,i)),i.render((0,c.jsx)(n,{mode:`static`,plugins:{math:l,cjk:a},controls:!1,remarkRehypeOptions:{allowDangerousHtml:!1},urlTransform:e=>d.test(e)?e:``,components:{a:({children:e})=>(0,c.jsx)(`span`,{children:e}),img:({src:e,alt:t})=>{let n=d.exec(e||``),i=n&&r(n[1]||n[2]);return i?(0,c.jsx)(`img`,{src:i,alt:t||`图片`}):(0,c.jsx)(`span`,{children:t})}},children:p(t)})),()=>{i.unmount(),u.delete(e)}}export{p as displayMarkdown,m as renderMaterial,f as toMathML};
