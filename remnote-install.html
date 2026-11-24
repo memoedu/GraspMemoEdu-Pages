@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>安装 RemNote 配套工具 · GraspMemoEdu</title>
+  <link rel="stylesheet" href="./install.css?v=e4f0b61b1957cdae">
+  <script type="module" src="./topic-sync-navigation.js?v=e4f0b61b1957cdae"></script>
+</head>
+<body>
+  <main class="intro">
+    <h1>安装 RemNote 配套工具</h1>
+    <p>使用已登录的网站账号下载安装包。需要 Windows x64、Google Chrome 和 RemNote 桌面端。</p>
+    <button type="button" class="primaryButton" data-navigator-download>下载 Windows 安装包</button>
+    <p role="status" data-download-status></p>
+    <ol>
+      <li>解压整个安装包，双击 <code>Install.cmd</code>。安装完成后，窗口会显示本机扩展目录。</li>
+      <li>在 Chrome 地址栏输入 <code>chrome://extensions</code>，开启「开发者模式」，点「加载已解压的扩展程序」，选择刚才显示的 <code>extension</code> 目录。</li>
+      <li>打开需要关联的 RemNote 知识库，进入「设置 → 插件 → 开发」，用本地网址添加 <code>http://localhost:43153/</code> 的导航插件，再添加 <code>http://localhost:43103/</code> 的正文插件。保持沙箱模式，按提示授权。已安装的插件可直接启用。</li>
+      <li>回到原 Topic 并刷新，点击「在本地 RemNote 中打开」完成账号配对。在已绑定的 Document 中，可以从窗格右上角打开网站或开始同步正文。</li>
+    </ol>
+    <p>若提示账号不一致，请切换到这个知识库原来绑定的网站账号。</p>
+    <p><a href="./" data-topic-return>返回 GraspMemoEdu</a></p>
+  </main>
+</body>
+</html>
