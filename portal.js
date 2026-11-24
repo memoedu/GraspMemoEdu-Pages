@@ -1,30 +1,30 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=23dea509222127b3";
-import {attachFormulaEditing} from './formula-input.js?v=23dea509222127b3';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=23dea509222127b3';
-import { createReviewView } from "./review.js?v=23dea509222127b3";
-import { renderCourseGraph } from "./course-graph.js?v=23dea509222127b3";
-import {questionInput, choiceTypeField} from './question-input.js?v=23dea509222127b3';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=23dea509222127b3';
-import {enhanceTopicContent} from './topic-content.js?v=23dea509222127b3';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=23dea509222127b3';
-import {createCatalogPicker} from './catalog-picker.js?v=23dea509222127b3';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=23dea509222127b3';
-import {createAtomicView} from './atomic.js?v=23dea509222127b3';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=23dea509222127b3';
-import {sourceAttributions} from './memory-chunk.js?v=23dea509222127b3';
-import {createTrainingView} from './training.js?v=23dea509222127b3';
-import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=23dea509222127b3';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=23dea509222127b3";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=b12283c47de1d27f";
+import {attachFormulaEditing} from './formula-input.js?v=b12283c47de1d27f';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=b12283c47de1d27f';
+import { createReviewView } from "./review.js?v=b12283c47de1d27f";
+import { renderCourseGraph } from "./course-graph.js?v=b12283c47de1d27f";
+import {questionInput, choiceTypeField} from './question-input.js?v=b12283c47de1d27f';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=b12283c47de1d27f';
+import {enhanceTopicContent} from './topic-content.js?v=b12283c47de1d27f';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=b12283c47de1d27f';
+import {createCatalogPicker} from './catalog-picker.js?v=b12283c47de1d27f';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=b12283c47de1d27f';
+import {createAtomicView} from './atomic.js?v=b12283c47de1d27f';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=b12283c47de1d27f';
+import {sourceAttributions} from './memory-chunk.js?v=b12283c47de1d27f';
+import {createTrainingView} from './training.js?v=b12283c47de1d27f';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=b12283c47de1d27f';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=b12283c47de1d27f";
 
-import {createPaperView} from './review-papers.js?v=23dea509222127b3';
-import {createFreeStudyView} from './free-study.js?v=23dea509222127b3';
-import {createContextLibraryView} from './context-library.js?v=23dea509222127b3';
+import {createPaperView} from './review-papers.js?v=b12283c47de1d27f';
+import {createFreeStudyView} from './free-study.js?v=b12283c47de1d27f';
+import {createContextLibraryView} from './context-library.js?v=b12283c47de1d27f';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=23dea509222127b3';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=23dea509222127b3';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=23dea509222127b3';
-import {createStudentDashboard} from './student-dashboard.js?v=23dea509222127b3';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=23dea509222127b3';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=b12283c47de1d27f';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=b12283c47de1d27f';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=b12283c47de1d27f';
+import {createStudentDashboard} from './student-dashboard.js?v=b12283c47de1d27f';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=b12283c47de1d27f';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -54,7 +54,7 @@ function resumableLearningHash(hash) {
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=23dea509222127b3').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=b12283c47de1d27f').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -171,6 +171,7 @@ export function initPortal(bridge) {
   const clockTime = (value) => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(locale(), { timeZone: timezone(), hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "—";
   const focusMode = createFocusMode({
     toolbar: $('focusToolbar'), toggle: $('focusToggle'), nextHref: nextLearningHref,
+    fullscreen: $('focusFullscreen'), fullscreenNotice: $('focusFullscreenNotice'),
     locationChanged: () => { currentHash = routeKey(); currentRoute = parseRoute(); saveLearningLocation(); },
   });
   const review = createReviewView({

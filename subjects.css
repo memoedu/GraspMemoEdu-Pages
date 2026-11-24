@@ -128,7 +128,7 @@ body { padding-top: var(--site-header-height); }
 }
 @media (max-width: 1000px) {
   :root { --site-header-height: 132px; }
-  body:has(.guestDemoOption[hidden]) { --site-header-height: 96px; }
+  body:not(.learningFocus):has(.guestDemoOption[hidden]) { --site-header-height: 96px; }
   .topRibbon { height: var(--site-header-height); }
   .topBarContainer { height: var(--site-header-height); display: grid; grid-template-columns: auto minmax(0,1fr) 34px; grid-template-rows: 50px 46px 36px; column-gap: 10px; padding-inline: 14px; }
   body:has(.guestDemoOption[hidden]) .topBarContainer { grid-template-rows: 50px 46px; }
