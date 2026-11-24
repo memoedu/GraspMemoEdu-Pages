@@ -1,4 +1,4 @@
-import {calculate, CalculationError, warmCalculator} from './calculator-engine.js?v=aa281f8b7310cbd6';
+import {calculate, CalculationError, warmCalculator} from './calculator-engine.js?v=67f23779c47825ad';
 
 self.onmessage = async ({data}) => {
   if (data.warmup) { await warmCalculator(data.module, data.expression).catch(() => {}); return; }

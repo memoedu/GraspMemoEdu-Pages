@@ -1,7 +1,9 @@
-import {setVoiceContext} from './voice-context.js?v=aa281f8b7310cbd6';
-import {getLanguage} from './i18n.js?v=aa281f8b7310cbd6';
-import {calculatorToolGroups} from './calculator.js?v=aa281f8b7310cbd6';
-import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=aa281f8b7310cbd6';
+import {setVoiceContext} from './voice-context.js?v=67f23779c47825ad';
+import {getLanguage} from './i18n.js?v=67f23779c47825ad';
+import {calculatorToolGroups} from './calculator.js?v=67f23779c47825ad';
+import {configureWhiteboard, openWhiteboard, questionToolSession} from './whiteboard.js?v=67f23779c47825ad';
+import {questionWhiteboard} from './whiteboard-answer.js?v=67f23779c47825ad';
+import {parsePlatformRoute} from './subjects.js?v=67f23779c47825ad';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -64,12 +66,71 @@ function createToolbar(label, orientation) {
   return toolbar;
 }
 
-export function installToolbars(host, voice, clipper) {
+function whiteboardTool(workspace, question, options, session, english) {
+  return {id: 'whiteboard', label: english ? 'Whiteboard' : '白板', icon: 'M3 3h18v15H3zM7 14l5-6 4 3M9 21h6',
+    open: button => openWhiteboard(workspace(), button, question, options, session, english)};
+}
+
+function toolButton({id, label, icon: path, open}, message, english, expanded = false) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.tabIndex = -1;
+  button.className = 'questionToolButton calculatorLaunch';
+  button.dataset.questionTool = id;
+  button.dataset.readOnly = 'true';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  if (id !== 'whiteboard') button.setAttribute('aria-haspopup', 'dialog');
+  else if (expanded) button.setAttribute('data-whiteboard-launch', '');
+  button.setAttribute('aria-expanded', String(expanded));
+  button.append(icon(path));
+  button.addEventListener('click', () => {
+    message.textContent = '';
+    try { open(button); }
+    catch {
+      message.textContent = english ? 'Tool couldn’t open. Select it again to retry.' : '工具未能打开，请再次点击重试。';
+    }
+  });
+  return button;
+}
+
+export function installToolbars(host, voice, clipper, {request, getScope}) {
   const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
   const pageToolbar = createToolbar(label(), 'horizontal');
+  const message = document.createElement('div');
+  message.className = 'questionToolStatus';
+  message.setAttribute('role', 'status');
+  host.classList.add('questionWorkspace');
   host.append(pageToolbar);
-  let modalToolbar;
+  pageToolbar.append(message);
+  const homeKey = () => {
+    const {path, subjectId} = parsePlatformRoute(location.hash);
+    const scope = getScope();
+    if (scope && (path === '/' && !subjectId || path === '/courses' && subjectId))
+      return JSON.stringify(['home-tools', scope]);
+  };
+  let modalToolbar, pageKey, pageLanguage, launchers = [];
   const sync = () => {
+    const key = homeKey(), english = getLanguage() === 'en';
+    if (key !== pageKey || english !== pageLanguage) {
+      configureWhiteboard(host);
+      for (const button of launchers) button.remove();
+      message.textContent = '';
+      launchers = [];
+      pageKey = key;
+      pageLanguage = english;
+      if (key) {
+        const config = {level: 'scientific'};
+        const question = {calculate: config};
+        const session = questionToolSession(key);
+        const options = questionWhiteboard({key, question, editable: true, canSubmit: false, standalone: true,
+          current: () => homeKey() === key, request, language: getLanguage()});
+        const calculator = calculatorToolGroups(config, english, session)[0].tools.find(tool => tool.id === 'expression');
+        launchers = [whiteboardTool(() => host, question, options, session, english), calculator]
+          .map(tool => toolButton(tool, message, english));
+        message.before(...launchers);
+      }
+    }
     const modal = voice.hidden ? null : currentModal();
     if (modalToolbar && modalToolbar.parentElement !== modal) {
       modalToolbar.remove();
@@ -84,7 +145,7 @@ export function installToolbars(host, voice, clipper) {
     const questionToolbar = !hasPageTools ? null :
       [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
     const toolbar = modalToolbar || questionToolbar || pageToolbar;
-    const hidePageTools = !hasPageTools || toolbar !== pageToolbar;
+    const hidePageTools = !key && (!hasPageTools || toolbar !== pageToolbar);
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
     for (const button of [voice, clipper].filter(Boolean)) {
       if (button.parentElement === toolbar) continue;
@@ -93,15 +154,19 @@ export function installToolbars(host, voice, clipper) {
       if (previous) setTabStop(previous);
       setTabStop(toolbar);
     }
+    if (key) setTabStop(pageToolbar);
     if (pageToolbar.getAttribute('aria-label') !== label()) pageToolbar.setAttribute('aria-label', label());
     if (modalToolbar && modalToolbar.getAttribute('aria-label') !== label()) modalToolbar.setAttribute('aria-label', label());
   };
   sync();
   // Route changes can replace a question rail or open a native modal.
   // Always transfer the one voice control to the currently usable toolbar.
-  new MutationObserver(sync).observe(document.body, {
+  const observer = new MutationObserver(sync);
+  observer.observe(document.body, {
     childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden'],
   });
+  observer.observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
+  addEventListener('hashchange', sync);
 }
 
 export function setQuestionTools(anchor, question, whiteboard) {
@@ -112,10 +177,10 @@ export function setQuestionTools(anchor, question, whiteboard) {
   const english = getLanguage() === 'en';
   const session = questionToolSession(whiteboard?.key);
   const groups = calculatorToolGroups(question.calculate, english, session);
-  if (whiteboard) groups.unshift({label: english ? 'Whiteboard' : '白板', tools: [{
-    id: 'whiteboard', label: english ? 'Whiteboard' : '白板', icon: 'M3 3h18v15H3zM7 14l5-6 4 3M9 21h6',
-    open: button => openWhiteboard(anchor.parentElement, button, question, whiteboard, session, english),
-  }]});
+  if (whiteboard) {
+    const tool = whiteboardTool(() => anchor.parentElement, question, whiteboard, session, english);
+    groups.unshift({label: tool.label, tools: [tool]});
+  }
   if (!groups.length) return;
   const rail = document.createElement('aside');
   rail.className = 'questionToolRail';
@@ -128,35 +193,13 @@ export function setQuestionTools(anchor, question, whiteboard) {
   const message = document.createElement('div');
   message.className = 'questionToolStatus';
   message.setAttribute('role', 'status');
-  const makeButton = ({id, label, icon: path, open}) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = 'questionToolButton calculatorLaunch';
-    button.dataset.questionTool = id;
-    button.dataset.readOnly = 'true';
-    button.title = label;
-    button.setAttribute('aria-label', label);
-    if (id !== 'whiteboard') button.setAttribute('aria-haspopup', 'dialog');
-    else if (anchor.parentElement?.classList.contains('whiteboardOpen')) button.setAttribute('data-whiteboard-launch', '');
-    button.setAttribute('aria-expanded', String(button.hasAttribute('data-whiteboard-launch')));
-    button.append(icon(path));
-    button.addEventListener('click', () => {
-      message.textContent = '';
-      try {
-        open(button);
-      } catch {
-        message.textContent = english ? 'Tool couldn’t open. Select it again to retry.' : '工具未能打开，请再次点击重试。';
-      }
-    });
-    return button;
-  };
   for (const {label, tools} of groups) {
     const group = document.createElement('div');
     group.className = 'questionToolGroup';
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', label);
-    const controls = tools.map(makeButton);
+    const controls = tools.map(tool => toolButton(tool, message, english,
+      tool.id === 'whiteboard' && anchor.parentElement?.classList.contains('whiteboardOpen')));
     group.append(...controls);
     groupList.append(group);
   }
