@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=f1e14d4b0c196fc7';
-import {learningSelectionBlock} from './content-report.js?v=f1e14d4b0c196fc7';
-import {presentationMathSource} from './math-presentation.js?v=f1e14d4b0c196fc7';
-import {currentModal} from './question-tools.js?v=f1e14d4b0c196fc7';
+import {getLanguage} from './i18n.js?v=23dea509222127b3';
+import {learningSelectionBlock} from './content-report.js?v=23dea509222127b3';
+import {presentationMathSource} from './math-presentation.js?v=23dea509222127b3';
+import {currentModal} from './question-tools.js?v=23dea509222127b3';
 
 const FORMULA = '[data-math-source],[data-tex],.katex,math,mjx-container';
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -211,7 +211,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=f1e14d4b0c196fc7').then(module => {
+    return import('./clipper-workspace.js?v=23dea509222127b3').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest});
       return app;
     });
