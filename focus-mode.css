@@ -19,7 +19,25 @@
 .focusFullscreenNotice { margin: 0 auto 0 0; color: var(--muted); font-size: .8rem; }
 
 .focusCompletion { display: contents; }
-body:not(.learningFocus) .focusCompletionOnly { display: none; }
+body:not(.learningFocus) .focusCompletion {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-inline-size: 100%;
+}
+body:not(.learningFocus) .focusCompletion > :is(.primaryButton, .secondaryButton, .textButton) {
+  min-block-size: 44px;
+  white-space: nowrap;
+}
+body:not(.learningFocus) .focusCompletion > a {
+  text-decoration: none;
+}
+body:not(.learningFocus) .focusCompletion > .primaryButton:active {
+  background: var(--button-active);
+  border-color: var(--button-active);
+}
 
 html:has(> body.learningFocus) { scrollbar-gutter: stable both-edges; }
 
