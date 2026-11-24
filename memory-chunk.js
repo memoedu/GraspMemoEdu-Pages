@@ -1,7 +1,7 @@
-import {t} from './i18n.js?v=96d6ac0e64adb146';
-import {enhanceSourceContent} from './topic-content.js?v=96d6ac0e64adb146';
-import {prepareAnswerContent} from './self-assessment.js?v=96d6ac0e64adb146';
-import {helpableContent} from './content-report.js?v=96d6ac0e64adb146';
+import {t} from './i18n.js?v=00493ad7a36c230c';
+import {enhanceSourceContent} from './topic-content.js?v=00493ad7a36c230c';
+import {prepareAnswerContent} from './self-assessment.js?v=00493ad7a36c230c';
+import {helpableContent} from './content-report.js?v=00493ad7a36c230c';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
