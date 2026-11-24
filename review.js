@@ -1,15 +1,15 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=f1e14d4b0c196fc7';
-import {attachFormulaEditing} from './formula-input.js?v=f1e14d4b0c196fc7';
-import {setQuestionTools} from './question-tools.js?v=f1e14d4b0c196fc7';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=f1e14d4b0c196fc7';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=f1e14d4b0c196fc7';
-import {mountAnswerConversion} from './answer-conversion.js?v=f1e14d4b0c196fc7';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=f1e14d4b0c196fc7';
-import {reportableContent} from './content-report.js?v=f1e14d4b0c196fc7';
-import {createLearningCache} from './learning-cache.js?v=f1e14d4b0c196fc7';
-import {enhanceTopicContent} from './topic-content.js?v=f1e14d4b0c196fc7';
-import {practiceHint} from './beginner-hints.js?v=f1e14d4b0c196fc7';
-import {questionWhiteboard} from './whiteboard-answer.js?v=f1e14d4b0c196fc7';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=23dea509222127b3';
+import {attachFormulaEditing} from './formula-input.js?v=23dea509222127b3';
+import {setQuestionTools} from './question-tools.js?v=23dea509222127b3';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=23dea509222127b3';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=23dea509222127b3';
+import {mountAnswerConversion} from './answer-conversion.js?v=23dea509222127b3';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=23dea509222127b3';
+import {reportableContent} from './content-report.js?v=23dea509222127b3';
+import {createLearningCache} from './learning-cache.js?v=23dea509222127b3';
+import {enhanceTopicContent} from './topic-content.js?v=23dea509222127b3';
+import {practiceHint} from './beginner-hints.js?v=23dea509222127b3';
+import {questionWhiteboard} from './whiteboard-answer.js?v=23dea509222127b3';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -109,7 +109,7 @@ export function createReviewView(bridge) {
     box.append(node('h1', '', t('review.unavailable')), node('p', '', message), home());
     root.replaceChildren(box);
   }
-  async function open(topicId, moduleId, sessionId) {
+  async function open(topicId, moduleId, sessionId, restoring = false) {
     stop(); topic = topicId; module = moduleId; learner = bridge.getAccess()?.learner_id;
     const ticket = epoch;
     root.replaceChildren(node('p', 'portalLoading', t('review.loading')));
@@ -129,7 +129,11 @@ export function createReviewView(bridge) {
           if (active(ticket)) { accept(submitted.state); if (submitted.status === 'error') notice(translateMessage(submitted.reason || t('review.judgeError'))); }
         } catch { /* An unaccepted request can be retried with the saved id. */ }
       }
-    } catch (error) { if (active(ticket)) renderUnavailable(translateMessage(error.message)); }
+    } catch (error) {
+      if (!active(ticket)) return;
+      if (restoring) throw error;
+      renderUnavailable(translateMessage(error.message));
+    }
   }
   async function mutate(action, body) {
     if (busy || !state) return;
