@@ -1,26 +1,26 @@
-import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=e4f0b61b1957cdae";
-import {answerReady} from './question-input.js?v=e4f0b61b1957cdae';
-import {reportableContent, visibleContentTopics} from './content-report.js?v=e4f0b61b1957cdae';
-import {startPresence} from './presence.js?v=e4f0b61b1957cdae';
-import {createLearningCache} from './learning-cache.js?v=e4f0b61b1957cdae';
-import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=e4f0b61b1957cdae';
+import { t, getLanguage, translateMessage, applyStaticTranslations, learningTitle } from "./i18n.js?v=74b96f499bbe2fdf";
+import {answerReady} from './question-input.js?v=74b96f499bbe2fdf';
+import {reportableContent, visibleContentTopics} from './content-report.js?v=74b96f499bbe2fdf';
+import {startPresence} from './presence.js?v=74b96f499bbe2fdf';
+import {createLearningCache} from './learning-cache.js?v=74b96f499bbe2fdf';
+import {createReadCache, createContentCache, createValidationCache, readLifetime, contentPath, contentKey} from './response-cache.js?v=74b96f499bbe2fdf';
 
-import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=e4f0b61b1957cdae';
-import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=e4f0b61b1957cdae';
-import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=e4f0b61b1957cdae';
-import {renderSourceReader} from './learning-ui.js?v=e4f0b61b1957cdae';
-import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=e4f0b61b1957cdae';
-import {createTrainingView} from './training.js?v=e4f0b61b1957cdae';
-import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=e4f0b61b1957cdae';
-import {installToolbars, setQuestionTools} from './question-tools.js?v=e4f0b61b1957cdae';
-import {installClipper} from './clipper.js?v=e4f0b61b1957cdae';
-import {installTopicNavigation} from './topic-sync-navigation.js?v=e4f0b61b1957cdae';
-import {installSelectableMath} from './math-presentation.js?v=e4f0b61b1957cdae';
-import {installAutocomplete} from './autocomplete.js?v=e4f0b61b1957cdae';
-import {expressionCompletions} from './calculator-policy.js?v=e4f0b61b1957cdae';
-import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=e4f0b61b1957cdae';
-import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=e4f0b61b1957cdae';
-import {questionWhiteboard} from './whiteboard-answer.js?v=e4f0b61b1957cdae';
+import {answerEditor, readerContent, readerStepTitle as sharedReaderStepTitle, readerHistorySteps, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, readerDrawerState, topicProgress, topicHistory} from './learning-ui.js?v=74b96f499bbe2fdf';
+import {isCourseSelfRating, selfAssessment, showAnswerButton} from './self-assessment.js?v=74b96f499bbe2fdf';
+import {mountTopicBacklinks, focusContentNode} from './topic-content.js?v=74b96f499bbe2fdf';
+import {renderSourceReader} from './learning-ui.js?v=74b96f499bbe2fdf';
+import {lessonTaskLabel, readingSectionHeading} from './learning-ui.js?v=74b96f499bbe2fdf';
+import {createTrainingView} from './training.js?v=74b96f499bbe2fdf';
+import {clearLearningHint, learningHint, practiceHint} from './beginner-hints.js?v=74b96f499bbe2fdf';
+import {installToolbars, setQuestionTools} from './question-tools.js?v=74b96f499bbe2fdf';
+import {installClipper} from './clipper.js?v=74b96f499bbe2fdf';
+import {installTopicNavigation} from './topic-sync-navigation.js?v=74b96f499bbe2fdf';
+import {installSelectableMath} from './math-presentation.js?v=74b96f499bbe2fdf';
+import {installAutocomplete} from './autocomplete.js?v=74b96f499bbe2fdf';
+import {expressionCompletions} from './calculator-policy.js?v=74b96f499bbe2fdf';
+import {installVoiceInput, refreshVoiceInput, voiceAnswerPending} from './voice-input.js?v=74b96f499bbe2fdf';
+import {installAnswerConversion, setAnswerCommandInputEnabled} from './answer-conversion.js?v=74b96f499bbe2fdf';
+import {questionWhiteboard} from './whiteboard-answer.js?v=74b96f499bbe2fdf';
 
 let topicTraining = null, topicTrainingKey = null;
 function stopTopicTraining() { topicTraining?.stop(); topicTraining = null; topicTrainingKey = null; }
@@ -1840,7 +1840,7 @@ installSelectableMath();
 installToolbars($('pageTools'), installVoiceInput({canUse: () => !identityProblem && access?.role === 'account',
   getIdentity: () => `${identityGeneration}:${connectionGeneration}`, getAccountScope: () => identityGeneration, request}), clipper.toggle);
 installAnswerConversion(request);
-const { initPortal } = await import("./portal.js?v=e4f0b61b1957cdae");
+const { initPortal } = await import("./portal.js?v=74b96f499bbe2fdf");
 startPresence({getAccess: () => identityProblem ? null : access, request, getTopics: visibleContentTopics});
 portal = initPortal({
   fetchGuideAsset: async (url, subjectId) => {
