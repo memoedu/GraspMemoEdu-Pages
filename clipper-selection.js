@@ -1,20 +1,39 @@
-import {presentationMathSource} from './math-presentation.js?v=6472887ae33cd079';
-import {learningSelectionBlock} from './content-report.js?v=6472887ae33cd079';
+import {presentationMathSource} from './math-presentation.js?v=783abd1bfadc97a5';
+import {learningSelectionBlock} from './content-report.js?v=783abd1bfadc97a5';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';
 const paragraph='p,li,td,th,pre,blockquote,h1,h2,h3,h4,h5,h6,[data-paragraph]';
 const asElement=n=>n?.nodeType===1?n:n?.parentElement;
-const mathSource=node=>{
+export function mathSource(node) {
   const raw=node.getAttribute('data-math-source')||node.querySelector('[data-math-source]')?.getAttribute('data-math-source');
   const annotation=node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
   const tex=raw||node.getAttribute('data-tex')||annotation||presentationMathSource(node)||
     node.getAttribute('aria-label')||node.querySelector('svg[aria-label]')?.getAttribute('aria-label')||node.textContent;
   if(!tex)return '';
-  const display=node.matches('.katex-display,[display="block"],[display="true"]');
+  const display=node.matches('.mathDisplay,.katex-display,[display="block"],[display="true"]');
   if(/^(?:\\\(|\\\[|\$)/.test(tex.trim()))return tex.trim();
   return display?'\\['+tex.trim()+'\\]':'\\('+tex.trim()+'\\)';
-};
+}
+
+export function formulaAt(node) {
+  let formula = asElement(node)?.closest(formulaSelector);
+  for (let parent; (parent = formula?.parentElement?.closest(formulaSelector));) formula = parent;
+  return formula;
+}
+
+export function formulaAtPoint(event) {
+  const direct = formulaAt(event.target);
+  if (direct) return direct;
+  // Between painted glyphs, the hit target can be the containing paragraph.
+  const row = asElement(event.target)?.closest('p,li,td,th,summary,label,button,h1,h2,h3,h4');
+  if (!row) return null;
+  for (const node of row.querySelectorAll(formulaSelector)) {
+    if ([...node.getClientRects()].some(rect => event.clientX >= rect.left && event.clientX < rect.right &&
+        event.clientY >= rect.top && event.clientY < rect.bottom)) return formulaAt(node);
+  }
+  return null;
+}
 
 // Assign each emitted character to its original DOM range. Occurrences with identical text retain distinct offsets.
 export function captureSelection(range,root){
