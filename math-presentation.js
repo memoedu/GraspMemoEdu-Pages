@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=fd0d8234bee53cfb';
+import {escapedAt, mathSpans} from './math-syntax.js?v=75a98ea509fec0d6';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -82,7 +82,7 @@ const archivedGlyphs = new WeakMap();
 let fragmentNumber = 0, renderer, svgGlyphLookup;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=fd0d8234bee53cfb').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=75a98ea509fec0d6').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -143,7 +143,7 @@ function scopeGlyphs(root) {
 async function identifyArchivedPaths(math, hashes) {
   const paths = [...math.querySelectorAll('svg [data-mml-node="math"] path[d]:not([d=""],[data-c])')];
   if (!paths.length || !globalThis.crypto?.subtle) return;
-  svgGlyphLookup ||= import('./vendor/mathjax-svg-glyphs/index.mjs?v=fd0d8234bee53cfb').catch(error => {
+  svgGlyphLookup ||= import('./vendor/mathjax-svg-glyphs/index.mjs?v=75a98ea509fec0d6').catch(error => {
     svgGlyphLookup = null;
     throw error;
   });
