@@ -1,4 +1,4 @@
-import {t} from './i18n.js?v=1187821e4225531a';
+import {t} from './i18n.js?v=fd0d8234bee53cfb';
 
 export function focusReaderRoute({path, params}) {
   return /^\/(?:topic\/[^/]+|review\/[^/]+\/[^/]+)$/.test(path)

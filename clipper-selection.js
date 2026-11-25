@@ -1,5 +1,5 @@
-import {presentationMathSource} from './math-presentation.js?v=1187821e4225531a';
-import {learningSelectionBlock} from './content-report.js?v=1187821e4225531a';
+import {presentationMathSource} from './math-presentation.js?v=fd0d8234bee53cfb';
+import {learningSelectionBlock} from './content-report.js?v=fd0d8234bee53cfb';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container,.mjpage';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';
@@ -32,13 +32,24 @@ function formulaFragment(formula, range) {
   if (!formula.contains(range.startContainer) && !formula.contains(range.endContainer)) return null;
   const visible = formula.querySelector('.katex-html') || formula;
   const walker = document.createTreeWalker(visible, NodeFilter.SHOW_TEXT, {
-    acceptNode: node => node.data && !node.parentElement.closest('.katex-mathml,annotation,annotation-xml,svg,[hidden]')
-      ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+    acceptNode(node) {
+      if (!/[^\s\p{Cf}]/u.test(node.data) ||
+          node.parentElement.closest('.katex-mathml,annotation,annotation-xml,svg,[hidden]')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      const style = getComputedStyle(node.parentElement);
+      return style.visibility === 'visible' && style.color !== 'rgba(0, 0, 0, 0)'
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
   });
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
   const first = nodes[0], last = nodes.at(-1);
-  if (!first || range.comparePoint(first, 0) === 0 && range.comparePoint(last, last.length) === 0) return null;
+  if (!first) return null;
+  // KaTeX inserts zero-width characters and invisible layout text around real glyphs.
+  const start = first.data.search(/[^\s\p{Cf}]/u);
+  const end = last.data.search(/[\s\p{Cf}]*$/u);
+  if (range.isPointInRange(first, start) && range.isPointInRange(last, end)) return null;
   return nodes;
 }
 
