@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=75a98ea509fec0d6';
-import {learningSelectionBlock} from './content-report.js?v=75a98ea509fec0d6';
-import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=75a98ea509fec0d6';
-import {currentModal} from './question-tools.js?v=75a98ea509fec0d6';
+import {getLanguage} from './i18n.js?v=d53ce4e80caae465';
+import {learningSelectionBlock} from './content-report.js?v=d53ce4e80caae465';
+import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=d53ce4e80caae465';
+import {currentModal} from './question-tools.js?v=d53ce4e80caae465';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -168,7 +168,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=75a98ea509fec0d6').then(module => {
+    return import('./clipper-workspace.js?v=d53ce4e80caae465').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -223,7 +223,7 @@ export function installClipper({request, identity}) {
   });
   actions.addEventListener('pointerdown', event => event.preventDefault());
   actions.addEventListener('focusout', queueSelection);
-  document.addEventListener('copy', event => {
+  window.addEventListener('copy', event => {
     if (event.defaultPrevented || !event.clipboardData || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
     const source = capture();
     const material = source && captureSource(source);
@@ -231,7 +231,9 @@ export function installClipper({request, identity}) {
     const text = material.text.replace(/!\[([^\]]*)\]\(clipper-image:\d+\)/g, '$1');
     event.clipboardData.setData('text/plain', text);
     event.preventDefault();
-  });
+    // A later copy listener can overwrite this event's clipboard with rendered glyphs.
+    event.stopImmediatePropagation();
+  }, {capture: true});
   document.addEventListener('selectionchange', queueSelection);
   document.addEventListener('pointerover', event => { hover = event.target; }, true);
   document.addEventListener('pointerdown', event => {
