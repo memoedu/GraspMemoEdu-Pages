@@ -333,7 +333,7 @@ body.portalModalOpen { overflow: hidden; }
 .feedbackLineLayer { position: absolute; inset: 0; z-index: 1; touch-action: pan-y; user-select: none; }
 .feedbackLine { display: block; position: absolute; left: 0; width: 100%; background: transparent; border: 0; border-radius: 0; padding: 0; cursor: pointer; }
 .feedbackLine::before { content: ''; position: absolute; top: 50%; left: 7px; width: 12px; height: 12px; transform: translateY(-50%); border: 1px solid #a1aab3; background: #fff; border-radius: 2px; }
-.feedbackLine:hover { background: #0874b910; }
+.feedbackLine:is(:hover, .clipperLineHover) { background: #0874b910; }
 .feedbackLine.selected { background: #0874b924; }
 .feedbackLine.selected::before { background: var(--ma-blue); border-color: var(--ma-blue); box-shadow: inset 0 0 0 2px #fff; }
 .feedbackLine:focus-visible { outline: 2px solid var(--ma-blue); outline-offset: -2px; }

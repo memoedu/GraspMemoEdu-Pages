@@ -39,6 +39,12 @@
 }
 .clipperActions button:hover, .clipperActions button:focus-visible { background: var(--clipper-tint); }
 
+.clipperLineStage { position: relative; }
+.clipperLineLayer { pointer-events: none; }
+.clipperLineLayer .feedbackLine::before { left: 2px; pointer-events: auto; }
+.clipperLineLayer .feedbackLine:not(.selected):not(.clipperLineHover):not(:hover):not(:focus-visible)::before { opacity: .6; }
+.clipperLineDragging { user-select: none; }
+
 body.clipperWindow { margin: 0; padding: 0; min-width: 0; overflow: hidden; }
 .clipperWorkspace {
   box-sizing: border-box;
