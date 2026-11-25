@@ -1,24 +1,30 @@
-import {presentationMathSource} from './math-presentation.js?v=4bc966c0a4c3128c';
-import {learningSelectionBlock} from './content-report.js?v=4bc966c0a4c3128c';
+import {presentationMathSource} from './math-presentation.js?v=39d6126f1d718201';
+import {learningSelectionBlock} from './content-report.js?v=39d6126f1d718201';
 
-export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container';
+export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container,.mjpage';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';
 const paragraph='p,li,td,th,pre,blockquote,h1,h2,h3,h4,h5,h6,[data-paragraph]';
 const asElement=n=>n?.nodeType===1?n:n?.parentElement;
+const isFormula = node => node.matches(formulaSelector) &&
+  (!node.matches('[data-tex]') || node.querySelectorAll('mjx-container,.mjpage').length < 2);
 export function mathSource(node) {
   const raw=node.getAttribute('data-math-source')||node.querySelector('[data-math-source]')?.getAttribute('data-math-source');
   const annotation=node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
   const tex=raw||node.getAttribute('data-tex')||annotation||presentationMathSource(node)||
     node.getAttribute('aria-label')||node.querySelector('svg[aria-label]')?.getAttribute('aria-label')||node.textContent;
   if(!tex)return '';
-  const display=node.matches('.mathDisplay,.katex-display,[display="block"],[display="true"]');
+  const blockMath='.mathDisplay,.katex-display,.mjpage__block,[display="block"],[display="true"]';
+  const display=node.matches(blockMath)||node.querySelector(blockMath);
   if(/^(?:\\\(|\\\[|\$)/.test(tex.trim()))return tex.trim();
   return display?'\\['+tex.trim()+'\\]':'\\('+tex.trim()+'\\)';
 }
 
 export function formulaAt(node) {
-  let formula = asElement(node)?.closest(formulaSelector);
-  for (let parent; (parent = formula?.parentElement?.closest(formulaSelector));) formula = parent;
+  let formula;
+  for (let candidate = asElement(node)?.closest(formulaSelector); candidate;
+    candidate = candidate.parentElement?.closest(formulaSelector)) {
+    if (isFormula(candidate)) formula = candidate;
+  }
   return formula;
 }
 
@@ -46,6 +52,7 @@ export function captureSelection(range,root){
     container=block?.contains(b)?block:formulaAt(common)||common;
   }
   const pieces=[], assets=[];
+  let hasCompleteFormula = false;
   const emit=(s,zone,kind='literal',inlineMath=false)=>{if(s)pieces.push({s,zone,kind,inlineMath});};
   function location(node){
     if(range.intersectsNode(node))return 0;
@@ -65,13 +72,14 @@ export function captureSelection(range,root){
     const style=getComputedStyle(n);
     if(style.display==='none'||style.visibility==='hidden')return;
     const zone=location(n);
-    if(n.matches(formulaSelector)){
+    if(isFormula(n)){
       const fragment = zone === 0 && formulaFragment(n, range);
       if (fragment) {
         for (const text of fragment) visit(text, true);
         return;
       }
       const formula=mathSource(n);
+      if (zone === 0 && formula) hasCompleteFormula = true;
       emit(formula,zone,'literal',!formula.startsWith('\\[')&&!formula.startsWith('$$'));return;
     }
     if(n.getAttribute('aria-hidden')==='true')return;
@@ -95,8 +103,18 @@ export function captureSelection(range,root){
     if(breakKind)emit('\n',edge(true),breakKind);
     if(n.tagName==='LI'&&n!==container){
       const siblings=[...n.parentElement.children].filter(x=>x.tagName==='LI');
-      const marker=n.parentElement.tagName==='OL'?((Number(n.parentElement.getAttribute('start'))||1)+siblings.indexOf(n))+'. ':'- ';
-      emit(marker,edge(true));
+      const ol = n.parentElement;
+      let index = ol.hasAttribute('start') ? ol.start : ol.reversed ? siblings.length : 1;
+      for (const li of siblings) {
+        if (li.hasAttribute('value')) index = li.value;
+        if (li === n) break;
+        index += ol.reversed ? -1 : 1;
+      }
+      const marker = ol.tagName === 'OL' ? index + '. ' : '- ';
+      let indent = '';
+      for (let ancestor = ol.parentElement?.closest('li'); ancestor && container.contains(ancestor);
+        ancestor = ancestor.parentElement?.closest('li')) indent += '  ';
+      emit(indent + marker,edge(true));
     }
     // Fences also enclose a partial selection inside a code block.
     if(fence)emit(fence+(code?language+'\n':''),zone);
@@ -131,6 +149,6 @@ export function captureSelection(range,root){
   if(!text)return null;
   const leading=middle.length-middle.trimStart().length,trailing=middle.length-middle.trimEnd().length;
   const prefix=before+middle.slice(0,leading), suffix=(trailing?middle.slice(-trailing):'')+after;
-  return {text,prefix:prefix.slice(-4000),suffix:suffix.slice(0,4000),assets,
+  return {text,prefix:prefix.slice(-4000),suffix:suffix.slice(0,4000),assets,hasCompleteFormula,
     isImage:assets.length===1&&/^!\[[^\]]*\]\(clipper-image:0\)$/.test(text)};
 }

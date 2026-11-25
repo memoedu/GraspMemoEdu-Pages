@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=4bc966c0a4c3128c';
+import {getLanguage} from './i18n.js?v=39d6126f1d718201';
 
 export function studentTopicGroups({request, learnerId, node, control}) {
   const tr=(zh,en)=>getLanguage()==='en'?en:zh;
