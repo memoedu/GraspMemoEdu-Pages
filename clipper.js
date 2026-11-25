@@ -1,7 +1,7 @@
-import {getLanguage} from './i18n.js?v=4bc966c0a4c3128c';
-import {learningSelectionBlock} from './content-report.js?v=4bc966c0a4c3128c';
-import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=4bc966c0a4c3128c';
-import {currentModal} from './question-tools.js?v=4bc966c0a4c3128c';
+import {getLanguage} from './i18n.js?v=39d6126f1d718201';
+import {learningSelectionBlock} from './content-report.js?v=39d6126f1d718201';
+import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=39d6126f1d718201';
+import {currentModal} from './question-tools.js?v=39d6126f1d718201';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -62,8 +62,15 @@ function capture() {
 function captureRange(range) {
   const common = elementOf(range.commonAncestorContainer);
   const root = common?.closest(CONTENT);
-  if (!root || !usable(range.startContainer) || !usable(range.endContainer)) return null;
-  return {range, common, root};
+  if (root && usable(range.startContainer) && usable(range.endContainer)) return {range, common, root};
+  // Ctrl+A may select the document shell as well as the current learning surface.
+  if (!common?.contains(document.body)) return null;
+  const visible = [...document.querySelectorAll(CONTENT)].find(node => node.getClientRects().length &&
+    range.comparePoint(node, 0) === 0 && range.comparePoint(node, node.childNodes.length) === 0);
+  if (!visible) return null;
+  const full = document.createRange();
+  full.selectNodeContents(visible);
+  return {range: full, common: visible, root: visible};
 }
 
 function captureSource({range, common, root}) {
@@ -161,7 +168,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=4bc966c0a4c3128c').then(module => {
+    return import('./clipper-workspace.js?v=39d6126f1d718201').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -216,6 +223,15 @@ export function installClipper({request, identity}) {
   });
   actions.addEventListener('pointerdown', event => event.preventDefault());
   actions.addEventListener('focusout', queueSelection);
+  document.addEventListener('copy', event => {
+    if (event.defaultPrevented || !event.clipboardData || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
+    const source = capture();
+    const material = source && captureSource(source);
+    if (!material?.hasCompleteFormula) return;
+    const text = material.text.replace(/!\[([^\]]*)\]\(clipper-image:\d+\)/g, '$1');
+    event.clipboardData.setData('text/plain', text);
+    event.preventDefault();
+  });
   document.addEventListener('selectionchange', queueSelection);
   document.addEventListener('pointerover', event => { hover = event.target; }, true);
   document.addEventListener('pointerdown', event => {

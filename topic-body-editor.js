@@ -1,8 +1,9 @@
-import {getLanguage} from './i18n.js?v=4bc966c0a4c3128c';
+import {getLanguage} from './i18n.js?v=39d6126f1d718201';
 
 const say = (zh, en) => getLanguage() === 'en' ? en : zh;
 const enabledKey = scope => 'graspmemoedu:topic-edit:' + scope;
 const drafts = new Map();
+const preferences = new Map();
 const keyOf = document => JSON.stringify(document);
 
 export function installBodyEditor({button, panel, status, request, current, companion, apiOrigin, installErrors}) {
@@ -16,17 +17,35 @@ export function installBodyEditor({button, panel, status, request, current, comp
     });
     else drafts.delete(session.draftKey);
   }
+  function hide(session) {
+    clearTimeout(session.timer);
+    clearTimeout(session.loadTimer);
+    session.port?.close();
+    session.port = null;
+    session.ready = false;
+    panel.replaceChildren();
+    panel.hidden = true;
+  }
   function reset() {
     if (active) {
-      remember(active);
-      clearTimeout(active.timer);
-      clearTimeout(active.loadTimer);
-      active.port?.close();
+      if (active.editable) remember(active);
+      hide(active);
       active = null;
     }
     button.hidden = true;
-    panel.replaceChildren();
-    panel.hidden = true;
+  }
+  function updateButton(session) {
+    button.hidden = false;
+    button.disabled = !session.editable;
+    button.setAttribute('aria-pressed', String(session.editing));
+    const label = session.editing ? say('关闭编辑', 'Finish editing') : say('开启编辑', 'Enable editing');
+    button.setAttribute('aria-label', label);
+    button.title = session.editable ? label : say('管理员尚未开放此 Topic 的编辑权限。', 'Editing is disabled by your administrator.');
+  }
+  function prefer(session, editing) {
+    const key = enabledKey(session.draftKey);
+    preferences.set(key, editing);
+    try { localStorage.setItem(key, editing ? 'yes' : 'no'); } catch {}
   }
   function changed(session, document) {
     if (!live(session) || !session.editing || document?.format !== 'topic-outline-v1' || !Array.isArray(document.blocks)) return;
@@ -114,28 +133,43 @@ export function installBodyEditor({button, panel, status, request, current, comp
     panel.hidden = false;
   }
 
-  async function open(scope) {
+  async function open(scope, previous = null) {
     reset();
     const session = {scope, scopeKey: keyOf(scope), draftKey: keyOf([apiOrigin(), scope.learnerId, scope.topicId]),
       deviceQuery: '', editing: false, pending: null, attempt: null};
     active = session;
-    let device;
-    try { device = await companion('device'); }
-    catch (error) { if (!installErrors.has(error.code)) throw error; }
-    if (!live(session)) return;
-    if (device?.device_id) session.deviceQuery = '?' + new URLSearchParams({device_id: device.device_id});
-    const query = new URLSearchParams(session.deviceQuery);
-    query.set('topic_id', scope.topicId);
-    const state = await request('topic-sync/body?' + query, {fresh: true});
+    let state;
+    try {
+      let device;
+      try { device = await companion('device'); }
+      catch (error) { if (!installErrors.has(error.code)) throw error; }
+      if (!live(session)) return;
+      if (device?.device_id) session.deviceQuery = '?' + new URLSearchParams({device_id: device.device_id});
+      const query = new URLSearchParams(session.deviceQuery);
+      query.set('topic_id', scope.topicId);
+      state = await request('topic-sync/body?' + query, {fresh: true});
+    } catch (error) {
+      if (!previous) throw error;
+      if (live(session)) {
+        active = previous;
+        updateButton(previous);
+        notice(previous, error.message);
+      }
+      return;
+    }
     if (!live(session)) return;
     Object.assign(session, {saved: state.document, revision: state.revision, baseline: state.baseline_revision,
       official: state.official_version, editable: state.editable});
-    let preferred = false;
-    try { preferred = localStorage.getItem(enabledKey(session.draftKey)) === 'yes'; } catch {}
-    session.editing = preferred && state.editable;
+    const preference = enabledKey(session.draftKey);
+    let preferred = preferences.get(preference);
+    try {
+      const stored = localStorage.getItem(preference);
+      if (stored !== null) preferred = stored === 'yes';
+    } catch {}
+    session.editing = Boolean((previous || preferred) && state.editable);
+    if (previous && session.editing) prefer(session, true);
     const draft = drafts.get(session.draftKey);
     if (draft && state.editable) {
-      session.editing = true;
       if (draft.attempt?.revision === state.revision && keyOf(draft.attempt.document) === keyOf(state.document)) {
         session.pending = keyOf(draft.document) === keyOf(state.document) ? null : draft.document;
       } else {
@@ -143,15 +177,14 @@ export function installBodyEditor({button, panel, status, request, current, comp
         session.attempt = draft.attempt;
         session.blocked = state.revision !== draft.revision || (!state.revision &&
           (state.baseline_revision !== draft.baseline || state.official_version !== draft.official));
+        if (session.blocked) Object.assign(session, {
+          revision: draft.revision, baseline: draft.baseline, official: draft.official,
+        });
       }
     }
-    button.hidden = false;
-    button.disabled = !state.editable;
-    button.setAttribute('aria-pressed', String(session.editing));
-    const label = session.editing ? say('关闭编辑', 'Finish editing') : say('开启编辑', 'Enable editing');
-    button.setAttribute('aria-label', label);
-    button.title = state.editable ? label : say('管理员尚未开放此 Topic 的编辑权限。', 'Editing is disabled by your administrator.');
-    if (session.editing || state.revision || state.baseline_revision) show(session, session.pending ?? session.saved);
+    updateButton(session);
+    if (!session.editing) return;
+    show(session, session.pending ?? session.saved);
     if (session.pending && !session.blocked) void save(session).catch(() => {});
     if (session.blocked) notice(session, say('正文已有新版本，此页保留了未保存的改动。', 'A newer revision exists. Your draft is still here.'));
   }
@@ -164,20 +197,29 @@ export function installBodyEditor({button, panel, status, request, current, comp
       if (session.editing && session.ready) {
         await new Promise((resolve, reject) => {
           const id = crypto.randomUUID();
-          const timer = setTimeout(() => reject(Error(say('编辑器未确认保存。', 'The editor did not acknowledge the save.'))), 5000);
-          session.flush = {id, done: () => { clearTimeout(timer); resolve(); }};
+          const timer = setTimeout(() => {
+            session.flush = null;
+            reject(Error(say('编辑器未确认保存。', 'The editor did not acknowledge the save.')));
+          }, 5000);
+          session.flush = {id, done: () => { clearTimeout(timer); session.flush = null; resolve(); }};
           session.port.postMessage({type: 'flush', id});
         });
         if (!live(session)) return;
-        if (session.blocked) return;
-        await save(session);
       }
       if (!live(session)) return;
-      try {localStorage.setItem(enabledKey(session.draftKey), session.editing ? 'no' : 'yes');} catch {}
-      await open(session.scope);
+      if (session.editing) {
+        if (!session.blocked) await save(session);
+        if (!live(session)) return;
+        prefer(session, false);
+        session.editing = false;
+        hide(session);
+        updateButton(session);
+        return;
+      }
+      await open(session.scope, session);
       if (active?.editing && live(active)) panel.scrollIntoView({block: 'nearest'});
     } catch (error) { notice(session, error.message); }
-    finally { if (active?.editable) button.disabled = false; }
+    finally { if (live(session) && session.editable) button.disabled = false; }
   });
   return {open, reset};
 }
