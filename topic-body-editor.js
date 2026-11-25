@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=39d6126f1d718201';
+import {getLanguage} from './i18n.js?v=1187821e4225531a';
 
 const say = (zh, en) => getLanguage() === 'en' ? en : zh;
 const enabledKey = scope => 'graspmemoedu:topic-edit:' + scope;
@@ -183,7 +183,10 @@ export function installBodyEditor({button, panel, status, request, current, comp
       }
     }
     updateButton(session);
-    if (!session.editing) return;
+    if (!session.editing) {
+      if (!state.editable && (state.revision || state.baseline_revision)) show(session, session.saved);
+      return;
+    }
     show(session, session.pending ?? session.saved);
     if (session.pending && !session.blocked) void save(session).catch(() => {});
     if (session.blocked) notice(session, say('正文已有新版本，此页保留了未保存的改动。', 'A newer revision exists. Your draft is still here.'));

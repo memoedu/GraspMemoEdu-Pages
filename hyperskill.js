@@ -1,7 +1,7 @@
-import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=39d6126f1d718201';
-import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=39d6126f1d718201';
-import {enhanceSourceContent} from './topic-content.js?v=39d6126f1d718201';
-import {mountAnswerConversion} from './answer-conversion.js?v=39d6126f1d718201';
+import {questionInput,answerReady,choiceTypeField} from './question-input.js?v=1187821e4225531a';
+import {attachFormulaEditing, attachLiteralAnswer} from './formula-input.js?v=1187821e4225531a';
+import {enhanceSourceContent} from './topic-content.js?v=1187821e4225531a';
+import {mountAnswerConversion} from './answer-conversion.js?v=1187821e4225531a';
 
 export async function localHyperskill(action,body,{timeout=120000}={}) {
   let response;

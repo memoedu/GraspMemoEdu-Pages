@@ -1,4 +1,4 @@
-import {clipText as tx} from './clipper.js?v=39d6126f1d718201';
+import {clipText as tx} from './clipper.js?v=1187821e4225531a';
 const shared=new URL('./vendor/knowledge-clipper/',import.meta.url);
 let renderer;
 
