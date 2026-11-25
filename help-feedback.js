@@ -1,5 +1,6 @@
-import {t, translateMessage} from './i18n.js?v=d53ce4e80caae465';
-import {enhanceTopicContent} from './topic-content.js?v=d53ce4e80caae465';
+import {t, translateMessage} from './i18n.js?v=ae92abb4b12205ac';
+import {enhanceTopicContent} from './topic-content.js?v=ae92abb4b12205ac';
+import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=ae92abb4b12205ac';
 
 const node = (tag, cls = '', text) => { const el = document.createElement(tag); el.className = cls; if (text !== undefined) el.textContent = text; return el; };
 export const feedbackCategories = {
@@ -41,37 +42,15 @@ function lineSelector(stage, content, onChange) {
   };
   function measure() {
     frame = 0; if (stopped || !stage.isConnected || !stage.getClientRects().length) return;
-    const base = stage.getBoundingClientRect(), bands = [], atoms = [];
-    function add(rect, range, atomic = false) {
-      if (rect.width < .1 || rect.height < .1) return;
-      const center = (rect.top + rect.bottom) / 2;
-      let band = bands.find(b => Math.abs(b.center - center) < Math.min(b.height, rect.height) * .4);
-      if (!band || atomic) {
-        band = {top: rect.top, bottom: rect.bottom, center, height: rect.height, ranges: []}; bands.push(band);
+    const base = stage.getBoundingClientRect();
+    const bands = measureLineBands(({text, atom}) => {
+      for (const token of content.querySelectorAll('[data-feedback-text]')) {
+        if (token.firstChild?.nodeType === Node.TEXT_NODE)
+          text(token.firstChild, (_start, _end, from, to) => [Number(token.dataset.feedbackText), from, to], true);
       }
-      band.ranges.push(range); band.top = Math.min(band.top, rect.top); band.bottom = Math.max(band.bottom, rect.bottom);
-    }
-    for (const token of content.querySelectorAll('[data-feedback-text]')) {
-      const text = token.firstChild;
-      if (!text || text.nodeType !== Node.TEXT_NODE) continue;
-      const range = document.createRange(); let offset = 0, point = 0;
-      for (const char of text.data) {
-        range.setStart(text, offset); offset += char.length; range.setEnd(text, offset);
-        const rect = range.getBoundingClientRect();
-        add(rect, [Number(token.dataset.feedbackText), point, point + 1]); point++;
-      }
-    }
-    for (const atom of content.querySelectorAll('[data-feedback-atom]')) {
-      const rect = atom.getBoundingClientRect(), range = [Number(atom.dataset.feedbackAtom), 0, 1];
-      if (getComputedStyle(atom).display.startsWith('inline')) atoms.push({rect, range});
-      else add(rect, range, true);
-    }
-    for (const {rect, range} of atoms) {
-      const band = bands.find(b => Math.min(b.bottom, rect.bottom) - Math.max(b.top, rect.top) > b.height * .4);
-      if (band) { band.ranges.push(range); band.top = Math.min(band.top, rect.top); band.bottom = Math.max(band.bottom, rect.bottom); }
-      else add(rect, range, true);
-    }
-    rows = bands.sort((a, b) => a.top - b.top).map((band, index) => {
+      for (const node of content.querySelectorAll('[data-feedback-atom]')) atom(node, [Number(node.dataset.feedbackAtom), 0, 1]);
+    });
+    rows = bands.map((band, index) => {
       const button = node('button', 'feedbackLine'); button.type = 'button'; button.disabled = disabled;
       button.setAttribute('aria-label', t('help.selectLine', {number: index + 1}));
       const top = Math.max(0, band.top - base.top - 1), height = band.bottom - band.top + 2;
@@ -100,11 +79,10 @@ function lineSelector(stage, content, onChange) {
     if (!drag || event.pointerId !== drag.id) return;
     if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
     drag.moved = true; event.preventDefault();
-    const rect = layer.getBoundingClientRect(), left = Math.min(drag.x, event.clientX) - rect.left,
-      top = Math.min(drag.y, event.clientY) - rect.top, right = Math.max(drag.x, event.clientX) - rect.left,
-      bottom = Math.max(drag.y, event.clientY) - rect.top;
-    marquee.hidden = false; Object.assign(marquee.style, {left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px`});
-    selected = normalize([...drag.initial, ...rows.filter(row => left < rect.width && right > 0 && top < row.bottom && bottom > row.top).flatMap(row => row.ranges)]);
+    const box = drawLineMarquee(marquee, drag.x, drag.y, event), rect = layer.getBoundingClientRect();
+    selected = normalize([...drag.initial, ...rows.filter(row => marqueeHitsLine(box, {
+      left: rect.left, right: rect.right, top: row.top + rect.top, bottom: row.bottom + rect.top,
+    })).flatMap(row => row.ranges)]);
     paint();
   });
   const finish = event => {

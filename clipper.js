@@ -1,7 +1,8 @@
-import {getLanguage} from './i18n.js?v=d53ce4e80caae465';
-import {learningSelectionBlock} from './content-report.js?v=d53ce4e80caae465';
-import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=d53ce4e80caae465';
-import {currentModal} from './question-tools.js?v=d53ce4e80caae465';
+import {getLanguage} from './i18n.js?v=ae92abb4b12205ac';
+import {learningSelectionBlock} from './content-report.js?v=ae92abb4b12205ac';
+import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=ae92abb4b12205ac';
+import {createClipperLines} from './clipper-lines.js?v=ae92abb4b12205ac';
+import {currentModal} from './question-tools.js?v=ae92abb4b12205ac';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -73,9 +74,21 @@ function captureRange(range) {
   return {range: full, common: visible, root: visible};
 }
 
-function captureSource({range, common, root}) {
-  if (!root.isConnected || !root.contains(common)) return null;
-  const selection = captureSelection(range,root);
+function captureSource({range, ranges, common, root}) {
+  if (!root.isConnected || (common && !root.contains(common))) return null;
+  const parts = (ranges || [range]).map(part => captureSelection(part, root)).filter(Boolean);
+  let selection = parts[0];
+  if (parts.length > 1) {
+    const assets = [];
+    const text = parts.map(part => {
+      const offset = assets.length;
+      assets.push(...part.assets);
+      return part.text.replace(/(!\[[^\]]*\]\(clipper-image:)(\d+)(\))/g,
+        (_match, start, index, end) => start + (offset + Number(index)) + end);
+    }).join('\n\n');
+    selection = {text, assets, prefix: '', suffix: '', isImage: false,
+      hasCompleteFormula: parts.some(part => part.hasCompleteFormula)};
+  }
   if (!selection) return null;
   const title = [...root.querySelectorAll('h1')].find(node => node.getClientRects().length)?.textContent || document.title;
   return {...selection, title:limit(title.trim(),400),route:clipRoute()};
@@ -109,6 +122,26 @@ export function installClipper({request, identity}) {
   document.body.append(actions);
   let prefs, pending, imageSelection;
   let owner, enabled = false, selection, app, hover, loading = false, frame = 0;
+  let lineSelectors = [];
+  function captureLines() {
+    for (const selector of lineSelectors) {
+      const captured = selector.capture();
+      if (captured) return captured;
+    }
+    return null;
+  }
+  const clearLines = () => lineSelectors.forEach(selector => selector.clear());
+
+  function syncLines() {
+    if (enabled && owner) {
+      if (!lineSelectors.length) lineSelectors = [...document.querySelectorAll(CONTENT)].map(root =>
+        createClipperLines(root, {onChange: queueSelection, blocked: currentModal, actions}));
+      else lineSelectors.forEach(selector => selector.refresh());
+    } else {
+      lineSelectors.forEach(selector => selector.destroy());
+      lineSelectors = [];
+    }
+  }
 
   function guardedRequest(...args) {
     const scope = owner;
@@ -142,10 +175,11 @@ export function installClipper({request, identity}) {
   }
 
   function positionSelection() {
-    const rect = selection && !currentModal() && selection.range.getBoundingClientRect();
+    const rect = selection && !currentModal() && (selection.ranges ? selection.anchor?.getBoundingClientRect() : selection.range.getBoundingClientRect());
     actions.hidden = !actions.childElementCount || !rect || rect.bottom <= 0 || rect.top >= innerHeight || (!rect.width && !rect.height);
     if (actions.hidden) return;
-    const left = Math.max(8, Math.min(rect.left, innerWidth - actions.offsetWidth - 8));
+    const anchorX = selection.ranges ? rect.right - actions.offsetWidth : rect.left;
+    const left = Math.max(8, Math.min(anchorX, innerWidth - actions.offsetWidth - 8));
     const bottom = rect.bottom + actions.offsetHeight + 12;
     const top = Math.max(6, Math.min(innerHeight - actions.offsetHeight - 6,
       bottom <= innerHeight ? rect.bottom + 6 : rect.top - actions.offsetHeight - 6));
@@ -153,10 +187,12 @@ export function installClipper({request, identity}) {
   }
 
   function showSelection() {
-    if (!enabled || !owner || currentModal()) selection = null;
+    if (!enabled || !owner || currentModal() || lineSelectors.some(selector => selector.dragging)) selection = null;
     else {
-      const next = capture() || imageSelection;
-      if (next || !actions.contains(document.activeElement)) selection = next;
+      const native = capture();
+      if (native || imageSelection) clearLines();
+      const next = native || imageSelection || captureLines();
+      if (next || selection?.ranges || !actions.contains(document.activeElement)) selection = next;
     }
     renderActions();
     positionSelection();
@@ -168,7 +204,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=d53ce4e80caae465').then(module => {
+    return import('./clipper-workspace.js?v=ae92abb4b12205ac').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -202,10 +238,11 @@ export function installClipper({request, identity}) {
     const next = identity();
     if (owner !== next) {
       app?.close(); app=null; prefs=pending=null; imageSelection=null;
+      clearLines();
       owner = next;
       enabled = clipperEnabled(owner);
     }
-    sync();
+    syncLines(); sync();
     showSelection();
     if(enabled && !prefs)void preferences().then(()=>{sync();showSelection();}).catch(()=>{});
   }
@@ -225,9 +262,9 @@ export function installClipper({request, identity}) {
   actions.addEventListener('focusout', queueSelection);
   window.addEventListener('copy', event => {
     if (event.defaultPrevented || !event.clipboardData || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
-    const source = capture();
+    const source = capture() || captureLines();
     const material = source && captureSource(source);
-    if (!material?.hasCompleteFormula) return;
+    if (!material || (!source.ranges && !material.hasCompleteFormula)) return;
     const text = material.text.replace(/!\[([^\]]*)\]\(clipper-image:\d+\)/g, '$1');
     event.clipboardData.setData('text/plain', text);
     event.preventDefault();
@@ -248,6 +285,8 @@ export function installClipper({request, identity}) {
     }
   }, true);
   document.addEventListener('keydown', event => {
+    if (!elementOf(event.target)?.closest(EDITING) && !currentModal() &&
+        (event.key === 'Escape' || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a'))) clearLines();
     if(enabled&&owner&&!event.isComposing&&!elementOf(event.target)?.closest(EDITING)&&prefs){
       const match=(key)=>{
         const parts=(key||'').toLowerCase().split('+'), last=parts.pop();
@@ -270,9 +309,9 @@ export function installClipper({request, identity}) {
       if (!actions.hidden) { event.preventDefault(); actions.firstElementChild.focus({preventScroll: true}); }
     }
   }, true);
-  window.addEventListener('hashchange', () => { imageSelection=null; selection = null; actions.hidden = true; });
+  window.addEventListener('hashchange', () => { clearLines(); imageSelection=null; selection = null; actions.hidden = true; });
   window.addEventListener('resize', positionSelection);
-  window.addEventListener('scroll', positionSelection, {capture: true, passive: true});
+  window.addEventListener('scroll', () => { if (selection?.ranges) queueSelection(); else positionSelection(); }, {capture: true, passive: true});
   const invalidate=()=>{prefs=pending=null;refresh();};
   window.addEventListener('clipper-settings-changed',invalidate);
   try {const channel=new BroadcastChannel('clipper-settings');channel.onmessage=invalidate;window.addEventListener('pagehide',()=>channel.close(),{once:true});}catch{}
