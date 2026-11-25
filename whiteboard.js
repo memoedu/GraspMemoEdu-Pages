@@ -1,8 +1,8 @@
-import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=fd0d8234bee53cfb';
-import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=fd0d8234bee53cfb';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=fd0d8234bee53cfb';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=fd0d8234bee53cfb';
-import {whiteboardDocument} from './whiteboard-editor.js?v=fd0d8234bee53cfb';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=75a98ea509fec0d6';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=75a98ea509fec0d6';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=75a98ea509fec0d6';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=75a98ea509fec0d6';
+import {whiteboardDocument} from './whiteboard-editor.js?v=75a98ea509fec0d6';
 
 const boards = new WeakMap();
 const work = new Map();
@@ -261,6 +261,8 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   selectionTools.hidden = true;
   const identify = control(selectionTools, '识别圈选公式', 'Recognize selected formula', recognizeSelected);
   const selectedFormula = node('input');
+  let latexOnly;
+  const notationRequired = () => local('已识别原式。请改成计算器支持的表达式后再计算或赋值。', 'Formula recognized. Edit it into calculator notation to evaluate or assign it.');
   selectedFormula.maxLength = 1024;
   selectedFormula.setAttribute('aria-label', local('圈选公式识别结果', 'Recognized formula'));
   selectedFormula.setAttribute('data-no-voice', '');
@@ -286,6 +288,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     selected = count ? id : undefined;
     identified = undefined;
     selectedFormula.value = '';
+    latexOnly = undefined;
     voiceSubstitute = false;
     selectionMessage.textContent = '';
     refresh();
@@ -333,8 +336,9 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
         throw Error(response.feedback || local('未识别到清晰公式。', 'No clear formula was recognized.'));
       }
       selectedFormula.value = response.answer;
+      latexOnly = response.calculatorSupported === false ? response.answer : undefined;
       identified = id;
-      selectionMessage.textContent = voiceSubstitute ? local('核对公式后，按 Enter 确认赋值并换元。', 'Check the formula, then press Enter to assign and replace.') :
+      selectionMessage.textContent = latexOnly ? notationRequired() : voiceSubstitute ? local('核对公式后，按 Enter 确认赋值并换元。', 'Check the formula, then press Enter to assign and replace.') :
         local('核对公式后，输入或读出变量名。', 'Check the formula, then type or say the variable name.');
       recognized = true;
     } catch (error) {
@@ -356,6 +360,10 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     const id = selected;
     if (identified !== id) await recognizeSelected(false);
     if (closed || selected !== id || identified !== id || !state.options.isCurrent()) return;
+    if (selectedFormula.value.trim() === latexOnly) {
+      selectionMessage.textContent = notationRequired();
+      return;
+    }
     const part = operand(selectedFormula);
     selectionBusy = true;
     refresh();
@@ -363,11 +371,14 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       const value = await calculateSelectedFormula({expression: part.value, config: question.calculate,
         cas: whiteboardCasEnabled(), memory: Object.fromEntries([...session.memory].map(([name, entry]) => [name, entry.value]))});
       if (closed || selected !== id || !state.options.isCurrent()) return;
-      selectionMessage.textContent = part.value + ' = ' + value.text;
+      const conditions = value.nonZero?.map(divisor => '(' + divisor + ') ≠ 0').join(', ');
+      selectionMessage.textContent = part.value + ' = ' + value.text +
+        (conditions ? local('（当 ' + conditions + '）', ' (where ' + conditions + ')') : '');
       showMemory(value.text);
     } catch (error) {
       if (!closed && selected === id) selectionMessage.textContent = error.code === 'expression_required' ?
         local('请选择等式或不等式中要计算的一段。', 'Select the part of the equation or inequality to evaluate.') :
+        error.code === 'matrix_dimensions' ? local('向量或矩阵的维度不匹配。', 'The vector or matrix dimensions do not match.') :
         local('无法计算，请核对识别结果和题目的计算器设置。', 'Check the recognized formula and question calculator settings.');
     } finally {
       selectionBusy = false;
@@ -380,6 +391,10 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     const id = selected;
     const name = normalizeVariableName(variable.value);
     const original = selectedFormula.value;
+    if (original.trim() === latexOnly) {
+      selectionMessage.textContent = notationRequired();
+      return;
+    }
     const part = operand(selectedFormula);
     if (!assignableVariable(name) || !part.value || /[=<>≤≥≠]/u.test(part.value)) {
       selectionMessage.textContent = local('请输入变量名。识别结果含等号或不等号时，请选中其中一段表达式。',
