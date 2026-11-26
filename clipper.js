@@ -1,8 +1,8 @@
-import {getLanguage} from './i18n.js?v=ae92abb4b12205ac';
-import {learningSelectionBlock} from './content-report.js?v=ae92abb4b12205ac';
-import {captureSelection, formulaAt, formulaSelector} from './clipper-selection.js?v=ae92abb4b12205ac';
-import {createClipperLines} from './clipper-lines.js?v=ae92abb4b12205ac';
-import {currentModal} from './question-tools.js?v=ae92abb4b12205ac';
+import {getLanguage} from './i18n.js?v=e80e3658b4e90a21';
+import {learningSelectionBlock} from './content-report.js?v=e80e3658b4e90a21';
+import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=e80e3658b4e90a21';
+import {createClipperLines} from './clipper-lines.js?v=e80e3658b4e90a21';
+import {currentModal} from './question-tools.js?v=e80e3658b4e90a21';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -63,19 +63,26 @@ function capture() {
 function captureRange(range) {
   const common = elementOf(range.commonAncestorContainer);
   const root = common?.closest(CONTENT);
-  if (root && usable(range.startContainer) && usable(range.endContainer)) return {range, common, root};
-  // Ctrl+A may select the document shell as well as the current learning surface.
-  if (!common?.contains(document.body)) return null;
-  const visible = [...document.querySelectorAll(CONTENT)].find(node => node.getClientRects().length &&
-    range.comparePoint(node, 0) === 0 && range.comparePoint(node, node.childNodes.length) === 0);
+  const routeHash = location.hash;
+  if (root && usable(range.startContainer) && usable(range.endContainer)) return {range, common, root, routeHash};
+  // A drag can start or end outside the reading surface. Keep its actual
+  // intersection with mounted content, including selections crossing the page shell.
+  const visible = root || [...document.querySelectorAll(CONTENT)].find(node =>
+    node.getClientRects().length && !node.closest('[hidden],[inert]') && range.intersectsNode(node) &&
+    (range.comparePoint(node, 0) === 0 && range.comparePoint(node, node.childNodes.length) === 0 ||
+      [...node.querySelectorAll(readingSourceSelector)].some(block => range.intersectsNode(block))));
   if (!visible) return null;
-  const full = document.createRange();
-  full.selectNodeContents(visible);
-  return {range: full, common: visible, root: visible};
+  const bounds = document.createRange();
+  bounds.selectNodeContents(visible);
+  if (range.compareBoundaryPoints(Range.START_TO_START, bounds) < 0) range.setStart(visible, 0);
+  if (range.compareBoundaryPoints(Range.END_TO_END, bounds) > 0) range.setEnd(visible, visible.childNodes.length);
+  if (range.collapsed) return null;
+  return {range, common: elementOf(range.commonAncestorContainer), root: visible, routeHash};
 }
 
-function captureSource({range, ranges, common, root}) {
-  if (!root.isConnected || (common && !root.contains(common))) return null;
+function captureSource({range, ranges, common, root, routeHash}) {
+  if (!root.isConnected || root.closest('[hidden],[inert]') || (common && !root.contains(common)) ||
+      (routeHash !== undefined && routeHash !== location.hash)) return null;
   const parts = (ranges || [range]).map(part => captureSelection(part, root)).filter(Boolean);
   let selection = parts[0];
   if (parts.length > 1) {
@@ -204,7 +211,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=ae92abb4b12205ac').then(module => {
+    return import('./clipper-workspace.js?v=e80e3658b4e90a21').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -264,7 +271,7 @@ export function installClipper({request, identity}) {
     if (event.defaultPrevented || !event.clipboardData || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
     const source = capture() || captureLines();
     const material = source && captureSource(source);
-    if (!material || (!source.ranges && !material.hasCompleteFormula)) return;
+    if (!material || (!source.ranges && !material.hasReadingSource && !material.hasCompleteFormula)) return;
     const text = material.text.replace(/!\[([^\]]*)\]\(clipper-image:\d+\)/g, '$1');
     event.clipboardData.setData('text/plain', text);
     event.preventDefault();

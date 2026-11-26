@@ -1,22 +1,19 @@
-import {presentationMathSource} from './math-presentation.js?v=ae92abb4b12205ac';
-import {learningSelectionBlock} from './content-report.js?v=ae92abb4b12205ac';
+import {sourceMathLatex} from './math-presentation.js?v=e80e3658b4e90a21';
+import {learningSelectionBlock} from './content-report.js?v=e80e3658b4e90a21';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container,.mjpage';
+export const readingSourceSelector = '[data-reading-source]';
 const ignored='script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.sourceCodeLanguage,.clipperActions,input,textarea,select,dialog,[contenteditable="true"]';
 const paragraph='p,li,td,th,pre,blockquote,h1,h2,h3,h4,h5,h6,[data-paragraph]';
 const asElement=n=>n?.nodeType===1?n:n?.parentElement;
 const isFormula = node => node.matches(formulaSelector) &&
   (!node.matches('[data-tex]') || node.querySelectorAll('mjx-container,.mjpage').length < 2);
-export function mathSource(node) {
-  const raw=node.getAttribute('data-math-source')||node.querySelector('[data-math-source]')?.getAttribute('data-math-source');
-  const annotation=node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
-  const tex=raw||node.getAttribute('data-tex')||annotation||presentationMathSource(node)||
-    node.getAttribute('aria-label')||node.querySelector('svg[aria-label]')?.getAttribute('aria-label')||node.textContent;
-  if(!tex)return '';
-  const blockMath='.mathDisplay,.katex-display,.mjpage__block,[display="block"],[display="true"]';
-  const display=node.matches(blockMath)||node.querySelector(blockMath);
-  if(/^(?:\\\(|\\\[|\$)/.test(tex.trim()))return tex.trim();
-  return display?'\\['+tex.trim()+'\\]':'\\('+tex.trim()+'\\)';
+export const mathSource = sourceMathLatex;
+
+function formulaLabel(node) {
+  const visual = node.querySelector('.katex-html') || node;
+  return (node.getAttribute('aria-label') || node.querySelector('svg[aria-label]')?.getAttribute('aria-label') ||
+    visual.textContent).replace(/[\u200b\ufeff]/g, '').replace(/\s+/gu, ' ').trim();
 }
 
 export function formulaAt(node) {
@@ -29,7 +26,9 @@ export function formulaAt(node) {
 }
 
 function formulaFragment(formula, range) {
-  if (!formula.contains(range.startContainer) && !formula.contains(range.endContainer)) return null;
+  const startsInFormula = formula.contains(range.startContainer);
+  const endsInFormula = formula.contains(range.endContainer);
+  if (!startsInFormula && !endsInFormula) return null;
   const visible = formula.querySelector('.katex-html') || formula;
   const walker = document.createTreeWalker(visible, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -46,6 +45,15 @@ function formulaFragment(formula, range) {
   while (walker.nextNode()) nodes.push(walker.currentNode);
   const first = nodes[0], last = nodes.at(-1);
   if (!first) return null;
+  // A prose selection that reaches into a formula carries that formula as one unit.
+  if (startsInFormula !== endsInFormula) {
+    return nodes.some(node => {
+      if (!range.intersectsNode(node)) return false;
+      const start = node === range.startContainer ? range.startOffset : 0;
+      const end = node === range.endContainer ? range.endOffset : node.length;
+      return /[^\s\p{Cf}]/u.test(node.data.slice(start, end));
+    }) ? null : [];
+  }
   // KaTeX inserts zero-width characters and invisible layout text around real glyphs.
   const start = first.data.search(/[^\s\p{Cf}]/u);
   const end = last.data.search(/[\s\p{Cf}]*$/u);
@@ -63,6 +71,7 @@ export function captureSelection(range,root){
     container=block?.contains(b)?block:formulaAt(common)||common;
   }
   const pieces=[], assets=[];
+  let hasReadingSource = false;
   let hasCompleteFormula = false;
   const emit=(s,zone,kind='literal',inlineMath=false)=>{if(s)pieces.push({s,zone,kind,inlineMath});};
   function location(node){
@@ -83,6 +92,7 @@ export function captureSelection(range,root){
     const style=getComputedStyle(n);
     if(style.display==='none'||style.visibility==='hidden')return;
     const zone=location(n);
+    if (zone === 0 && n.matches(readingSourceSelector)) hasReadingSource = true;
     if(isFormula(n)){
       const fragment = zone === 0 && formulaFragment(n, range);
       if (fragment) {
@@ -91,7 +101,7 @@ export function captureSelection(range,root){
       }
       const formula=mathSource(n);
       if (zone === 0 && formula) hasCompleteFormula = true;
-      emit(formula,zone,'literal',!formula.startsWith('\\[')&&!formula.startsWith('$$'));return;
+      emit(formula || formulaLabel(n),zone,'literal',Boolean(formula) && !formula.startsWith('\\[')&&!formula.startsWith('$$'));return;
     }
     if(n.getAttribute('aria-hidden')==='true')return;
     if(n.tagName==='IMG'){
@@ -161,5 +171,6 @@ export function captureSelection(range,root){
   const leading=middle.length-middle.trimStart().length,trailing=middle.length-middle.trimEnd().length;
   const prefix=before+middle.slice(0,leading), suffix=(trailing?middle.slice(-trailing):'')+after;
   return {text,prefix:prefix.slice(-4000),suffix:suffix.slice(0,4000),assets,hasCompleteFormula,
+    hasReadingSource: hasReadingSource || Boolean(container.closest(readingSourceSelector)),
     isImage:assets.length===1&&/^!\[[^\]]*\]\(clipper-image:0\)$/.test(text)};
 }

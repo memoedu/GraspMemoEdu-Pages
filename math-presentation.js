@@ -1,4 +1,4 @@
-import {escapedAt, mathSpans} from './math-syntax.js?v=ae92abb4b12205ac';
+import {escapedAt, mathSpans} from './math-syntax.js?v=e80e3658b4e90a21';
 
 const namespace = 'http://www.w3.org/1998/Math/MathML';
 const greek = /[Α-Ωα-ω]/;
@@ -79,10 +79,11 @@ const pendingDisplays = new WeakSet();
 const mountedSvg = new WeakSet();
 const glyphCodepoints = new WeakMap();
 const archivedGlyphs = new WeakMap();
+const archivedSources = new WeakMap();
 let fragmentNumber = 0, renderer, svgGlyphLookup;
 
 function loadRenderer() {
-  renderer ||= import('./vendor/formula/editor.mjs?v=ae92abb4b12205ac').catch(error => { renderer = null; throw error; });
+  renderer ||= import('./vendor/formula/editor.mjs?v=e80e3658b4e90a21').catch(error => { renderer = null; throw error; });
   return renderer;
 }
 
@@ -143,7 +144,7 @@ function scopeGlyphs(root) {
 async function identifyArchivedPaths(math, hashes) {
   const paths = [...math.querySelectorAll('svg [data-mml-node="math"] path[d]:not([d=""],[data-c])')];
   if (!paths.length || !globalThis.crypto?.subtle) return;
-  svgGlyphLookup ||= import('./vendor/mathjax-svg-glyphs/index.mjs?v=ae92abb4b12205ac').catch(error => {
+  svgGlyphLookup ||= import('./vendor/mathjax-svg-glyphs/index.mjs?v=e80e3658b4e90a21').catch(error => {
     svgGlyphLookup = null;
     throw error;
   });
@@ -220,6 +221,26 @@ function storedLatex(math) {
   if (!value) return '';
   const first = mathSpans(value).next().value;
   return first?.raw === value ? first.latex : value;
+}
+
+export function sourceMathLatex(node) {
+  const exact = node.getAttribute('data-math-source') ||
+    node.querySelector('[data-math-source]')?.getAttribute('data-math-source');
+  const tex = (exact || node.getAttribute('data-tex') ||
+    node.querySelector('annotation[encoding="application/x-tex"]')?.textContent ||
+    archivedSources.get(node) || presentationMathSource(node))?.trim();
+  if (!tex || mathSpans(tex).next().value?.raw === tex) return tex || '';
+  const blockMath = '.mathDisplay,.katex-display,.mjpage__block,[display="block"],[display="true"]';
+  return node.matches(blockMath) || node.querySelector(blockMath) ? '\\[' + tex + '\\]' : '\\(' + tex + '\\)';
+}
+
+function rememberArchivedSource(math) {
+  if (archivedSources.has(math)) return;
+  const source = storedLatex(math);
+  if (!source) return;
+  const display = math.matches('[display="true"],.mjpage__block');
+  const latex = math.matches('.mjpage') && source.length <= 4000 ? normalizeArchivedLatex(source, display) : source;
+  archivedSources.set(math, display ? '\\[' + latex + '\\]' : '\\(' + latex + '\\)');
 }
 
 function archivedArgument(source, start) {
@@ -304,7 +325,10 @@ export function installSelectableMath(root = document.body) {
   function render(batch) {
     const pending = [...batch].filter(math => !seen.has(math));
     if (!pending.length) return;
-    pending.forEach(math => seen.add(math));
+    for (const math of pending) {
+      rememberArchivedSource(math);
+      seen.add(math);
+    }
     void loadRenderer().then(({renderLatex}) => {
       const hashes = new Map();
       return Promise.all(pending.map(async math => {
@@ -417,6 +441,7 @@ function joinSplitMath(root) {
 
 export function prepareMathContent(root, {literal = false} = {}) {
   scopeGlyphs(root);
+  for (const math of root.querySelectorAll(archivedMath)) rememberArchivedSource(math);
   const source = root.textContent;
   if (!/[$\\]/.test(source) && (!literal || !/[Α-Ωα-ω_^=<>≤≥≠+−*\/×·±-]/.test(source))) return root;
   joinSplitMath(root);

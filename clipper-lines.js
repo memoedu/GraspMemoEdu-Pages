@@ -1,6 +1,6 @@
-import {t} from './i18n.js?v=ae92abb4b12205ac';
-import {formulaAt, formulaSelector} from './clipper-selection.js?v=ae92abb4b12205ac';
-import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=ae92abb4b12205ac';
+import {t} from './i18n.js?v=e80e3658b4e90a21';
+import {formulaAt, formulaSelector} from './clipper-selection.js?v=e80e3658b4e90a21';
+import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=e80e3658b4e90a21';
 
 const readingSurface = '.courseContent,.answerContent,[data-help-block]';
 const ignored = '[hidden],[inert],[aria-hidden="true"],[data-content-actions],[role="toolbar"],.sourceCodeLanguage,script,style,template,button,input,textarea,select,dialog,[contenteditable="true"]';

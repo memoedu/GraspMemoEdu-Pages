@@ -1,7 +1,7 @@
-import {mountMermaid} from './vendor/mermaid/index.js?v=ae92abb4b12205ac';
-import {renderBacklinks} from './vendor/document-backlinks.mjs?v=ae92abb4b12205ac';
-import {t} from './i18n.js?v=ae92abb4b12205ac';
-import {prepareMathContent} from './math-presentation.js?v=ae92abb4b12205ac';
+import {mountMermaid} from './vendor/mermaid/index.js?v=e80e3658b4e90a21';
+import {renderBacklinks} from './vendor/document-backlinks.mjs?v=e80e3658b4e90a21';
+import {t} from './i18n.js?v=e80e3658b4e90a21';
+import {prepareMathContent} from './math-presentation.js?v=e80e3658b4e90a21';
 
 export function referenceHref(target) {
   const base = `#/subjects/${encodeURIComponent(target.subject_id)}/topic/${encodeURIComponent(target.topic_id)}`;
@@ -10,6 +10,7 @@ export function referenceHref(target) {
 
 export function enhanceTopicContent(root, references) {
   enhanceSourceContent(root);
+  root.dataset.readingSource = '';
   root.classList.add('reading-outline');
   for (const callout of root.querySelectorAll('[data-callout="requirement"]')) {
     for (const paragraph of callout.querySelectorAll(':scope > p')) {
