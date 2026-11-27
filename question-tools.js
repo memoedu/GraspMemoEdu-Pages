@@ -1,11 +1,22 @@
-import {setVoiceContext} from './voice-context.js?v=e80e3658b4e90a21';
-import {getLanguage} from './i18n.js?v=e80e3658b4e90a21';
-import {calculatorToolGroups} from './calculator.js?v=e80e3658b4e90a21';
-import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=e80e3658b4e90a21';
-import {questionWhiteboard} from './whiteboard-answer.js?v=e80e3658b4e90a21';
+import {setVoiceContext} from './voice-context.js?v=a684a6921871e5f3';
+import {getLanguage} from './i18n.js?v=a684a6921871e5f3';
+import {calculatorToolGroups} from './calculator.js?v=a684a6921871e5f3';
+import {unrestrictedCalculator} from './calculator-policy.js?v=a684a6921871e5f3';
+import {parsePlatformRoute} from './subjects.js?v=a684a6921871e5f3';
+import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=a684a6921871e5f3';
+import {questionWhiteboard} from './whiteboard-answer.js?v=a684a6921871e5f3';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
+// Re-enable material calculator policies by turning off this temporary override.
+const suspendCalculatorRestrictions = true;
+
+function learningCalculatorPage() {
+  const {path, subjectId} = parsePlatformRoute(location.hash);
+  if (suspendCalculatorRestrictions && /^\/(?:courses|learn|topic|banks|review|reviews)(?:\/|$)/.test(path)) {
+    return JSON.stringify([subjectId, path, getLanguage()]);
+  }
+}
 
 const modalSelector = globalThis.CSS?.supports?.('selector(dialog:modal)') ? 'dialog:modal' : 'dialog[open]';
 
@@ -107,8 +118,13 @@ function toolButton({id, label, icon: path, open}, message, english, expanded = 
 export function installToolbars(host, voice, clipper, topicTools) {
   const label = () => getLanguage() === 'en' ? 'Input tools' : '输入工具';
   const pageToolbar = createToolbar(label(), 'horizontal');
+  const calculatorStatus = document.createElement('div');
+  calculatorStatus.className = 'questionToolStatus';
+  calculatorStatus.setAttribute('role', 'status');
+  pageToolbar.append(calculatorStatus);
   host.append(pageToolbar);
-  let modalToolbar;
+  let modalToolbar, calculatorPage;
+  let pageCalculators = [];
   const sync = () => {
     const modal = voice.hidden ? null : currentModal();
     if (modalToolbar && modalToolbar.parentElement !== modal) {
@@ -122,9 +138,20 @@ export function installToolbars(host, voice, clipper, topicTools) {
     }
     const hasGlobalTools = !voice.hidden || Boolean(clipper && !clipper.hidden);
     const hasTopicTools = Boolean(topicTools && !topicTools.hidden);
-    const hasPageTools = hasGlobalTools || hasTopicTools;
-    const questionToolbar = !hasPageTools ? null :
-      [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar => toolbar.getClientRects().length);
+    const learningPage = learningCalculatorPage();
+    const questionToolbar = hasGlobalTools || hasTopicTools || learningPage ?
+      [...document.querySelectorAll('.questionToolRail .questionTools')].find(toolbar =>
+        toolbar.getClientRects().length && !toolbar.closest('[inert]')) : null;
+    const calculatorPageNow = !questionToolbar && !modal ? learningPage : undefined;
+    if (calculatorPage !== calculatorPageNow) {
+      calculatorPage = calculatorPageNow;
+      for (const button of pageCalculators) button.remove();
+      calculatorStatus.textContent = '';
+      const english = getLanguage() === 'en';
+      pageCalculators = calculatorPage ? calculatorToolGroups(unrestrictedCalculator, english)
+        .flatMap(({tools}) => tools.map(tool => toolButton(tool, calculatorStatus, english))) : [];
+      calculatorStatus.before(...pageCalculators);
+    }
     const toolbar = modalToolbar || questionToolbar || pageToolbar;
     const lessonToolbar = questionToolbar?.closest('#lessonContent') ? questionToolbar : pageToolbar;
     const topicShelf = lessonToolbar.querySelector('.questionToolGroups') || lessonToolbar;
@@ -133,7 +160,8 @@ export function installToolbars(host, voice, clipper, topicTools) {
       topicShelf.prepend(topicTools);
       setTabStop(previous);
     }
-    const hidePageTools = !(hasGlobalTools && toolbar === pageToolbar || hasTopicTools && lessonToolbar === pageToolbar && !modal);
+    const hidePageTools = !(calculatorPage || hasGlobalTools && toolbar === pageToolbar ||
+      hasTopicTools && lessonToolbar === pageToolbar && !modal);
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
     for (const button of [voice, clipper].filter(Boolean)) {
       if (button.parentElement === toolbar) continue;
@@ -153,9 +181,10 @@ export function installToolbars(host, voice, clipper, topicTools) {
   // Always transfer the one voice control to the currently usable toolbar.
   const observer = new MutationObserver(sync);
   observer.observe(document.body, {
-    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden', 'disabled'],
+    childList: true, subtree: true, attributes: true, attributeFilter: ['open', 'hidden', 'disabled', 'inert'],
   });
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
+  addEventListener('hashchange', sync);
 }
 
 export function setQuestionTools(anchor, question, whiteboard, topicBody) {
@@ -164,6 +193,7 @@ export function setQuestionTools(anchor, question, whiteboard, topicBody) {
   const language = getLanguage();
   const reading = topicBody && !question?.question_id && !question?.card_id && !question?.interaction &&
     !['question', 'example', 'practice'].includes(question?.kind);
+  if ((question || topicBody) && learningCalculatorPage()) question = {...question, calculate: unrestrictedCalculator};
   if (topicBody) {
     if (reading) question = {...question, calculate: question?.calculate ?? {level: 'scientific'}};
     whiteboard ||= questionWhiteboard({...topicBody, key: JSON.stringify([topicBody.key, question.calculate]),

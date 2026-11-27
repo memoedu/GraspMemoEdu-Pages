@@ -22,6 +22,7 @@ const scientificModules = ['constants'];
 const advancedModules = ['graph', 'integral', 'matrix', 'probability', 'statistics'];
 const optionalModules = ['modular', 'machine_learning', 'physics', 'chemistry', 'signal', 'programmer',
   'astronomy', 'geography', 'finance', 'optimization', 'ecology'];
+export const unrestrictedCalculator = Object.freeze({level: 'cas', enable_modules: Object.freeze(optionalModules)});
 
 export function permitsModule(config, module) {
   const tier = levels.indexOf(config?.level);
