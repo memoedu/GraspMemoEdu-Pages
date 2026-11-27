@@ -1,10 +1,10 @@
-import {getLanguage} from './i18n.js?v=e80e3658b4e90a21';
-import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=e80e3658b4e90a21';
-import {microphoneIcon, recordingPayload} from './microphone-recorder.js?v=e80e3658b4e90a21';
-import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=e80e3658b4e90a21';
-import {dictationContext, voiceContext} from './voice-context.js?v=e80e3658b4e90a21';
-import {answerTarget, answerConversionChange} from './answer-conversion.js?v=e80e3658b4e90a21';
-import {currentModal} from './question-tools.js?v=e80e3658b4e90a21';
+import {getLanguage} from './i18n.js?v=a684a6921871e5f3';
+import {activeFormulaField, prepareVoiceFormula} from './formula-input.js?v=a684a6921871e5f3';
+import {microphoneIcon, recordingPayload} from './microphone-recorder.js?v=a684a6921871e5f3';
+import {retainMicrophone, segmentMicrophone} from './voice-stream.js?v=a684a6921871e5f3';
+import {dictationContext, voiceContext} from './voice-context.js?v=a684a6921871e5f3';
+import {answerTarget, answerConversionChange} from './answer-conversion.js?v=a684a6921871e5f3';
+import {currentModal} from './question-tools.js?v=a684a6921871e5f3';
 
 const answerForms = new WeakSet();
 const textTypes = ['text', 'search', 'tel', 'url', 'email', 'number'];

@@ -196,6 +196,7 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
   z-index: 2;
 }
 .dialogTools { margin-inline-start: auto; margin-block-end: 8px; }
+.pageTools > .questionTools { flex-wrap: wrap; max-inline-size: 100%; }
 .voiceTool { position: relative; display: flex; justify-content: flex-end; }
 .voiceTool .questionToolButton[aria-pressed="true"] {
   background: var(--intro-background);
