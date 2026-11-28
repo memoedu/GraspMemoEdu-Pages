@@ -1,8 +1,8 @@
-import {t} from './i18n.js?v=7391113e33abe624';
-import {answerEmpty} from './question-input.js?v=7391113e33abe624';
-import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=7391113e33abe624';
-import {answerAssessment} from './point-assessment.js?v=7391113e33abe624';
-import {fromWhiteboard, whiteboardText} from './whiteboard-answer.js?v=7391113e33abe624';
+import {t} from './i18n.js?v=f4e8cccd42a8abae';
+import {answerEmpty} from './question-input.js?v=f4e8cccd42a8abae';
+import {prepareMathContent, renderPlainMath, setOptionContent} from './math-presentation.js?v=f4e8cccd42a8abae';
+import {answerAssessment} from './point-assessment.js?v=f4e8cccd42a8abae';
+import {fromWhiteboard, whiteboardText} from './whiteboard-answer.js?v=f4e8cccd42a8abae';
 
 const element = (tag, cls, text) => {
   const node = document.createElement(tag); node.className = cls;
