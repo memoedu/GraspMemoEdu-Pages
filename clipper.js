@@ -1,9 +1,9 @@
-import {getLanguage} from './i18n.js?v=62993fabc4b9bca0';
-import {learningSelectionBlock} from './content-report.js?v=62993fabc4b9bca0';
-import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=62993fabc4b9bca0';
-import {createClipperLines} from './clipper-lines.js?v=62993fabc4b9bca0';
-import {currentModal, toolbarAction, toolbarExtension} from './question-tools.js?v=62993fabc4b9bca0';
-import {clipperAcquisition} from './clipper-acquisition.js?v=62993fabc4b9bca0';
+import {getLanguage} from './i18n.js?v=7391113e33abe624';
+import {learningSelectionBlock} from './content-report.js?v=7391113e33abe624';
+import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=7391113e33abe624';
+import {createClipperLines} from './clipper-lines.js?v=7391113e33abe624';
+import {currentModal, toolbarAction, toolbarExtension} from './question-tools.js?v=7391113e33abe624';
+import {clipperAcquisition} from './clipper-acquisition.js?v=7391113e33abe624';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -212,7 +212,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=62993fabc4b9bca0').then(module => {
+    return import('./clipper-workspace.js?v=7391113e33abe624').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
