@@ -1,15 +1,15 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=07ee4f864649de99';
-import {attachFormulaEditing} from './formula-input.js?v=07ee4f864649de99';
-import {setQuestionTools} from './question-tools.js?v=07ee4f864649de99';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=07ee4f864649de99';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=07ee4f864649de99';
-import {mountAnswerConversion} from './answer-conversion.js?v=07ee4f864649de99';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=07ee4f864649de99';
-import {reportableContent} from './content-report.js?v=07ee4f864649de99';
-import {createLearningCache} from './learning-cache.js?v=07ee4f864649de99';
-import {enhanceTopicContent} from './topic-content.js?v=07ee4f864649de99';
-import {practiceHint} from './beginner-hints.js?v=07ee4f864649de99';
-import {questionWhiteboard} from './whiteboard-answer.js?v=07ee4f864649de99';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=de001249fb622a2d';
+import {attachFormulaEditing} from './formula-input.js?v=de001249fb622a2d';
+import {setQuestionTools} from './question-tools.js?v=de001249fb622a2d';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=de001249fb622a2d';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=de001249fb622a2d';
+import {mountAnswerConversion} from './answer-conversion.js?v=de001249fb622a2d';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=de001249fb622a2d';
+import {reportableContent} from './content-report.js?v=de001249fb622a2d';
+import {createLearningCache} from './learning-cache.js?v=de001249fb622a2d';
+import {enhanceTopicContent} from './topic-content.js?v=de001249fb622a2d';
+import {practiceHint} from './beginner-hints.js?v=de001249fb622a2d';
+import {questionWhiteboard} from './whiteboard-answer.js?v=de001249fb622a2d';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -204,6 +204,7 @@ export function createReviewView(bridge) {
     const focus = oldInput && document.activeElement === oldInput ? [oldInput.selectionStart, oldInput.selectionEnd] : null;
     rendered = JSON.stringify([state.revision, state.dependency_ready, state.access?.features, state.access?.topics]);
     const layout = node('div', 'reviewLayout'), main = node('section', 'reviewMain'); main.id = 'reviewContent'; main.tabIndex = -1;
+    main.dataset.learningPage = '';
     const back = node('a', '', t('nav.backHome')); back.href = bridge.homeHref();
     const breadcrumb = node('div', 'topicBreadcrumb'); breadcrumb.append(back, button(t('lesson.feedback'), 'textButton', () => bridge.showFeedback({topic_id: topic, task_id: `review:${state.session_id}`, question_id: selected || state.practice.id})));
     main.append(breadcrumb, node('p', 'eyebrow', t('portal.review')), node('h1', 'lessonTitle', state.module_title ? learningTitle(state.module_title) : state.topic_title), node('p', 'reviewTopicTitle', state.topic_title));

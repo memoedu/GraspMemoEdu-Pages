@@ -1,5 +1,5 @@
-import {ct, contextError} from './context-library-messages.js?v=07ee4f864649de99';
-import {sourceAttributions} from './memory-chunk.js?v=07ee4f864649de99';
+import {ct, contextError} from './context-library-messages.js?v=de001249fb622a2d';
+import {sourceAttributions} from './memory-chunk.js?v=de001249fb622a2d';
 /* Shared reading component. Content is rendered as text, including dictionary output. */
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -171,6 +171,7 @@ export function createContextLibraryView(bridge) {
   function renderMaterial() {
     root.replaceChildren();
     const view = node('section', 'contextLibrary');
+    view.dataset.learningPage = '';
     view.append(button(ct('返回阅读材料'), () => show(), 'textButton'));
     view.append(node('h1', 'lessonTitle', data.material.title));
     view.append(node('p', 'inputHint beginnerOnly', ct('点击带下划线的词查看释义；也可以选中文字后查词并保留疑惑。')));

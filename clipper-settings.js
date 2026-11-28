@@ -1,4 +1,4 @@
-import {clipText as tx,clipperEnabled,setClipperEnabled} from './clipper.js?v=07ee4f864649de99';
+import {clipText as tx,clipperEnabled,setClipperEnabled} from './clipper.js?v=de001249fb622a2d';
 
 const groups={
   floating:['浮点操作','Selection menu'],capture:['语言与上下文','Language and context'],images:['图片与识别','Images and OCR'],
