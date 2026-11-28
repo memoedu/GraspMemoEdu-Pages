@@ -1,6 +1,6 @@
-import {drawLineMarquee, listenContentMarquee, marqueeHitsLine} from './content-lines.js?v=3eda597ca70644cd';
-import {captureSelection, formulaAt} from './clipper-selection.js?v=3eda597ca70644cd';
-import {clipperPng} from './clipper-host.js?v=3eda597ca70644cd';
+import {drawLineMarquee, listenContentMarquee, marqueeHitsLine} from './content-lines.js?v=f81a576e90667aa8';
+import {captureSelection, formulaAt} from './clipper-selection.js?v=f81a576e90667aa8';
+import {clipperPng} from './clipper-host.js?v=f81a576e90667aa8';
 
 const preference = 'graspmemoedu:whiteboard-tutor';
 export function whiteboardTutorMode() {

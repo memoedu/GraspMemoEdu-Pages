@@ -1,9 +1,9 @@
-import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=3eda597ca70644cd';
-import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=3eda597ca70644cd';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=3eda597ca70644cd';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=3eda597ca70644cd';
-import {whiteboardDocument} from './whiteboard-editor.js?v=3eda597ca70644cd';
-import {openWhiteboardTutoring, selectTutorContent, tutorAvailable, whiteboardTutorMode} from './whiteboard-tutor.js?v=3eda597ca70644cd';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=f81a576e90667aa8';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=f81a576e90667aa8';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=f81a576e90667aa8';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=f81a576e90667aa8';
+import {whiteboardDocument} from './whiteboard-editor.js?v=f81a576e90667aa8';
+import {openWhiteboardTutoring, selectTutorContent, tutorAvailable, whiteboardTutorMode} from './whiteboard-tutor.js?v=f81a576e90667aa8';
 
 const boards = new WeakMap();
 const work = new Map();

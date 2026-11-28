@@ -1,25 +1,25 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=3eda597ca70644cd';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=3eda597ca70644cd';
-import {answerReady, answerEmpty} from './question-input.js?v=3eda597ca70644cd';
-import {createLearningCache} from './learning-cache.js?v=3eda597ca70644cd';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=3eda597ca70644cd';
-import {helpableContent} from './content-report.js?v=3eda597ca70644cd';
-import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=3eda597ca70644cd';
-import {pointAssessment} from './point-assessment.js?v=3eda597ca70644cd';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=3eda597ca70644cd';
-import {learningHint} from './beginner-hints.js?v=3eda597ca70644cd';
+import {t, translateMessage, getLanguage} from './i18n.js?v=f81a576e90667aa8';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=f81a576e90667aa8';
+import {answerReady, answerEmpty} from './question-input.js?v=f81a576e90667aa8';
+import {createLearningCache} from './learning-cache.js?v=f81a576e90667aa8';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=f81a576e90667aa8';
+import {helpableContent} from './content-report.js?v=f81a576e90667aa8';
+import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=f81a576e90667aa8';
+import {pointAssessment} from './point-assessment.js?v=f81a576e90667aa8';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=f81a576e90667aa8';
+import {learningHint} from './beginner-hints.js?v=f81a576e90667aa8';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=3eda597ca70644cd';
-import {setQuestionTools} from './question-tools.js?v=3eda597ca70644cd';
-import {voiceAnswerPending} from './voice-input.js?v=3eda597ca70644cd';
-import {questionWhiteboard} from './whiteboard-answer.js?v=3eda597ca70644cd';
-import {checkpointWhiteboard} from './whiteboard.js?v=3eda597ca70644cd';
-import {rubberDuck} from './rubber-duck.js?v=3eda597ca70644cd';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=f81a576e90667aa8';
+import {setQuestionTools} from './question-tools.js?v=f81a576e90667aa8';
+import {voiceAnswerPending} from './voice-input.js?v=f81a576e90667aa8';
+import {questionWhiteboard} from './whiteboard-answer.js?v=f81a576e90667aa8';
+import {checkpointWhiteboard} from './whiteboard.js?v=f81a576e90667aa8';
+import {rubberDuck} from './rubber-duck.js?v=f81a576e90667aa8';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess, topicBody} = bridge;
@@ -424,7 +424,8 @@ export function createTrainingView(bridge) {
     const viewing = () => alive(e, s) && current?.attempt_id === state.attempt_id &&
       current.multi_step?.current_step_id === state.multi_step?.current_step_id;
     const currentBoard = () => viewing() && current.phase === 'answer' && current.can_submit && !current.submission_id;
-    const canSubmit = !state.revealed && !state.preview && currentBoard();
+    // The first answer uses a reader preview until post() opens the durable attempt.
+    const canSubmit = !state.revealed && currentBoard();
     const whiteboard = !outline && !state.hyperskill && !state.academy && questionWhiteboard({
       key: JSON.stringify([location.origin, getAccess()?.learner_id, state.bank_id, state.question_id]), question: state.question,
       activePart: state.multi_step?.steps?.[state.multi_step.current_index],
