@@ -1,16 +1,16 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=62993fabc4b9bca0';
-import {attachFormulaEditing} from './formula-input.js?v=62993fabc4b9bca0';
-import {setQuestionTools} from './question-tools.js?v=62993fabc4b9bca0';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=62993fabc4b9bca0';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=62993fabc4b9bca0';
-import {mountAnswerConversion} from './answer-conversion.js?v=62993fabc4b9bca0';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=62993fabc4b9bca0';
-import {reportableContent} from './content-report.js?v=62993fabc4b9bca0';
-import {createLearningCache} from './learning-cache.js?v=62993fabc4b9bca0';
-import {enhanceTopicContent} from './topic-content.js?v=62993fabc4b9bca0';
-import {practiceHint} from './beginner-hints.js?v=62993fabc4b9bca0';
-import {questionWhiteboard} from './whiteboard-answer.js?v=62993fabc4b9bca0';
-import {checkpointWhiteboard} from './whiteboard.js?v=62993fabc4b9bca0';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=7391113e33abe624';
+import {attachFormulaEditing} from './formula-input.js?v=7391113e33abe624';
+import {setQuestionTools} from './question-tools.js?v=7391113e33abe624';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=7391113e33abe624';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=7391113e33abe624';
+import {mountAnswerConversion} from './answer-conversion.js?v=7391113e33abe624';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=7391113e33abe624';
+import {reportableContent} from './content-report.js?v=7391113e33abe624';
+import {createLearningCache} from './learning-cache.js?v=7391113e33abe624';
+import {enhanceTopicContent} from './topic-content.js?v=7391113e33abe624';
+import {practiceHint} from './beginner-hints.js?v=7391113e33abe624';
+import {questionWhiteboard} from './whiteboard-answer.js?v=7391113e33abe624';
+import {checkpointWhiteboard} from './whiteboard.js?v=7391113e33abe624';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;

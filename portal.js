@@ -1,34 +1,34 @@
-import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=62993fabc4b9bca0";
-import {attachFormulaEditing} from './formula-input.js?v=62993fabc4b9bca0';
-import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=62993fabc4b9bca0';
-import {remnoteTopicLink, topicBindingPath} from './topic-sync-navigation.js?v=62993fabc4b9bca0';
-import { createReviewView } from "./review.js?v=62993fabc4b9bca0";
-import { renderCourseGraph } from "./course-graph.js?v=62993fabc4b9bca0";
-import {questionInput, choiceTypeField} from './question-input.js?v=62993fabc4b9bca0';
-import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=62993fabc4b9bca0';
-import {enhanceTopicContent} from './topic-content.js?v=62993fabc4b9bca0';
-import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=62993fabc4b9bca0';
-import {createCatalogPicker} from './catalog-picker.js?v=62993fabc4b9bca0';
-import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=62993fabc4b9bca0';
-import {createAtomicView} from './atomic.js?v=62993fabc4b9bca0';
-import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=62993fabc4b9bca0';
-import {sourceAttributions} from './memory-chunk.js?v=62993fabc4b9bca0';
-import {createTrainingView} from './training.js?v=62993fabc4b9bca0';
-import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=62993fabc4b9bca0';
-import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=62993fabc4b9bca0";
+import { t, getLanguage, setLanguage, locale, translateMessage, learningTitle } from "./i18n.js?v=7391113e33abe624";
+import {attachFormulaEditing} from './formula-input.js?v=7391113e33abe624';
+import {prepareMathContent, renderPlainMath} from './math-presentation.js?v=7391113e33abe624';
+import {remnoteTopicLink, topicBindingPath} from './topic-sync-navigation.js?v=7391113e33abe624';
+import { createReviewView } from "./review.js?v=7391113e33abe624";
+import { renderCourseGraph } from "./course-graph.js?v=7391113e33abe624";
+import {questionInput, choiceTypeField} from './question-input.js?v=7391113e33abe624';
+import {lessonTaskLabel, readingFields, readingSectionHeading} from './learning-ui.js?v=7391113e33abe624';
+import {enhanceTopicContent} from './topic-content.js?v=7391113e33abe624';
+import {reportableContent, placeContentActions, installContentReporting, installHelpRequests} from './content-report.js?v=7391113e33abe624';
+import {createCatalogPicker} from './catalog-picker.js?v=7391113e33abe624';
+import {catalogPath, courseWorkspaceId, createWorkspaceLocations, catalogView, workspaceLayout, courseDisplayEntries} from './catalog-workspace.js?v=7391113e33abe624';
+import {createAtomicView} from './atomic.js?v=7391113e33abe624';
+import {ideaFeedback, ideaFeedbackHash, ideaFeedbackId, ideaSetupSection, renderIdeaSetupSection} from './idea-setup.js?v=7391113e33abe624';
+import {sourceAttributions} from './memory-chunk.js?v=7391113e33abe624';
+import {createTrainingView} from './training.js?v=7391113e33abe624';
+import {createFocusMode, focusReaderRoute} from './focus-mode.js?v=7391113e33abe624';
+import { subjectHref, parsePlatformRoute, renderSubjectHome, renderSubjectEmpty, applySubjectTheme, subjectLabel, subjectLogo } from "./subjects.js?v=7391113e33abe624";
 
-import {createPaperView} from './review-papers.js?v=62993fabc4b9bca0';
-import {createFreeStudyView} from './free-study.js?v=62993fabc4b9bca0';
-import {createContextLibraryView} from './context-library.js?v=62993fabc4b9bca0';
+import {createPaperView} from './review-papers.js?v=7391113e33abe624';
+import {createFreeStudyView} from './free-study.js?v=7391113e33abe624';
+import {createContextLibraryView} from './context-library.js?v=7391113e33abe624';
 
-import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=62993fabc4b9bca0';
-import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=62993fabc4b9bca0';
-import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=62993fabc4b9bca0';
-import {createStudentDashboard} from './student-dashboard.js?v=62993fabc4b9bca0';
-import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=62993fabc4b9bca0';
-import {whiteboardCasEnabled, setWhiteboardCasEnabled} from './whiteboard.js?v=62993fabc4b9bca0';
-import {whiteboardTutorMode, setWhiteboardTutorMode} from './whiteboard-tutor.js?v=62993fabc4b9bca0';
-import {currentPwa, isStandalone, installEntry, routeInPwaScope, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=62993fabc4b9bca0';
+import {renderTaskTree, enhanceMarkdownOutline, orderTopicSiblings} from './task-tree.js?v=7391113e33abe624';
+import {referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=7391113e33abe624';
+import {createHelpFeedback, feedbackDetails} from './help-feedback.js?v=7391113e33abe624';
+import {createStudentDashboard} from './student-dashboard.js?v=7391113e33abe624';
+import {autocompleteGroups, autocompleteEnabled, setAutocompleteEnabled, setInputCompletions} from './autocomplete.js?v=7391113e33abe624';
+import {whiteboardCasEnabled, setWhiteboardCasEnabled} from './whiteboard.js?v=7391113e33abe624';
+import {whiteboardTutorMode, setWhiteboardTutorMode} from './whiteboard-tutor.js?v=7391113e33abe624';
+import {currentPwa, isStandalone, installEntry, routeInPwaScope, pwaLocationKey, restorableHash, observeScopeDeparture} from './pwa-location.js?v=7391113e33abe624';
 
 const $ = (id) => document.getElementById(id);
 const node = (tag, className = "", text) => {
@@ -39,7 +39,12 @@ const node = (tag, className = "", text) => {
 };
 const control = (text, className, action) => { const item = node("button", className, text); item.type = "button"; item.addEventListener("click", action); return item; };
 const percent = (value) => Number.isFinite(Number(value)) && value !== null ? Math.max(0, Math.min(100, Number(value))) : null;
-const percentLabel = (value) => percent(value) === null ? "—" : `${Math.round(percent(value)).toLocaleString(locale())}%`;
+const percentLabel = (value, mode) => {
+  const progress = percent(value);
+  if (progress === null) return "—";
+  const rounded = mode === 'mastery' && progress < 100 ? Math.min(99, Math.round(progress)) : Math.round(progress);
+  return `${rounded.toLocaleString(locale())}%`;
+};
 const encode = encodeURIComponent;
 const taskLabelKeys = {Review: 'portal.reviewTask', Placement: 'portal.diagnostic.0', Supplemental: 'portal.supplemental.diagnostic.1', Quiz: 'portal.assessment.2', Exam: 'portal.assessment.2'};
 const statusNames = { not_started: t("portal.not.started.3"), in_progress: t("portal.in.progress.4"), paused: t("portal.paused.5"), completed: t("portal.completed.6") };
@@ -48,7 +53,7 @@ const roundButton = (text, action) => control(text, "portalStart", action);
 export function initPortal(bridge) {
   let chatModule, attachChatEditor, renderChatMarkdown;
   async function loadChat() {
-    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=62993fabc4b9bca0').catch(error => { chatModule = null; throw error; }));
+    const module = await (chatModule ||= import('./vendor/chat/chat.js?v=7391113e33abe624').catch(error => { chatModule = null; throw error; }));
     ({attachChatEditor, renderChatMarkdown} = module);
     module.configureChatImages(ident => bridge.request('help-images?image_id=' + encode(ident)));
   }
@@ -527,7 +532,7 @@ export function initPortal(bridge) {
         document.title = pageTitle(t('students.personalTitle'));
         await renderStudents(ticket, bridge.getAccess()?.learner_id, true);
       } else if (path === "/settings/knowledge-clipper" && bridge.getAccess()?.role === "account") {
-        const {clipperSettings} = await import('./clipper-settings.js?v=62993fabc4b9bca0');
+        const {clipperSettings} = await import('./clipper-settings.js?v=7391113e33abe624');
         document.title = pageTitle(getLanguage() === 'en' ? 'Knowledge Clipper' : '零碎知识简藏');
         const page = await clipperSettings({request:call,node,owner:bridge.getAccess()?.learner_id,current:()=>ticket===sequence});
         if (page && ticket===sequence) root.replaceChildren(page);
@@ -696,11 +701,15 @@ export function initPortal(bridge) {
   function delayPopover() { clearTimeout(popoverTimer); popoverTimer = setTimeout(hidePopovers, 100); }
   function showPopover(item) { hidePopovers(); item.hidden = false; }
   function infoRow(label, value) { const row = node("div", "portalInfoRow"); row.append(node("span", "", label), node("span", "", value)); return row; }
-  function unitBar(unit, maxTopics) {
+  function unitBar(unit, maxTopics, mode) {
     const bar = node("div", "unitProgress");
     const count = Math.max(0, Number(unit.topic_count) || 0);
     bar.style.width = `${maxTopics ? Math.max(0, Math.min(100, count / maxTopics * 100)) : 0}%`;
-    bar.setAttribute("aria-label", `${unit.title} · ${percentLabel(unit.progress)}`);
+    bar.setAttribute("aria-label", `${unit.title} · ${percentLabel(unit.progress, mode)}`);
+    if (mode === 'mastery') {
+      const fill = node('span', 'completed'); fill.style.width = `${percent(unit.progress) ?? 0}%`;
+      bar.append(fill); return bar;
+    }
     for (const status of ["completed", "in_progress", "paused", "not_started"]) {
       const part = node("span", status); part.style.width = `${count ? Math.max(0, Number(unit.status_counts?.[status]) || 0) / count * 100 : 0}%`;
       bar.append(part);
@@ -711,7 +720,7 @@ export function initPortal(bridge) {
     const list = node("div", "unitList"), max = Math.max(0, ...(data.units || []).map((unit) => Number(unit.topic_count) || 0));
     (data.units || []).forEach((unit, index) => {
       const row = node("div", "unitRow");
-      row.append(link(t("portal.unitList", { index: (index + 1).toLocaleString(locale()), title: unit.title, count: Number(unit.topic_count).toLocaleString(locale()) }), `#/courses/${encode(data.course.id)}/progress?unitId=${encode(unit.id)}`), unitBar(unit, max)); list.append(row);
+      row.append(link(t("portal.unitList", { index: (index + 1).toLocaleString(locale()), title: unit.title, count: Number(unit.topic_count).toLocaleString(locale()) }), `#/courses/${encode(data.course.id)}/progress?unitId=${encode(unit.id)}`), unitBar(unit, max, data.course.progress_mode)); list.append(row);
     });
     if (!list.childElementCount) list.append(node("p", "", t("portal.course.units.are.not.available.yet.34")));
     return list;
@@ -719,7 +728,8 @@ export function initPortal(bridge) {
   function courseSidebar(data, view = {}) {
     const side = node("aside", "courseSidebar"), frame = node("section", "courseOverview"), top = node("div", "courseOverviewTop");
     const name = link(data.course.title, view.href || `#/courses/${encode(data.course.id)}/progress${data.course.root_id ? '?root=' + encode(data.course.root_id) : ''}`, "courseNameLink");
-    const circle = control(percentLabel(data.course.progress), "coursePercent", () => view.onProgress ? view.onProgress() : openGraph(data)); circle.setAttribute("aria-label", t("portal.graphProgress", { progress: percentLabel(data.course.progress) }));
+    const completion = percentLabel(data.course.progress, data.course.progress_mode);
+    const circle = control(completion, "coursePercent", () => view.onProgress ? view.onProgress() : openGraph(data)); circle.setAttribute("aria-label", t("portal.graphProgress", { progress: completion }));
     const actions = node('div', 'courseOverviewActions'); actions.append(circle);
     if (!view.review) actions.append(link(t('portal.reselectTopic'), catalogPath(view.training ? 'banks' : 'courses'), 'workspaceReselect'));
     top.append(name, actions);
@@ -740,16 +750,17 @@ export function initPortal(bridge) {
       try {
         const chosen = await dashboard(id, null, null);
         if (tabTicket !== tabSequence) return; dashboards.set(id, chosen); unitContent.replaceChildren(unitList(chosen));
-        const selected = tabs.querySelector(`[data-course-id="${CSS.escape(id)}"] .sequencePercent`); if (selected) selected.textContent = percentLabel(chosen.course.progress);
+        const selected = tabs.querySelector(`[data-course-id="${CSS.escape(id)}"] .sequencePercent`); if (selected) selected.textContent = percentLabel(chosen.course.progress, chosen.course.progress_mode);
       } catch (error) { if (tabTicket === tabSequence) unitContent.replaceChildren(errorBox(translateMessage(error.message), () => showUnits(id))); }
     };
     for (const course of catalog.courses) {
       const tab = control("", "sequenceTab", () => showUnits(course.id)); tab.dataset.courseId = course.id;
-      tab.append(node("span", "", course.title), node("span", "sequencePercent", percentLabel(dashboards.get(course.id)?.course.progress)));
+      const overview = dashboards.get(course.id)?.course;
+      tab.append(node("span", "", course.title), node("span", "sequencePercent", percentLabel(overview?.progress, overview?.progress_mode)));
       tabs.append(tab);
     }
     unitContent.append(unitList(data)); tabs.querySelector(`[data-course-id="${CSS.escape(data.course.id)}"]`)?.classList.add("selected");
-    detailsPopup.append(infoRow(t("portal.progress.36"), percentLabel(data.course.progress)), infoRow(t("portal.start.date.37"), apiDate(data.course.start_date)), infoRow(t("portal.end.date.38"), apiDate(data.course.end_date)));
+    detailsPopup.append(infoRow(t("portal.progress.36"), completion), infoRow(t("portal.start.date.37"), apiDate(data.course.start_date)), infoRow(t("portal.end.date.38"), apiDate(data.course.end_date)));
     for (const [trigger, popup] of [[name, unitsPopup], [circle, detailsPopup]]) {
       trigger.addEventListener("mouseenter", () => showPopover(popup)); trigger.addEventListener("focus", () => showPopover(popup));
       trigger.addEventListener("mouseleave", delayPopover); trigger.addEventListener("blur", delayPopover);
@@ -841,7 +852,7 @@ export function initPortal(bridge) {
         const known = { ...(typeof item === "object" ? item : {}), ...(data.topics || []).find((topic) => topic.id === id), ...(task.prerequisite_details || []).find((topic) => topic.id === id) };
         const mastery = typeof known.mastery === "number" && Number.isFinite(known.mastery) ? known.mastery.toLocaleString(locale(), { maximumFractionDigits: 2 }) : "—";
         const row = node("div", "prerequisiteRow"); row.append(node("span", known.status === "completed" ? "prerequisiteCheck complete" : "prerequisiteCheck", known.status === "completed" ? "✓" : "·"), link(known.title || id, known.href || `#/courses/${encode(task.course_id || data.course.id)}/progress?topicId=${encode(id)}`));
-        if (known.progress != null || known.mastery != null) row.append(node("span", "prerequisiteMetrics", t("portal.prerequisiteMetrics", { progress: percentLabel(known.progress), mastery })));
+        if (known.progress != null || known.mastery != null) row.append(node("span", "prerequisiteMetrics", t("portal.prerequisiteMetrics", { progress: percentLabel(known.progress, data.course.progress_mode), mastery })));
         requirements.append(row);
       }
       details.append(requirements);
@@ -1084,14 +1095,15 @@ export function initPortal(bridge) {
     tasks.append(taskVisibilityOptions(tasks, {hideUnavailableTopics: true}));
     const pending = node("section", "incompleteTasks"); pending.setAttribute("aria-label", t("portal.pending.tasks.64"));
     const display = renderCoursePending(pending, data);
+    const learningComplete = data.course.progress_mode === 'mastery' ? Boolean(data.course.end_date) : percent(data.course.progress) === 100;
     if (!data.tasks.length && !display.drafts.length) {
-      const empty = emptyBox(percent(data.course.progress) === 100 ? t("portal.all.current.tasks.in.this.course.are.complete.65") : t("portal.no.tasks.are.available.to.start.we.will.check.again.shortly.66") );
+      const empty = emptyBox(learningComplete ? t("portal.all.current.tasks.in.this.course.are.complete.65") : t("portal.no.tasks.are.available.to.start.we.will.check.again.shortly.66") );
       empty.append(control(t("portal.check.again.67"), "textButton", () => route())); pending.append(empty);
     }
     const historyList = node("section", "completedTasks"); historyList.id = "completedTasks"; historyList.setAttribute("aria-label", t("portal.completed.tasks.68")); renderHistory(data, historyList);
     const more = node("div", "historyMore"); more.id = "historyMore";
     tasks.append(pending, historyList, more); renderMore();
-    if (!data.tasks.length && !data.history.length && percent(data.course.progress) !== 100) historyList.append(node("p", "historyEmpty", t("portal.completed.learning.records.will.appear.here.69")));
+    if (!data.tasks.length && !data.history.length && !learningComplete) historyList.append(node("p", "historyEmpty", t("portal.completed.learning.records.will.appear.here.69")));
     if (data.next_review_due_at && !data.tasks.some(task => task.type === "Review")) pending.append(node("p", "reviewNextDue", t("review.nextDue", {time: apiDate(data.next_review_due_at, true)})));
     waitForTasks(ticket, 0);
   }
@@ -1131,7 +1143,7 @@ export function initPortal(bridge) {
         const fresh = await dashboard(selectedCourse);
         if (ticket !== sequence) return;
         const data = mergeDashboard(selectedCourse, fresh);
-        if (root.querySelector(".taskRefreshError") || JSON.stringify([previous?.tasks, previous?.history, previous?.course, previous?.pending_hierarchy, previous?.course_hierarchy_enabled]) !== JSON.stringify([data.tasks, data.history, data.course, data.pending_hierarchy, data.course_hierarchy_enabled])) {
+        if (root.querySelector(".taskRefreshError") || JSON.stringify([previous?.tasks, previous?.history, previous?.course, previous?.units, previous?.pending_hierarchy, previous?.course_hierarchy_enabled]) !== JSON.stringify([data.tasks, data.history, data.course, data.units, data.pending_hierarchy, data.course_hierarchy_enabled])) {
           const y = window.scrollY, expanded = expandedTask;
           renderCourseWorkspace(data, null, ticket);
           if (expanded) root.querySelector(`[data-task-id="${CSS.escape(expanded)}"] .taskToggle`)?.click();
@@ -1198,18 +1210,19 @@ export function initPortal(bridge) {
   }
 
   function renderCourseProgress(data, params) {
+    const mode = data.course.progress_mode;
     document.title = pageTitle(data.course.title);
     const header = node('div', 'progressPageHeading'); header.append(link(t('nav.backHome'), catalogPath('courses', data.course.id, data.course.root_id), 'textButton'), node('h1', 'portalPageTitle', data.course.title));
-    const details = node("section", "courseProgressSummary"); details.append(infoRow(t("portal.progress.36"), percentLabel(data.course.progress)), infoRow(t("portal.start.date.37"), apiDate(data.course.start_date)), infoRow(t("portal.end.date.38"), apiDate(data.course.end_date)), infoRow(t("portal.estimated.completion.39"), apiDate(data.course.estimated_completion)), control(t("portal.view.knowledge.map.91"), "textButton", () => openGraph(data)));
+    const details = node("section", "courseProgressSummary"); details.append(infoRow(t("portal.progress.36"), percentLabel(data.course.progress, mode)), infoRow(t("portal.start.date.37"), apiDate(data.course.start_date)), infoRow(t("portal.end.date.38"), apiDate(data.course.end_date)), infoRow(t("portal.estimated.completion.39"), apiDate(data.course.estimated_completion)), control(t("portal.view.knowledge.map.91"), "textButton", () => openGraph(data)));
     root.replaceChildren(header, details);
     const max = Math.max(0, ...(data.units || []).map((unit) => Number(unit.topic_count) || 0));
     for (const unit of data.units || []) {
       const section = node("section", "progressUnit"); section.dataset.progressId = unit.id;
-      section.append(node("h2", "", t("portal.unitCount", { title: unit.title, count: Number(unit.topic_count).toLocaleString(locale()) })), unitBar(unit, max));
+      section.append(node("h2", "", t("portal.unitCount", { title: unit.title, count: Number(unit.topic_count).toLocaleString(locale()) })), unitBar(unit, max, mode));
       for (const topic of (data.topics || []).filter((topic) => topic.unit_id === unit.id || unit.topic_ids?.includes(topic.id))) {
         const row = node("div", "progressTopic"); row.dataset.progressId = topic.id;
         row.append(topic.status === 'read_only' ? link(topic.title, `/topic/${encode(topic.id)}`) : node("span", "", topic.title),
-          node("span", "", topic.status === 'read_only' ? '可阅读 · 暂不可训练' : statusNames[topic.status] || "—"), node("span", "", percentLabel(topic.progress)));
+          node("span", "", topic.status === 'read_only' ? '可阅读 · 暂不可训练' : statusNames[topic.status] || "—"), node("span", "", percentLabel(topic.progress, mode)));
         if (bridge.getAccess()?.is_admin) row.append(link(t('admin.allBlocks'), `/topic/${encode(topic.id)}/content`, 'textButton'));
         if (topic.id === params.get("topicId")) row.classList.add("highlighted"); section.append(row);
       }
@@ -1369,6 +1382,16 @@ export function initPortal(bridge) {
     language.addEventListener("change", () => { setLanguage(language.value); location.reload(); });
     const languageHint = node("p", "fieldHint", t("portal.languageHint"));
     form.append(languageLabel, language, languageHint, displayLabel, display, zoneLabel, zone, hint, status, submit);
+
+    const progressMode = node('select'); progressMode.id = 'courseProgressMode';
+    const progressLabel = node('label', '', t('portal.courseProgressMode')); progressLabel.htmlFor = progressMode.id;
+    const progressHint = node('p', 'fieldHint', t('portal.courseProgressModeHint')); progressHint.id = 'courseProgressModeHint';
+    progressMode.setAttribute('aria-describedby', progressHint.id);
+    for (const [value, key] of [['learning', 'portal.courseProgressLearning'], ['mastery', 'portal.courseProgressMastery']]) {
+      const option = node('option', '', t(key)); option.value = value; progressMode.append(option);
+    }
+    progressMode.value = profile.course_progress_mode ?? 'learning';
+    form.insertBefore(progressLabel, status); form.insertBefore(progressMode, status); form.insertBefore(progressHint, status);
     const completionSetting = node('fieldset', 'autocompleteSetting');
     completionSetting.append(node('legend', '', t('autocomplete.title')));
     for (const group of autocompleteGroups) {
@@ -1455,10 +1478,12 @@ export function initPortal(bridge) {
           display_name: defaultGuestName && display.value.trim() === t("portal.guest.12") ? profile.display_name || "游客" : display.value.trim(),
           timezone: zone.value.trim(), beginner_mode_enabled: beginner.checked,
           answer_command_input_enabled: commandInput.checked,
+          course_progress_mode: progressMode.value,
           ...(allowed("course_hierarchy") ? {course_hierarchy_enabled: hierarchy.checked} : {}),
         } });
         if (actor !== bridge.getAccess()?.learner_id) return;
         profile = updated;
+        dashboards.clear();
         bridge.setAccess({...bridge.getAccess(), beginner_mode_enabled: profile.beginner_mode_enabled,
           answer_command_input_enabled: profile.answer_command_input_enabled});
         if (trainingPreferences?.eligible) await call('training/preferences', {method: 'POST', body: {self_rating_enabled: selfRating.checked}});
@@ -1466,7 +1491,7 @@ export function initPortal(bridge) {
           ...(paperPreferences.can_choose ? {mode: paperMode.value} : {}),
           ...(paperPreferences.can_choose_timeout ? {timeout_action: timeoutMode.value} : {}),
         }});
-        dashboards.clear(); updateUser(); status.textContent = t("portal.settings.saved.121");
+        updateUser(); status.textContent = t("portal.settings.saved.121");
       }
       catch (error) { status.textContent = translateMessage(error.message); }
       finally { submit.disabled = false; }
@@ -1951,7 +1976,7 @@ export function initPortal(bridge) {
         if (!data.student.enabled) detail.append(node('p', 'fieldError', t('students.accountDisabled')));
         if (!own) {
           detail.append(qualifications(data.student));
-          const {studentTopicGroups} = await import('./topic-sync-groups.js?v=62993fabc4b9bca0');
+          const {studentTopicGroups} = await import('./topic-sync-groups.js?v=7391113e33abe624');
           if (!current()) return;
           detail.append(studentTopicGroups({request:bridge.request, learnerId, node, control}));
         }
