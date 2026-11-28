@@ -23,8 +23,20 @@
 .whiteboardPanel > :is(header, .whiteboardMath) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 9px; }
 .whiteboardPanel button { font: inherit; }
 .whiteboardPanel .whiteboardSubmit:disabled { background: var(--ma-border); border-color: var(--ma-border); color: var(--muted); opacity: 1; }
+.whiteboardPanel .whiteboardTutor:not(:disabled) { background: var(--green); border-color: var(--green); }
 .whiteboardPanel > header strong { margin-inline-end: auto; }
 .whiteboardPanel iframe { border: 0; width: 100%; height: clamp(330px, 66dvh, 850px); display: block; background: #f5f7fa; }
+.whiteboardSurface { position: relative; min-inline-size: 0; }
+.tutorWholeBoard { justify-self: start; margin: 0 9px 7px; }
+.tutorWholeBoard[aria-pressed="true"] { background: var(--intro-background); }
+.tutorSelectable, .tutorBoardOverlay { outline: 1px dashed var(--muted-accent-border); outline-offset: -1px; cursor: crosshair; touch-action: none; }
+.tutorWholeBlock { outline: 2px solid var(--ma-blue); outline-offset: -2px; }
+.tutorBoardOverlay { position: absolute; overflow: hidden; }
+.tutorBoardRegions { pointer-events: none; }
+.tutorBoardRegions > div { position: absolute; outline: 2px solid var(--ma-blue); outline-offset: -2px; }
+.tutorSelectionLayer { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
+.tutorSelectionLayer > [hidden], .tutorBoardOverlay[hidden] { display: none; }
+::highlight(tutor-content) { background: var(--intro-background); text-decoration: underline var(--ma-blue); }
 .whiteboardMath input {
   flex: 1 1 12em;
   min-width: 0;

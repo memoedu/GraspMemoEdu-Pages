@@ -19,12 +19,15 @@ async function recognize(png, request, language, fields, signal) {
   return request('whiteboard/recognize', {method: 'POST', timeout: 38000, signal, body: {image, language, ...fields}});
 }
 
-export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart}) {
+export function questionWhiteboard({key, editable, canSubmit = editable, current, submit, request, question, language, activePart,
+  reading = false, correct = question.feedback?.correct ?? question.correct, submitted = question.answer_display ?? question.answer}) {
   if (!key || question.academy || question.hyperskill || question.interaction?.grading === 'unavailable') return;
   const ocrLanguage = language === 'en' ? 'en' : 'zh';
+  const judged = typeof correct === 'boolean';
   const options = {key, editable, isCurrent: current,
+    tutor: reading || judged ? {question: !reading, correct: judged ? correct : null, submitted: whiteboardText(submitted)} : null,
     recognizeSelection: (png, signal) => recognize(png, request, ocrLanguage, {purpose: 'expression'}, signal)};
-  if (!canSubmit) return options;
+  if (!canSubmit || judged) return options;
   const content = document.createElement('template');
   content.innerHTML = [question.html, activePart?.html].filter(Boolean).join('<br>');
   for (const element of content.content.querySelectorAll('script,style,template,[hidden],[inert],[aria-hidden="true"]')) element.remove();

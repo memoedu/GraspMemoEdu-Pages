@@ -172,3 +172,28 @@ body.clipperWindow > .clipperWorkspace, .clipperDock.clipperExpanded {
   .clipperEditor { grid-template-columns: minmax(0, 1fr); }
   .clipperDock { top: 45px; }
 }
+.clipperCaptureDialog {
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 16px;
+  border: 1px solid var(--control-border);
+  border-radius: 10px;
+  background: white;
+  color: var(--ma-ink);
+}
+.clipperCaptureDialog > p { margin-block: 0 12px; }
+.clipperCaptureControls { display: flex; justify-content: end; gap: 8px; }
+.clipperCaptureHint {
+  position: fixed;
+  z-index: 82;
+  inset: auto 12px 12px auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-inline-size: calc(100vw - 24px);
+  padding: 6px 9px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: white;
+  color: var(--ma-ink);
+}
+.clipperCaptureHint[hidden] { display: none; }

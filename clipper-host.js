@@ -1,4 +1,4 @@
-import {getLanguage} from './i18n.js?v=de001249fb622a2d';
+import {getLanguage} from './i18n.js?v=3eda597ca70644cd';
 
 // The distribution contains the same Workflow assembly and chat editor shipped to WebView2.
 const base=new URL('./vendor/knowledge-clipper/',import.meta.url);
@@ -28,16 +28,30 @@ export async function replayRecording(owner){
   try{const key=await db.get('meta','lastRecording');if(key)await play(owner,key);}
   finally{db.close();}
 }
+export async function clipperPng(input){
+  const bitmap = input instanceof Blob ? await createImageBitmap(input) : null;
+  const image = bitmap || input;
+  try {
+    if (!bitmap && !image.complete) await image.decode();
+    const width = bitmap ? image.width : image.naturalWidth;
+    const height = bitmap ? image.height : image.naturalHeight;
+    if (!width || !height || width * height > 24000000) {
+      throw new Error(tx('图片无法读取或尺寸过大。','Image unavailable or too large.'));
+    }
+    if (bitmap && input.type === 'image/png') return input;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(image, 0, 0);
+    try { return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(), 'image/png')); }
+    catch { throw new Error(tx('当前图片来源不允许读取。可选择本地图片继续。','This image cannot be read. Choose a local image to continue.')); }
+  } finally { bitmap?.close(); }
+}
+
 async function collect(source){
   const {encoded}=await import(new URL('storage.js',base));
   const images=await Promise.all((source.assets||[]).map(async img=>{
-    if(!img.complete)await img.decode();
-    if(!img.naturalWidth||img.naturalWidth*img.naturalHeight>24000000)throw new Error(tx('图片无法读取或尺寸过大。','Image unavailable or too large.'));
-    const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
-    canvas.getContext('2d').drawImage(img,0,0);
-    let blob;
-    try{blob=await new Promise((ok,fail)=>canvas.toBlob(v=>v?ok(v):fail(),'image/png'));}
-    catch{throw new Error(tx('当前图片来源不允许读取。可选择本地图片继续。','This image cannot be read. Choose a local image to continue.'));}
+    const blob = await clipperPng(img);
     const digest=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());
     return {data:await encoded(blob),role:'question',hash:[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')};
   }));
@@ -83,7 +97,8 @@ export async function mountFloating(session,{request,identity,preferences,langua
     };
     frame.contentWindow.postMessage({kind:'knowledge-clipper:open',owner,language:language(),images:savedId?[]:material.images,
       options:{action:session.kind,source,values:session.source.originalExcerpt?{...prefs.values,quickExcerpt:true}:prefs.values,
-        model:prefs.model,imageModel:prefs.imageModel,defaults:defaults.rules,overrides:prefs.rules,savedId}},
+        model:session.source.tutor && material.images.length ? prefs.imageModel : prefs.model,
+        imageModel:prefs.imageModel,defaults:defaults.rules,overrides:prefs.rules,savedId}},
       frameUrl.origin,[pair.port2]);
   });
   session.panel.append(frame);

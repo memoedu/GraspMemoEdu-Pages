@@ -1,8 +1,9 @@
-import {getLanguage} from './i18n.js?v=de001249fb622a2d';
-import {learningSelectionBlock} from './content-report.js?v=de001249fb622a2d';
-import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=de001249fb622a2d';
-import {createClipperLines} from './clipper-lines.js?v=de001249fb622a2d';
-import {currentModal} from './question-tools.js?v=de001249fb622a2d';
+import {getLanguage} from './i18n.js?v=3eda597ca70644cd';
+import {learningSelectionBlock} from './content-report.js?v=3eda597ca70644cd';
+import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=3eda597ca70644cd';
+import {createClipperLines} from './clipper-lines.js?v=3eda597ca70644cd';
+import {currentModal, toolbarAction, toolbarExtension} from './question-tools.js?v=3eda597ca70644cd';
+import {clipperAcquisition} from './clipper-acquisition.js?v=3eda597ca70644cd';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
@@ -111,17 +112,11 @@ function select(node) {
 }
 
 export function installClipper({request, identity}) {
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'questionToolButton clipperToggle';
-  toggle.dataset.questionTool = 'clipper';
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS(svg.namespaceURI, 'path');
-  path.setAttribute('d', 'M7 3h10l2 2v16l-7-4-7 4V5a2 2 0 0 1 2-2zM9 8h6M9 11h6');
-  svg.append(path);
-  toggle.append(svg);
+  const label = () => clipText('零碎知识简藏', 'Knowledge Clipper');
+  const toggle = toolbarAction('clipper', 'M7 3h10l2 2v16l-7-4-7 4V5a2 2 0 0 1 2-2zM9 8h6M9 11h6');
+  toggle.classList.add('clipperToggle');
+  const acquisition = clipperAcquisition({label: label(), text: clipText, onOpen: openSource, pageSource, externalSource});
+  const extension = toolbarExtension(toggle, (panel, hide) => acquisition.render(panel, hide, toggle));
   const actions = document.createElement('div');
   actions.className = 'clipperActions';
   actions.setAttribute('role', 'group');
@@ -142,7 +137,7 @@ export function installClipper({request, identity}) {
   function syncLines() {
     if (enabled && owner) {
       if (!lineSelectors.length) lineSelectors = [...document.querySelectorAll(CONTENT)].map(root =>
-        createClipperLines(root, {onChange: queueSelection, blocked: currentModal, actions}));
+        createClipperLines(root, {onChange: queueSelection, blocked: () => currentModal() || tutorSelecting(), actions}));
       else lineSelectors.forEach(selector => selector.refresh());
     } else {
       lineSelectors.forEach(selector => selector.destroy());
@@ -172,12 +167,12 @@ export function installClipper({request, identity}) {
     return pending;
   }
   function sync() {
-    const label = clipText('零碎知识简藏', 'Knowledge Clipper');
-    toggle.title = label;
-    toggle.setAttribute('aria-label', label);
+    toggle.title = label();
+    toggle.setAttribute('aria-label', label());
     toggle.setAttribute('aria-pressed', String(enabled));
     if (toggle.hidden === Boolean(owner)) toggle.hidden = !owner;
-    actions.setAttribute('aria-label', label);
+    if (extension.item.hidden === Boolean(owner)) extension.item.hidden = !owner;
+    actions.setAttribute('aria-label', label());
     renderActions();
   }
 
@@ -194,7 +189,8 @@ export function installClipper({request, identity}) {
   }
 
   function showSelection() {
-    if (!enabled || !owner || currentModal() || lineSelectors.some(selector => selector.dragging)) selection = null;
+    if (!enabled || !owner || acquisition.selecting || tutorSelecting() || currentModal() ||
+        lineSelectors.some(selector => selector.dragging)) selection = null;
     else {
       const native = capture();
       if (native || imageSelection) clearLines();
@@ -211,7 +207,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=de001249fb622a2d').then(module => {
+    return import('./clipper-workspace.js?v=3eda597ca70644cd').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -228,13 +224,35 @@ export function installClipper({request, identity}) {
       button.textContent=clipText(def.label,def.englishLabel);button.onclick=()=>invoke(def.id);return button;
     }));
   }
+  const tutorSelecting = () => document.body.hasAttribute('data-tutor-selecting');
+  function externalSource(value) {
+    const isImage = value instanceof Blob;
+    return {title: document.title, route: clipRoute(), text: isImage ? label() : limit(value, 18000),
+      assets: isImage ? [value] : [], isImage};
+  }
+  function pageSource(image, target) {
+    if (!image) {
+      const picked = capture() || captureLines();
+      const source = picked && captureSource(picked);
+      if (source && /\S/u.test(source.text.replace(/!\[[^\]]*\]\(clipper-image:\d+\)/g, ''))) return {...source, isImage: false};
+      return null;
+    }
+    const picture = elementOf(target)?.closest('img');
+    if (!picture || !usable(picture) || formulaAt(picture)) return null;
+    const range = document.createRange();
+    range.selectNode(picture);
+    const picked = captureRange(range);
+    const source = picked && captureSource(picked);
+    return source?.assets.length ? {...source, isImage: true} : null;
+  }
   async function openSource(id, source) {
-    if (loading || !enabled || !owner || owner !== identity()) return;
+    if (loading || !owner || owner !== identity()) return;
     const scope = owner;
+    const route = location.hash;
     loading = true;
     try {
       const workspace = await preload();
-      if (enabled && scope === owner && owner === identity()) workspace.open(id, source);
+      if (scope === owner && owner === identity() && route === location.hash) workspace.open(id, source);
     } finally { loading = false; }
   }
   function invoke(id, originalExcerpt = false) {
@@ -244,6 +262,8 @@ export function installClipper({request, identity}) {
   function refresh() {
     const next = identity();
     if (owner !== next) {
+      acquisition.stop();
+      extension.hide();
       app?.close(); app=null; prefs=pending=null; imageSelection=null;
       clearLines();
       owner = next;
@@ -285,7 +305,7 @@ export function installClipper({request, identity}) {
   }, true);
   document.addEventListener('pointerup', event => {
     const picture=elementOf(event.target)?.closest('img');
-    if(enabled && picture && usable(picture) && !formulaAt(picture) && !picture.closest('a,button,label') && getSelection()?.isCollapsed){
+    if(enabled && !acquisition.selecting && !tutorSelecting() && picture && usable(picture) && !formulaAt(picture) && !picture.closest('a,button,label') && getSelection()?.isCollapsed){
       const range=document.createRange();range.selectNode(picture);
       const captured=captureRange(range);
       if(captured){imageSelection={...captured,image:picture};showSelection();}
@@ -316,12 +336,12 @@ export function installClipper({request, identity}) {
       if (!actions.hidden) { event.preventDefault(); actions.firstElementChild.focus({preventScroll: true}); }
     }
   }, true);
-  window.addEventListener('hashchange', () => { clearLines(); imageSelection=null; selection = null; actions.hidden = true; });
+  window.addEventListener('hashchange', () => { acquisition.stop(); extension.hide(); clearLines(); imageSelection=null; selection = null; actions.hidden = true; });
   window.addEventListener('resize', positionSelection);
   window.addEventListener('scroll', () => { if (selection?.ranges) queueSelection(); else positionSelection(); }, {capture: true, passive: true});
   const invalidate=()=>{prefs=pending=null;refresh();};
   window.addEventListener('clipper-settings-changed',invalidate);
   try {const channel=new BroadcastChannel('clipper-settings');channel.onmessage=invalidate;window.addEventListener('pagehide',()=>channel.close(),{once:true});}catch{}
   refresh();
-  return {toggle, refresh};
+  return {extension, refresh, openAsk: source => openSource('ask', {route: clipRoute(), title: document.title, ...source})};
 }

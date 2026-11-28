@@ -1,5 +1,5 @@
-import {sourceMathLatex} from './math-presentation.js?v=de001249fb622a2d';
-import {learningSelectionBlock} from './content-report.js?v=de001249fb622a2d';
+import {sourceMathLatex} from './math-presentation.js?v=3eda597ca70644cd';
+import {learningSelectionBlock} from './content-report.js?v=3eda597ca70644cd';
 
 export const formulaSelector='[data-math-source],[data-tex],.katex-display,.katex,math,mjx-container,.mjpage';
 export const readingSourceSelector = '[data-reading-source]';

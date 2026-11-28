@@ -1,15 +1,16 @@
-import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=de001249fb622a2d';
-import {attachFormulaEditing} from './formula-input.js?v=de001249fb622a2d';
-import {setQuestionTools} from './question-tools.js?v=de001249fb622a2d';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=de001249fb622a2d';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=de001249fb622a2d';
-import {mountAnswerConversion} from './answer-conversion.js?v=de001249fb622a2d';
-import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=de001249fb622a2d';
-import {reportableContent} from './content-report.js?v=de001249fb622a2d';
-import {createLearningCache} from './learning-cache.js?v=de001249fb622a2d';
-import {enhanceTopicContent} from './topic-content.js?v=de001249fb622a2d';
-import {practiceHint} from './beginner-hints.js?v=de001249fb622a2d';
-import {questionWhiteboard} from './whiteboard-answer.js?v=de001249fb622a2d';
+import { t, translateMessage, learningTitle, getLanguage } from './i18n.js?v=3eda597ca70644cd';
+import {attachFormulaEditing} from './formula-input.js?v=3eda597ca70644cd';
+import {setQuestionTools} from './question-tools.js?v=3eda597ca70644cd';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=3eda597ca70644cd';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3eda597ca70644cd';
+import {mountAnswerConversion} from './answer-conversion.js?v=3eda597ca70644cd';
+import {isCourseSelfRating, selfAssessment, referenceAnswer, prepareAnswerContent, submittedAnswer} from './self-assessment.js?v=3eda597ca70644cd';
+import {reportableContent} from './content-report.js?v=3eda597ca70644cd';
+import {createLearningCache} from './learning-cache.js?v=3eda597ca70644cd';
+import {enhanceTopicContent} from './topic-content.js?v=3eda597ca70644cd';
+import {practiceHint} from './beginner-hints.js?v=3eda597ca70644cd';
+import {questionWhiteboard} from './whiteboard-answer.js?v=3eda597ca70644cd';
+import {checkpointWhiteboard} from './whiteboard.js?v=3eda597ca70644cd';
 
 const node = (tag, cls = '', text) => {
   const item = document.createElement(tag); item.className = cls;
@@ -149,8 +150,11 @@ export function createReviewView(bridge) {
   }
   async function mutate(action, body) {
     if (busy || !state) return;
-    const ticket = epoch; busy = true; tick(true); failure = null; render();
+    const ticket = epoch; busy = true; tick(true); failure = null;
     try {
+      if (action === 'submit') await checkpointWhiteboard(root);
+      if (!active(ticket)) return;
+      render();
       const result = await call(sessionPath(action), {method: 'POST', body});
       if (!active(ticket)) return;
       busy = false;
@@ -306,12 +310,16 @@ export function createReviewView(bridge) {
     for (const item of nav.querySelectorAll('button')) if (busy) item.disabled = true;
     card.append(nav); main.append(card);
     const ticket = epoch, revision = state.revision;
-    const currentBoard = () => active(ticket) && current() && state.practice.id === questionId &&
-      state.revision === revision && !busy && !state.pending_submission_id && can('submit_answer');
+    const viewingBoard = () => active(ticket) && state.revision === revision && card.isConnected;
+    const currentBoard = () => viewingBoard() && current() && state.practice.id === questionId &&
+      !busy && !state.pending_submission_id && can('submit_answer');
+    const canSubmitBoard = editable && !state.practice.revealed && !busy && !state.pending_submission_id && can('submit_answer');
     setQuestionTools(card, question, questionWhiteboard({
       key: JSON.stringify([bridge.getApiOrigin(), learner, topic, questionId]), question,
-      editable: editable && !state.practice.revealed && currentBoard(),
-      current: currentBoard, language: getLanguage(), request: bridge.request,
+      editable: canSubmitBoard, canSubmit: canSubmitBoard,
+      correct: feedback?.correct, submitted: answer?.answer_display ?? answer?.answer,
+      current: typeof feedback?.correct === 'boolean' ? viewingBoard : currentBoard,
+      language: getLanguage(), request: bridge.request,
       submit: answer => mutate('submit', {...payload(), answer, elapsed_ms: tick(true)}),
     }));
     layout.append(renderHistory(), main); root.replaceChildren(layout);

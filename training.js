@@ -1,24 +1,25 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=de001249fb622a2d';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=de001249fb622a2d';
-import {answerReady, answerEmpty} from './question-input.js?v=de001249fb622a2d';
-import {createLearningCache} from './learning-cache.js?v=de001249fb622a2d';
-import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=de001249fb622a2d';
-import {helpableContent} from './content-report.js?v=de001249fb622a2d';
-import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=de001249fb622a2d';
-import {pointAssessment} from './point-assessment.js?v=de001249fb622a2d';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=de001249fb622a2d';
-import {learningHint} from './beginner-hints.js?v=de001249fb622a2d';
+import {t, translateMessage, getLanguage} from './i18n.js?v=3eda597ca70644cd';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=3eda597ca70644cd';
+import {answerReady, answerEmpty} from './question-input.js?v=3eda597ca70644cd';
+import {createLearningCache} from './learning-cache.js?v=3eda597ca70644cd';
+import {catalogView, catalogPath, workspaceLayout} from './catalog-workspace.js?v=3eda597ca70644cd';
+import {helpableContent} from './content-report.js?v=3eda597ca70644cd';
+import {ratingChoices, selfAssessmentChoices} from './self-assessment.js?v=3eda597ca70644cd';
+import {pointAssessment} from './point-assessment.js?v=3eda597ca70644cd';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=3eda597ca70644cd';
+import {learningHint} from './beginner-hints.js?v=3eda597ca70644cd';
 
 const node = (tag, cls = '', text) => { const n = document.createElement(tag); n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const button = (text, cls, action) => { const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', action); return n; };
 const encode = encodeURIComponent;
 const query = fields => new URLSearchParams(fields).toString();
 const ratingKeys = ['', 'training.again', 'training.hard', 'training.good', 'training.easy', 'training.retire'];
-import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=de001249fb622a2d';
-import {setQuestionTools} from './question-tools.js?v=de001249fb622a2d';
-import {voiceAnswerPending} from './voice-input.js?v=de001249fb622a2d';
-import {questionWhiteboard} from './whiteboard-answer.js?v=de001249fb622a2d';
-import {rubberDuck} from './rubber-duck.js?v=de001249fb622a2d';
+import {answerEditor, readerFrame, readerStepTitle, renderReaderStep, readerHistoryGroup, readerProgress, readerNavigation, renderReviewReader} from './learning-ui.js?v=3eda597ca70644cd';
+import {setQuestionTools} from './question-tools.js?v=3eda597ca70644cd';
+import {voiceAnswerPending} from './voice-input.js?v=3eda597ca70644cd';
+import {questionWhiteboard} from './whiteboard-answer.js?v=3eda597ca70644cd';
+import {checkpointWhiteboard} from './whiteboard.js?v=3eda597ca70644cd';
+import {rubberDuck} from './rubber-duck.js?v=3eda597ca70644cd';
 
 export function createTrainingView(bridge) {
   const {root, request, href, formatDate, getAccess, topicBody} = bridge;
@@ -428,7 +429,9 @@ export function createTrainingView(bridge) {
       key: JSON.stringify([location.origin, getAccess()?.learner_id, state.bank_id, state.question_id]), question: state.question,
       activePart: state.multi_step?.steps?.[state.multi_step.current_index],
       editable: Boolean(topicBody) || canSubmit, canSubmit,
-      current: canSubmit || !topicBody ? currentBoard : viewing, language: getLanguage(), request,
+      current: canSubmit ? currentBoard : viewing, language: getLanguage(), request,
+      correct: result?.correct ?? state.multi_step?.steps?.[state.multi_step.current_index]?.result?.correct,
+      submitted: state.answer_display ?? state.answer,
       submit: async answer => {
         const payload = {request_id: crypto.randomUUID(), attempt_id: state.attempt_id, answer, elapsed_ms: flushClock(),
           ...(state.multi_step ? {step_id: state.multi_step.current_step_id} : {})};
@@ -550,6 +553,8 @@ export function createTrainingView(bridge) {
               ...(state.multi_step ? {step_id: state.multi_step.current_step_id} : {})};
             savedPayload = payload;
             save('submission', draftKey, JSON.stringify(payload));
+            await checkpointWhiteboard(root);
+            if (!alive(e, s)) return;
             next = await post('submit', payload);
           }
           if (!alive(e, s)) return;

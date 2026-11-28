@@ -126,7 +126,24 @@ button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke
   scrollbar-gutter: stable;
 }
 .questionToolGroup { gap: 4px; }
-.questionToolRail .voiceTool { justify-content: flex-start; margin-inline: 4px; }
+.globalToolGroup { align-items: flex-start; }
+.questionToolRail .globalToolGroup { padding-inline: 4px; }
+.questionTools[aria-orientation="horizontal"] > .globalToolGroup { flex-direction: row; }
+.toolbarExtension { position: relative; flex: 0 0 auto; }
+.toolbarExtensionPanel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 5px;
+  max-inline-size: calc(100vw - 16px);
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: var(--soft-blue);
+  color: var(--ma-ink);
+  z-index: 80;
+}
+.toolbarExtensionPanel:is(:popover-open, :not([popover], [hidden])) { display: flex; flex-wrap: wrap; gap: 4px; }
+.toolbarExtensionPanel button { white-space: nowrap; min-inline-size: 40px; }
 .questionTools .voiceToolPanel,
 .questionToolStatus {
   inline-size: min(300px, calc(100vw - 34px));
