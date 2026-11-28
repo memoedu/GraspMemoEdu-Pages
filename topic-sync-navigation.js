@@ -1,6 +1,6 @@
-import {getLanguage} from './i18n.js?v=7391113e33abe624';
-import {installBodyEditor} from './topic-body-editor.js?v=7391113e33abe624';
-import {toolbarAction} from './question-tools.js?v=7391113e33abe624';
+import {getLanguage} from './i18n.js?v=f4e8cccd42a8abae';
+import {installBodyEditor} from './topic-body-editor.js?v=f4e8cccd42a8abae';
+import {toolbarAction} from './question-tools.js?v=f4e8cccd42a8abae';
 
 const channel = 'graspmemoedu-remnote-v1';
 const tr = (zh, en) => getLanguage() === 'en' ? en : zh;

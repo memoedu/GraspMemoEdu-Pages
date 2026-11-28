@@ -1,15 +1,51 @@
-import {clipText as tx,clipperEnabled,setClipperEnabled} from './clipper.js?v=7391113e33abe624';
+import {clipText as tx,clipperEnabled,setClipperEnabled} from './clipper.js?v=f4e8cccd42a8abae';
 
 const groups={
   floating:['浮点操作','Selection menu'],capture:['语言与上下文','Language and context'],images:['图片与识别','Images and OCR'],
   speech:['朗读','Read aloud'],shortcuts:['快捷键','Keyboard shortcuts'],model:['模型请求','Model requests']
 };
-export async function clipperSettings({request,node,current,owner}){
-  const prefs=await request('clipper/settings');
-  if(!current())return null;
+export async function clipperSettings({request,node,current,owner,accountName,desktop}){
   const page=node('section','settingsPage'), form=node('form','profileForm clipperSettings');
   const back=node('a','textButton',tx('返回设置','Back to settings'));back.href='#/settings';
   page.append(back,node('h1','portalPageTitle',tx('零碎知识简藏','Knowledge Clipper')),form);
+  const device=node('fieldset','autocompleteSetting');
+  device.append(node('legend','',tx('桌面剪藏授权','Desktop clipper access')));
+  const deviceStatus=node('p','profileStatus');deviceStatus.setAttribute('role','status');
+  function deviceAction(label, operation, body, onSuccess){
+    const action=node('button','secondaryButton',label);action.type='button';
+    action.onclick=async()=>{
+      if(!current())return;
+      action.disabled=true;deviceStatus.textContent=tx('正在处理…','Working…');
+      try {
+        const result=await request('clipper/desktop-'+operation,{method:'POST',body});
+        if(current())onSuccess(result,action);
+      } catch(e) {
+        if(current()){deviceStatus.textContent=e.message;action.disabled=false;}
+      }
+    };
+    device.append(action);
+  }
+  if(desktop!==null){
+    if(/^[a-f0-9]{64}$/.test(desktop)){
+      device.append(node('p','',tx('接收账号','Receiving account')+' · '+accountName),
+        node('p','',tx('请核对桌面窗口上的配对码','Check the pairing code shown in the desktop app')+' · '+desktop.slice(0,8).toUpperCase()));
+      deviceAction(tx('授权桌面导入','Authorize desktop imports'),'authorize',{challenge:desktop,learner_id:owner},(_,action)=>{
+        action.hidden=true;
+        deviceStatus.textContent=tx('已授权。可以返回桌面工具。','Authorized. Return to the desktop app.');
+      });
+    } else {
+      deviceStatus.textContent=tx('授权链接无效。请在桌面工具重新打开。','Invalid authorization link. Open a new one from the desktop app.');
+    }
+    device.append(deviceStatus);form.append(device);
+    return page;
+  }
+  const prefs=await request('clipper/settings');
+  if(!current())return null;
+  deviceAction(tx('解除本账号所有桌面授权','Revoke all desktop connections'),'revoke',{},({revoked},action)=>{
+    deviceStatus.textContent=revoked ? tx('已解除桌面授权。','Desktop access revoked.') : tx('当前没有桌面授权。','No desktop connections.');
+    action.disabled=false;
+  });
+  device.append(deviceStatus);form.append(device);
   const status=node('p','profileStatus');status.setAttribute('role','status');
   const controls=new Map(), services=new Map(), editedRules={...prefs.rules};
   const field=(parent,label,el)=>{const wrapper=node('label','clipperSetting');wrapper.append(document.createTextNode(label),el);parent.append(wrapper);};
