@@ -1,4 +1,4 @@
-import {appendCatalogOutline} from './catalog-outline.js?v=3eda597ca70644cd';
+import {appendCatalogOutline} from './catalog-outline.js?v=f81a576e90667aa8';
 
 const node = (tag, className) => {
   const element = document.createElement(tag); element.className = className; return element;

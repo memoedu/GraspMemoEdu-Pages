@@ -1,14 +1,14 @@
-import {getLanguage} from './i18n.js?v=3eda597ca70644cd';
-import {learningSelectionBlock} from './content-report.js?v=3eda597ca70644cd';
-import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=3eda597ca70644cd';
-import {createClipperLines} from './clipper-lines.js?v=3eda597ca70644cd';
-import {currentModal, toolbarAction, toolbarExtension} from './question-tools.js?v=3eda597ca70644cd';
-import {clipperAcquisition} from './clipper-acquisition.js?v=3eda597ca70644cd';
+import {getLanguage} from './i18n.js?v=f81a576e90667aa8';
+import {learningSelectionBlock} from './content-report.js?v=f81a576e90667aa8';
+import {captureSelection, formulaAt, formulaSelector, readingSourceSelector} from './clipper-selection.js?v=f81a576e90667aa8';
+import {createClipperLines} from './clipper-lines.js?v=f81a576e90667aa8';
+import {currentModal, toolbarAction, toolbarExtension} from './question-tools.js?v=f81a576e90667aa8';
+import {clipperAcquisition} from './clipper-acquisition.js?v=f81a576e90667aa8';
 
 const FORMULA = formulaSelector;
 const EDITING = 'input,textarea,select,dialog,[contenteditable="true"]';
 const EXCLUDED = 'script,style,template,[hidden],[inert],button,[role="toolbar"],[data-content-actions],.clipperActions,' + EDITING;
-const CONTENT = '#portalContent,#lessonContent';
+const CONTENT = '#portalContent,#lessonContent,[data-learning-page]';
 const TEXT_BLOCK = 'p,li,td,th,pre,blockquote,h1,h2,h3,h4,.courseContent,.answerContent,[data-paragraph]';
 const limit = (text, length) => [...text].slice(0, length).join('');
 const elementOf = node => node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
@@ -124,9 +124,9 @@ export function installClipper({request, identity}) {
   document.body.append(actions);
   let prefs, pending, imageSelection;
   let owner, enabled = false, selection, app, hover, loading = false, frame = 0;
-  let lineSelectors = [];
+  const lineSelectors = new Map();
   function captureLines() {
-    for (const selector of lineSelectors) {
+    for (const selector of lineSelectors.values()) {
       const captured = selector.capture();
       if (captured) return captured;
     }
@@ -135,13 +135,18 @@ export function installClipper({request, identity}) {
   const clearLines = () => lineSelectors.forEach(selector => selector.clear());
 
   function syncLines() {
-    if (enabled && owner) {
-      if (!lineSelectors.length) lineSelectors = [...document.querySelectorAll(CONTENT)].map(root =>
-        createClipperLines(root, {onChange: queueSelection, blocked: () => currentModal() || tutorSelecting(), actions}));
-      else lineSelectors.forEach(selector => selector.refresh());
-    } else {
-      lineSelectors.forEach(selector => selector.destroy());
-      lineSelectors = [];
+    const roots = enabled && owner ? [...document.querySelectorAll(CONTENT)]
+      .filter(root => !root.parentElement?.closest(CONTENT)) : [];
+    for (const [root, selector] of lineSelectors) {
+      if (roots.includes(root)) continue;
+      selector.destroy();
+      lineSelectors.delete(root);
+    }
+    for (const root of roots) {
+      if (lineSelectors.has(root)) lineSelectors.get(root).refresh();
+      else lineSelectors.set(root, createClipperLines(root, {
+        onChange: queueSelection, blocked: () => currentModal() || tutorSelecting(), actions,
+      }));
     }
   }
 
@@ -190,7 +195,7 @@ export function installClipper({request, identity}) {
 
   function showSelection() {
     if (!enabled || !owner || acquisition.selecting || tutorSelecting() || currentModal() ||
-        lineSelectors.some(selector => selector.dragging)) selection = null;
+        [...lineSelectors.values()].some(selector => selector.dragging)) selection = null;
     else {
       const native = capture();
       if (native || imageSelection) clearLines();
@@ -207,7 +212,7 @@ export function installClipper({request, identity}) {
   }
 
   function preload() {
-    return import('./clipper-workspace.js?v=3eda597ca70644cd').then(module => {
+    return import('./clipper-workspace.js?v=f81a576e90667aa8').then(module => {
       if (!app) app = module.createClipperWorkspace({request: guardedRequest, identity:()=>owner, preferences, language:getLanguage});
       return app;
     });
@@ -327,7 +332,7 @@ export function installClipper({request, identity}) {
         event.isComposing || elementOf(event.target)?.closest(EDITING) || currentModal()) return;
     if (event.code === 'KeyS') {
       const at = [getSelection()?.anchorNode, event.target, hover].find(usable);
-      const fallback = [...document.querySelectorAll('#lessonContent [data-help-block],#portalContent [data-help-block]')]
+      const fallback = [...document.querySelectorAll('[data-help-block]')]
         .find(node => usable(node) && node.getClientRects().length);
       const block = formulaAt(at) || learningSelectionBlock(at) || elementOf(at)?.closest(TEXT_BLOCK) || fallback;
       if (block) { event.preventDefault(); select(block); }
@@ -337,6 +342,11 @@ export function installClipper({request, identity}) {
     }
   }, true);
   window.addEventListener('hashchange', () => { acquisition.stop(); extension.hide(); clearLines(); imageSelection=null; selection = null; actions.hidden = true; });
+  const contentObserver = new MutationObserver(records => {
+    if (enabled && records.some(record => [...record.addedNodes, ...record.removedNodes]
+      .some(node => node.nodeType === Node.ELEMENT_NODE && (node.matches(CONTENT) || node.querySelector(CONTENT))))) syncLines();
+  });
+  contentObserver.observe(document.body, {childList: true, subtree: true});
   window.addEventListener('resize', positionSelection);
   window.addEventListener('scroll', () => { if (selection?.ranges) queueSelection(); else positionSelection(); }, {capture: true, passive: true});
   const invalidate=()=>{prefs=pending=null;refresh();};
