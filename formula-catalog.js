@@ -1,4 +1,4 @@
-import {expressionCompletions} from './calculator-policy.js?v=a684a6921871e5f3';
+import {expressionCompletions} from './calculator-policy.js?v=07ee4f864649de99';
 
 export const formulaToken = /(\\?[\p{L}_][\p{L}\p{M}\p{Nd}_₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹]*|[+−*×/÷^!(),.π√=\-])$/iu;
 

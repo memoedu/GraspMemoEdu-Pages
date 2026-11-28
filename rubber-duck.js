@@ -1,6 +1,6 @@
-import {t, translateMessage} from './i18n.js?v=a684a6921871e5f3';
-import {recordingPayload} from './microphone-recorder.js?v=a684a6921871e5f3';
-import {releaseMicrophone, segmentMicrophone} from './voice-stream.js?v=a684a6921871e5f3';
+import {t, translateMessage} from './i18n.js?v=07ee4f864649de99';
+import {recordingPayload} from './microphone-recorder.js?v=07ee4f864649de99';
+import {releaseMicrophone, segmentMicrophone} from './voice-stream.js?v=07ee4f864649de99';
 
 const limit = 120000;
 const context = {style: 'literal'};

@@ -1,8 +1,8 @@
-import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=a684a6921871e5f3';
-import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=a684a6921871e5f3';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=a684a6921871e5f3';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=a684a6921871e5f3';
-import {whiteboardDocument} from './whiteboard-editor.js?v=a684a6921871e5f3';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=07ee4f864649de99';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=07ee4f864649de99';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=07ee4f864649de99';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=07ee4f864649de99';
+import {whiteboardDocument} from './whiteboard-editor.js?v=07ee4f864649de99';
 
 const boards = new WeakMap();
 const work = new Map();
@@ -372,7 +372,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
         cas: whiteboardCasEnabled(), memory: Object.fromEntries([...session.memory].map(([name, entry]) => [name, entry.value]))});
       if (closed || selected !== id || !state.options.isCurrent()) return;
       const conditions = value.nonZero?.map(divisor => '(' + divisor + ') ≠ 0').join(', ');
-      selectionMessage.textContent = part.value + ' = ' + value.text +
+      selectionMessage.textContent = (value.label ? value.text : part.value + ' = ' + value.text) +
         (conditions ? local('（当 ' + conditions + '）', ' (where ' + conditions + ')') : '');
       showMemory(value.text);
     } catch (error) {
