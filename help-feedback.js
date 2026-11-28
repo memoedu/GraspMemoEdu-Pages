@@ -1,6 +1,6 @@
-import {t, translateMessage} from './i18n.js?v=07ee4f864649de99';
-import {enhanceTopicContent} from './topic-content.js?v=07ee4f864649de99';
-import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=07ee4f864649de99';
+import {t, translateMessage} from './i18n.js?v=de001249fb622a2d';
+import {enhanceTopicContent} from './topic-content.js?v=de001249fb622a2d';
+import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=de001249fb622a2d';
 
 const node = (tag, cls = '', text) => { const el = document.createElement(tag); el.className = cls; if (text !== undefined) el.textContent = text; return el; };
 export const feedbackCategories = {
