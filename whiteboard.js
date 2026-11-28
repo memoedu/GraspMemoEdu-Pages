@@ -1,12 +1,14 @@
-import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=de001249fb622a2d';
-import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=de001249fb622a2d';
-import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=de001249fb622a2d';
-import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=de001249fb622a2d';
-import {whiteboardDocument} from './whiteboard-editor.js?v=de001249fb622a2d';
+import {calculate, calculateSelectedFormula, storedExpression, warmCalculator} from './calculator-engine.js?v=3eda597ca70644cd';
+import {assignableVariable, normalizeVariableName, permitsKey, permitsModule} from './calculator-policy.js?v=3eda597ca70644cd';
+import {chooseWhiteboardFolder, whiteboardFolder, saveWhiteboard, restoreWhiteboard} from './whiteboard-archive.js?v=3eda597ca70644cd';
+import {refreshVoiceInput, voiceFieldPending} from './voice-input.js?v=3eda597ca70644cd';
+import {whiteboardDocument} from './whiteboard-editor.js?v=3eda597ca70644cd';
+import {openWhiteboardTutoring, selectTutorContent, tutorAvailable, whiteboardTutorMode} from './whiteboard-tutor.js?v=3eda597ca70644cd';
 
 const boards = new WeakMap();
 const work = new Map();
 let preparedBoard;
+let presentedBoard;
 const casPreference = 'graspmemoedu:whiteboard-cas';
 
 export function whiteboardCasEnabled() {
@@ -31,7 +33,12 @@ export function configureWhiteboard(workspace, options) {
   const board = boards.get(workspace);
   if (!board) return;
   if (options?.key !== board.options.key) board.dispose();
-  else { board.options = options; board.refresh(); }
+  else { board.stopTutorSelection(); board.options = options; board.refresh(); }
+}
+
+export function checkpointWhiteboard(root) {
+  const board = presentedBoard;
+  return board?.connected() && root.contains(board.element) ? board.checkpoint() : undefined;
 }
 
 function node(tag, className, text) {
@@ -41,7 +48,7 @@ function node(tag, className, text) {
   return element;
 }
 
-function bridge(frame, onSelection) {
+function bridge(frame, onSelection, onGeometry) {
   const channel = new MessageChannel();
   const pending = new Map();
   let sequence = 0;
@@ -56,6 +63,7 @@ function bridge(frame, onSelection) {
   channel.port1.onmessage = ({data}) => {
     if (data?.ready === 1) { clearTimeout(timeout); resolveReady(); }
     if (data?.selection) onSelection(data.selection);
+    if (data?.geometry) onGeometry(data.geometry);
     const task = pending.get(data?.id);
     if (!task) return;
     pending.delete(data.id);
@@ -86,6 +94,15 @@ function bridge(frame, onSelection) {
 
 export function prepareWhiteboard(workspace, launcher, question, options, session, english, priority = false) {
   if (!workspace?.isConnected || !launcher.isConnected || boards.has(workspace)) return;
+  const previous = presentedBoard;
+  if (previous && !previous.connected()) {
+    const reopen = previous.options.key === options.key && previous.route === location.hash;
+    previous.dispose();
+    if (reopen) {
+      openWhiteboard(workspace, launcher, question, options, session, english);
+      return;
+    }
+  }
   if (preparedBoard?.connected() && !priority) return;
   preparedBoard?.dispose();
   preparedBoard = openWhiteboard(workspace, launcher, question, options, session, english, false);
@@ -107,7 +124,11 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   frame.title = local('批注画布', 'Annotation canvas');
   frame.setAttribute('sandbox', 'allow-scripts');
   frame.referrerPolicy = 'no-referrer';
-  const port = bridge(frame, selectionChanged);
+  let geometry, tutorSelection, tutorRequest;
+  const port = bridge(frame, selectionChanged, value => {
+    geometry = value;
+    tutorSelection?.repaint();
+  });
   frame.srcdoc = english ? whiteboardDocument.replace('lang="zh-CN"', 'lang="en"') : whiteboardDocument;
   const divider = node('div', 'whiteboardDivider');
   divider.tabIndex = 0;
@@ -123,7 +144,9 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   let ready = false, loadFailed = false, busy = false, closed = false, shown = false, used = false, hydrated = false, share = 55, swapped = false;
   let selected, identified, selectionBusy = false, voiceSubstitute = false;
   let selectionOcr;
-  const state = {options, dispose, toggle, refresh, connected: () => workspace.isConnected, unopenedFailure: () => !shown && loadFailed};
+  const state = {options, dispose, toggle, refresh, stopTutorSelection, element: panel, checkpoint,
+    route: location.hash, connected: () => workspace.isConnected,
+    unopenedFailure: () => !shown && loadFailed};
   boards.set(workspace, state);
 
   function control(parent, zh, en, handler, className = 'secondaryButton') {
@@ -175,9 +198,12 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
       if (!closed) refresh();
     }
   });
-  const submit = control(header, '提交', 'Submit', submitBoard, 'primaryButton');
+  const submit = control(header, '提交', 'Submit', primaryAction, 'primaryButton');
   submit.classList.add('whiteboardSubmit');
   const dismiss = control(header, '收起', 'Close', () => toggle());
+  const surface = node('div', 'whiteboardSurface'), overlay = node('div', 'tutorBoardOverlay');
+  overlay.hidden = true;
+  surface.append(frame, overlay);
 
   const math = node('div', 'whiteboardMath');
   const expression = node('input');
@@ -278,7 +304,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   }
   if (stores || evaluates) math.append(selectionTools);
   math.append(result);
-  panel.append(header, frame, math, status);
+  panel.append(header, surface, math, status);
   workspace.append(divider, panel);
   show(initiallyOpen);
 
@@ -303,7 +329,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     if (!(stores || evaluates)) return;
     const active = selected !== undefined && state.options.editable;
     const hasFormula = active && identified === selected;
-    const disabled = busy || selectionBusy || !!selectionOcr || !ready;
+    const disabled = busy || selectionBusy || !!selectionOcr || !!tutorSelection || !!tutorRequest || !ready;
     selectionTools.hidden = !active;
     if (manualStore) manualStore.hidden = active;
     variable.toggleAttribute('data-whiteboard-voice-selection', active && stores);
@@ -453,11 +479,16 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
     shown = value;
     if (shown) {
       used = true;
+      presentedBoard = state;
       if (preparedBoard === state) preparedBoard = undefined;
       if (evaluates) {
         const mode = whiteboardCasEnabled() && permitsModule(question.calculate, 'symbolic') ? 'symbolic' : 'expression';
         void warmCalculator(mode).catch(() => {});
       }
+    } else {
+      stopTutorSelection();
+      tutorRequest?.abort();
+      if (presentedBoard === state) presentedBoard = undefined;
     }
     workspace.classList.toggle('whiteboardOpen', value);
     workspace.classList.toggle('whiteboardFirst', value && swapped);
@@ -474,13 +505,82 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   }
 
   function refresh() {
-    for (const control of math.querySelectorAll('button, input')) control.disabled = busy || !ready || !state.options.editable;
-    submit.disabled = busy || !ready || !state.options.submit || !state.options.editable;
+    const tutoring = Boolean(state.options.tutor);
+    for (const control of math.querySelectorAll('button, input')) {
+      control.disabled = busy || !!tutorSelection || !ready || !state.options.editable;
+    }
+    submit.textContent = tutoring ? tutorSelection ? local('确定', 'Confirm') : local('解惑', 'Explain this') : local('提交', 'Submit');
+    submit.classList.toggle('whiteboardTutor', tutoring);
+    submit.toggleAttribute('aria-busy', Boolean(tutorRequest));
+    submit.disabled = busy || Boolean(tutorRequest) || !ready || (!tutoring && (!state.options.submit || !state.options.editable));
     folder.disabled = busy || !ready;
     dismiss.disabled = busy;
-    if (ready && !busy) void port.send('lock', !state.options.editable).catch(() => {});
+    if (ready && !busy) void port.send('lock', !state.options.editable || !!tutorSelection || !!tutorRequest).catch(() => {});
     refreshSelection();
     refreshVoiceInput();
+  }
+
+  function stopTutorSelection() {
+    if (!tutorSelection) return;
+    tutorSelection.dispose();
+    tutorSelection = undefined;
+    void port.send('reportGeometry', false).catch(() => {});
+    status.textContent = '';
+  }
+
+  async function checkpoint() {
+    if (busy || !ready || !shown) return;
+    try { session.whiteboardScene = await port.send('scene'); } catch { /* The current grade can proceed if the editor closed. */ }
+  }
+
+  async function primaryAction() {
+    if (!state.options.tutor) return submitBoard();
+    if (!ready || busy || tutorRequest || !state.options.isCurrent()) return;
+    const current = state.options;
+    if (!tutorAvailable()) {
+      status.textContent = local('请登录后使用零碎知识简藏解惑。', 'Sign in to use Knowledge Clipper.');
+      return;
+    }
+    const root = () => workspace.firstElementChild;
+    const mode = tutorSelection || whiteboardTutorMode() === 'selection' ? 'selection' : 'direct';
+    const hint = count => {
+      status.textContent = count ? local(`已选 ${count} 处，点击「确定」解惑。按 Esc 取消。`, `${count} selected. Confirm to ask or press Esc to cancel.`)
+        : local('点击整块或拖动框选正文、题面、答案或白板。按 Esc 取消。', 'Click a block or drag over content or the board. Press Esc to cancel.');
+    };
+    if (mode === 'selection' && !tutorSelection) {
+      cancelSelectionOcr();
+      tutorSelection = selectTutorContent({scope: workspace, root, surface: frame, overlay, geometry: () => geometry,
+        question: current.tutor.question, local, change: hint, cancel: () => { stopTutorSelection(); refresh(); submit.focus(); }});
+      actionsForGeometry();
+      refresh();
+      return;
+    }
+    const selection = tutorSelection?.value();
+    if (selection && !selection.board && !selection.blocks.some(block => block.text || block.assets.length)) {
+      status.textContent = local('请先选择要解惑的内容。', 'Select something to ask about first.');
+      return;
+    }
+    const controller = new AbortController();
+    tutorRequest = controller;
+    status.textContent = local('正在准备解惑内容…', 'Preparing your question…');
+    refresh();
+    try {
+      await openWhiteboardTutoring({mode, root: root(), ...current.tutor, snapshot: () => port.send('snapshot'),
+        selection, language: english ? 'en' : 'zh', signal: controller.signal});
+      stopTutorSelection();
+      status.textContent = '';
+    } catch (error) {
+      if (!controller.signal.aborted) status.textContent = error.message || ioError();
+    } finally {
+      tutorRequest = undefined;
+      if (!closed) refresh();
+    }
+  }
+
+  function actionsForGeometry() {
+    void port.send('reportGeometry', true).catch(() => {
+      if (tutorSelection) status.textContent = local('白板选区尚不可用，可先选择页面内容。', 'The board region is unavailable. You can still select page content.');
+    });
   }
 
   async function loadSaved() {
@@ -555,6 +655,7 @@ export function openWhiteboard(workspace, launcher, question, options, session, 
   function dispose() {
     if (closed) return;
     cancelSelectionOcr();
+    tutorRequest?.abort();
     closed = true;
     if (preparedBoard === state) preparedBoard = undefined;
     boards.delete(workspace);

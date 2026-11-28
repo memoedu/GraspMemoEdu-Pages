@@ -1,6 +1,6 @@
-import {t, translateMessage} from './i18n.js?v=de001249fb622a2d';
-import {enhanceTopicContent} from './topic-content.js?v=de001249fb622a2d';
-import {drawLineMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=de001249fb622a2d';
+import {t, translateMessage} from './i18n.js?v=3eda597ca70644cd';
+import {enhanceTopicContent} from './topic-content.js?v=3eda597ca70644cd';
+import {drawLineMarquee, listenContentMarquee, marqueeHitsLine, measureLineBands} from './content-lines.js?v=3eda597ca70644cd';
 
 const node = (tag, cls = '', text) => { const el = document.createElement(tag); el.className = cls; if (text !== undefined) el.textContent = text; return el; };
 export const feedbackCategories = {
@@ -32,7 +32,7 @@ function subtract(ranges, removed) {
 function lineSelector(stage, content, onChange) {
   const layer = node('div', 'feedbackLineLayer'), marquee = node('div', 'feedbackMarquee');
   marquee.hidden = true; layer.append(marquee); stage.append(layer);
-  let selected = [], rows = [], frame = 0, stopped = false, disabled = false, drag = null, suppressClick = false;
+  let selected = [], rows = [], frame = 0, stopped = false, disabled = false, initial, suppressClick = false;
   const paint = () => {
     for (const row of rows) {
       const active = row.ranges.some(a => selected.some(b => overlaps(a, b)));
@@ -69,34 +69,32 @@ function lineSelector(stage, content, onChange) {
   const observer = new ResizeObserver(schedule); observer.observe(stage);
   const mutation = new MutationObserver(schedule); mutation.observe(content, {childList: true, subtree: true});
   content.addEventListener('load', schedule, true);
-  layer.addEventListener('pointerdown', event => {
-    suppressClick = false;
-    if (disabled || event.button !== 0 || event.pointerType === 'touch') return;
-    drag = {id: event.pointerId, x: event.clientX, y: event.clientY, initial: selected, moved: false};
-    layer.setPointerCapture(event.pointerId);
+  listenContentMarquee(layer, {
+    accepts(event) {
+      suppressClick = false;
+      initial = selected;
+      return !disabled && event.pointerType !== 'touch';
+    },
+    preview(drag, event) {
+      const box = drawLineMarquee(marquee, drag.x, drag.y, event), rect = layer.getBoundingClientRect();
+      selected = normalize([...initial, ...rows.filter(row => marqueeHitsLine(box, {
+        left: rect.left, right: rect.right, top: row.top + rect.top, bottom: row.bottom + rect.top,
+      })).flatMap(row => row.ranges)]);
+      paint();
+    },
+    finish(drag, event, cancelled) {
+      if (cancelled) selected = initial;
+      // Capture retargets click to the layer: perform the click toggle here.
+      if (!drag.moved && !cancelled) {
+        const y = event.clientY - layer.getBoundingClientRect().top;
+        const row = rows.find(row => y >= row.top && y <= row.bottom);
+        if (row) selected = row.ranges.some(a => selected.some(b => overlaps(a, b))) ? subtract(selected, row.ranges) : normalize([...selected, ...row.ranges]);
+      }
+      suppressClick = true;
+      marquee.hidden = true;
+      paint();
+    },
   });
-  layer.addEventListener('pointermove', event => {
-    if (!drag || event.pointerId !== drag.id) return;
-    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
-    drag.moved = true; event.preventDefault();
-    const box = drawLineMarquee(marquee, drag.x, drag.y, event), rect = layer.getBoundingClientRect();
-    selected = normalize([...drag.initial, ...rows.filter(row => marqueeHitsLine(box, {
-      left: rect.left, right: rect.right, top: row.top + rect.top, bottom: row.bottom + rect.top,
-    })).flatMap(row => row.ranges)]);
-    paint();
-  });
-  const finish = event => {
-    if (!drag || event.pointerId !== drag.id) return;
-    if (event.type === 'pointercancel') selected = drag.initial;
-    // Capture retargets click to the layer: perform the click toggle here.
-    if (!drag.moved && event.type === 'pointerup') {
-      const y = event.clientY - layer.getBoundingClientRect().top;
-      const row = rows.find(row => y >= row.top && y <= row.bottom);
-      if (row) selected = row.ranges.some(a => selected.some(b => overlaps(a, b))) ? subtract(selected, row.ranges) : normalize([...selected, ...row.ranges]);
-    }
-    suppressClick = true; drag = null; marquee.hidden = true; paint();
-  };
-  layer.addEventListener('pointerup', finish); layer.addEventListener('pointercancel', finish);
   schedule();
   return {
     value: () => selected, clear() { selected = []; paint(); }, refresh: schedule,

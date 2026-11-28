@@ -1,9 +1,9 @@
-import {setVoiceContext} from './voice-context.js?v=de001249fb622a2d';
-import {getLanguage} from './i18n.js?v=de001249fb622a2d';
-import {calculatorToolGroups} from './calculator.js?v=de001249fb622a2d';
-import {unrestrictedCalculator} from './calculator-policy.js?v=de001249fb622a2d';
-import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=de001249fb622a2d';
-import {questionWhiteboard} from './whiteboard-answer.js?v=de001249fb622a2d';
+import {setVoiceContext} from './voice-context.js?v=3eda597ca70644cd';
+import {getLanguage} from './i18n.js?v=3eda597ca70644cd';
+import {calculatorToolGroups} from './calculator.js?v=3eda597ca70644cd';
+import {unrestrictedCalculator} from './calculator-policy.js?v=3eda597ca70644cd';
+import {configureWhiteboard, openWhiteboard, prepareWhiteboard, questionToolSession} from './whiteboard.js?v=3eda597ca70644cd';
+import {questionWhiteboard} from './whiteboard-answer.js?v=3eda597ca70644cd';
 
 const toolbars = new WeakMap();
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -47,6 +47,70 @@ export function toolbarAction(id, path) {
   button.tabIndex = -1;
   button.append(icon(path));
   return button;
+}
+
+export function toolbarExtension(button, render) {
+  const item = document.createElement('div');
+  item.className = 'toolbarExtension';
+  const panel = document.createElement('div');
+  panel.className = 'toolbarExtensionPanel';
+  panel.id = `tool-extension-${button.dataset.questionTool}`;
+  const popover = typeof panel.showPopover === 'function';
+  if (popover) panel.setAttribute('popover', 'manual'); else panel.hidden = true;
+  panel.setAttribute('role', 'group');
+  button.setAttribute('aria-controls', panel.id);
+  button.setAttribute('aria-expanded', 'false');
+  item.append(button, panel);
+  let active = false, timer;
+  const place = () => {
+    if (!active) return;
+    const anchor = button.getBoundingClientRect(), bounds = panel.getBoundingClientRect();
+    const vertical = item.closest('[aria-orientation="vertical"]') && !item.closest('.whiteboardOpen');
+    const width = document.documentElement.clientWidth;
+    const x = vertical ? (anchor.left >= bounds.width + 12 ? anchor.left - bounds.width - 4 : anchor.right + 4) : anchor.left;
+    const y = vertical ? anchor.top : anchor.bottom + 4;
+    panel.style.left = Math.max(8, Math.min(x, width - bounds.width - 8)) + 'px';
+    panel.style.top = Math.max(8, Math.min(y, innerHeight - bounds.height - 8)) + 'px';
+  };
+  const hide = () => {
+    clearTimeout(timer);
+    if (!active) return;
+    active = false;
+    if (popover) panel.hidePopover(); else panel.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    window.removeEventListener('scroll', place, true);
+    window.removeEventListener('resize', place);
+  };
+  const show = () => {
+    clearTimeout(timer);
+    if (active || item.hidden || button.hidden || button.disabled) return;
+    render(panel, hide);
+    panel.setAttribute('aria-label', button.getAttribute('aria-label'));
+    if (popover) panel.showPopover(); else panel.hidden = false;
+    active = true;
+    button.setAttribute('aria-expanded', 'true');
+    place();
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+  };
+  item.addEventListener('pointerover', event => { if (event.pointerType === 'mouse') show(); });
+  item.addEventListener('pointerout', event => {
+    if (event.pointerType === 'mouse' && !item.contains(event.relatedTarget)) {
+      timer = setTimeout(() => { if (!panel.contains(document.activeElement)) hide(); }, 220);
+    }
+  });
+  button.addEventListener('focus', () => { if (button.matches(':focus-visible')) show(); });
+  button.addEventListener('click', show);
+  item.addEventListener('focusout', event => { if (!item.contains(event.relatedTarget)) hide(); });
+  item.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !active) return;
+    event.stopPropagation();
+    event.preventDefault();
+    button.focus();
+    hide();
+  });
+  document.addEventListener('pointerdown', event => { if (!item.contains(event.target)) hide(); }, true);
+  return {item, hide};
 }
 
 function createToolbar(label, orientation) {
@@ -116,10 +180,14 @@ export function installToolbars(host, voice, clipper, topicTools) {
   calculatorStatus.setAttribute('role', 'status');
   pageToolbar.append(calculatorStatus);
   host.append(pageToolbar);
+  const globalTools = document.createElement('div');
+  globalTools.className = 'questionToolGroup globalToolGroup';
+  globalTools.append(voice, ...[clipper?.item].filter(Boolean));
   let modalToolbar, calculatorPage, calculatorLanguage;
   let pageCalculators = [];
   const sync = () => {
-    const modal = voice.hidden ? null : currentModal();
+    const activeDialog = currentModal();
+    const modal = voice.hidden || activeDialog?.hasAttribute('data-no-tool-relocation') ? null : activeDialog;
     if (modalToolbar && modalToolbar.parentElement !== modal) {
       modalToolbar.remove();
       modalToolbar = null;
@@ -129,7 +197,7 @@ export function installToolbars(host, voice, clipper, topicTools) {
       modalToolbar.classList.add('dialogTools');
       modal.prepend(modalToolbar);
     }
-    const hasGlobalTools = !voice.hidden || Boolean(clipper && !clipper.hidden);
+    const hasGlobalTools = !voice.hidden || Boolean(clipper && !clipper.item.hidden);
     const hasTopicTools = Boolean(topicTools && !topicTools.hidden);
     const learningPage = suspendCalculatorRestrictions ?
       [...document.querySelectorAll(learningPageSelector)].find(page =>
@@ -160,13 +228,13 @@ export function installToolbars(host, voice, clipper, topicTools) {
     const hidePageTools = !(calculatorPage || hasGlobalTools && toolbar === pageToolbar ||
       hasTopicTools && lessonToolbar === pageToolbar && !modal);
     if (host.hidden !== hidePageTools) host.hidden = hidePageTools;
-    for (const button of [voice, clipper].filter(Boolean)) {
-      if (button.parentElement === toolbar) continue;
-      const previous = button.parentElement;
-      toolbar.append(button);
-      if (previous) setTabStop(previous);
-      setTabStop(toolbar);
+    if (globalTools.parentElement !== toolbar) {
+      const previous = globalTools.closest('.questionTools');
+      clipper?.hide();
+      toolbar.append(globalTools);
+      setTabStop(previous);
     }
+    if (globalTools.hidden === hasGlobalTools) globalTools.hidden = !hasGlobalTools;
     if (pageToolbar.getAttribute('aria-label') !== label()) pageToolbar.setAttribute('aria-label', label());
     if (modalToolbar && modalToolbar.getAttribute('aria-label') !== label()) modalToolbar.setAttribute('aria-label', label());
     setTabStop(pageToolbar);
@@ -195,7 +263,7 @@ export function setQuestionTools(anchor, question, whiteboard, topicBody) {
   if (topicBody) {
     if (reading) question = {...question, calculate: question?.calculate ?? {level: 'scientific'}};
     whiteboard ||= questionWhiteboard({...topicBody, key: JSON.stringify([topicBody.key, question.calculate]),
-      language, question: {}, editable: true, canSubmit: false});
+      language, question: {}, editable: true, canSubmit: false, reading});
   }
   configureWhiteboard(anchor.parentElement, whiteboard);
   if (!anchor.parentNode || !question) return;

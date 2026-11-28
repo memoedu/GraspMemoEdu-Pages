@@ -1,21 +1,22 @@
-import {t, translateMessage, getLanguage} from './i18n.js?v=de001249fb622a2d';
-import {attachFormulaEditing} from './formula-input.js?v=de001249fb622a2d';
-import {setQuestionTools} from './question-tools.js?v=de001249fb622a2d';
-import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=de001249fb622a2d';
-import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=de001249fb622a2d';
-import {mountAnswerConversion} from './answer-conversion.js?v=de001249fb622a2d';
-import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=de001249fb622a2d';
-import {reportableContent} from './content-report.js?v=de001249fb622a2d';
-import {createLearningCache} from './learning-cache.js?v=de001249fb622a2d';
-import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=de001249fb622a2d';
-import {enhanceSourceContent} from './topic-content.js?v=de001249fb622a2d';
-import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=de001249fb622a2d';
-import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=de001249fb622a2d';
-import {pointAssessment} from './point-assessment.js?v=de001249fb622a2d';
-import {trainingAudio} from './training-audio.js?v=de001249fb622a2d';
-import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=de001249fb622a2d';
-import {learningHint} from './beginner-hints.js?v=de001249fb622a2d';
-import {questionWhiteboard, whiteboardText} from './whiteboard-answer.js?v=de001249fb622a2d';
+import {t, translateMessage, getLanguage} from './i18n.js?v=3eda597ca70644cd';
+import {attachFormulaEditing} from './formula-input.js?v=3eda597ca70644cd';
+import {setQuestionTools} from './question-tools.js?v=3eda597ca70644cd';
+import {enableVoiceAnswer, voiceAnswerPending} from './voice-input.js?v=3eda597ca70644cd';
+import {questionInput, answerReady, choiceTypeField} from './question-input.js?v=3eda597ca70644cd';
+import {mountAnswerConversion} from './answer-conversion.js?v=3eda597ca70644cd';
+import {selfAssessment, referenceAnswer, prepareAnswerContent, ratingChoices} from './self-assessment.js?v=3eda597ca70644cd';
+import {reportableContent} from './content-report.js?v=3eda597ca70644cd';
+import {createLearningCache} from './learning-cache.js?v=3eda597ca70644cd';
+import {hyperskillQuestion,localHyperskill} from './hyperskill.js?v=3eda597ca70644cd';
+import {enhanceSourceContent} from './topic-content.js?v=3eda597ca70644cd';
+import {memoryChunk, chunkPeek, sourceAttributions} from './memory-chunk.js?v=3eda597ca70644cd';
+import {topicProgress, topicHistory, readingFields, readingSectionHeading} from './learning-ui.js?v=3eda597ca70644cd';
+import {pointAssessment} from './point-assessment.js?v=3eda597ca70644cd';
+import {trainingAudio} from './training-audio.js?v=3eda597ca70644cd';
+import {ideaSetupHash, ideaSetupLink} from './idea-setup.js?v=3eda597ca70644cd';
+import {learningHint} from './beginner-hints.js?v=3eda597ca70644cd';
+import {questionWhiteboard, whiteboardText} from './whiteboard-answer.js?v=3eda597ca70644cd';
+import {checkpointWhiteboard} from './whiteboard.js?v=3eda597ca70644cd';
 
 const node = (tag, cls = '', text) => {
   const el = document.createElement(tag); el.className = cls;
@@ -138,8 +139,11 @@ export function createAtomicView(bridge) {
     const saved = savedSubmission();
     const body = saved?.step_id === state.active_step_id ? saved : {...payload(),
       answer: whiteboard || (rating === null ? input.value : `自主评分：${rating}`), ...(rating === null ? {} : {self_rating: rating})};
-    write(submissionKey(), JSON.stringify(body)); busy = true; failure = null; render();
+    write(submissionKey(), JSON.stringify(body)); busy = true; failure = null;
     try {
+      if (!whiteboard) await checkpointWhiteboard(root);
+      if (!active(ticket)) return;
+      render();
       const result = await call('submit', {method: 'POST', body});
       if (active(ticket)) { busy = false; accept(result.state, true); bridge.progressChanged(); }
     } catch (error) {
@@ -384,7 +388,7 @@ export function createAtomicView(bridge) {
       setQuestionTools(card, question, questionWhiteboard({
         key: questionId ? JSON.stringify([bridge.getApiOrigin(), learner, topic, questionId]) : null, question,
         editable: Boolean(topicBody) || canSubmit, canSubmit,
-        current: canSubmit || !topicBody ? current : viewing, language: getLanguage(), request: bridge.request,
+        current: canSubmit ? current : viewing, language: getLanguage(), request: bridge.request,
         submit: answer => submit(null, null, answer),
       }), topicBody);
     };

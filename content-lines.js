@@ -62,3 +62,29 @@ export function drawLineMarquee(element, x, y, event) {
 export function marqueeHitsLine(box, row) {
   return box.left < row.right && box.right > row.left && box.top < row.bottom && box.bottom > row.top;
 }
+
+// Both feedback and tutoring use a single pointer gesture for a block click or region drag.
+export function listenContentMarquee(surface, {signal, accepts, preview, finish, capture = () => surface, captureEvents = false}) {
+  let drag;
+  const events = {signal, capture: captureEvents};
+  surface.addEventListener('pointerdown', event => {
+    if (drag || event.button !== 0 || !accepts(event)) return;
+    drag = {id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, target: event.target};
+    capture(event)?.setPointerCapture(event.pointerId);
+  }, events);
+  surface.addEventListener('pointermove', event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
+    drag.moved = true;
+    event.preventDefault();
+    preview(drag, event);
+  }, events);
+  const end = event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const current = drag;
+    drag = null;
+    if (event.type === 'pointerup' && current.moved) preview(current, event);
+    finish(current, event, event.type !== 'pointerup');
+  };
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) surface.addEventListener(type, end, events);
+}
