@@ -1,6 +1,6 @@
 import {assignableVariable, constants, expressionExtensions, functions, normalizeVariableName, operators, permitsConstant,
   permitsCustomFunctions, permitsExtension, permitsKey, permitsModule, toolOperation}
-  from './calculator-policy.js?v=a684a6921871e5f3';
+  from './calculator-policy.js?v=07ee4f864649de99';
 
 export class CalculationError extends Error {
   constructor(code) {
@@ -13,10 +13,10 @@ const ensure = (value, code = 'invalid') => {
   if (!value) throw new CalculationError(code);
 };
 const checkKey = (config, key, tier) => ensure(permitsKey(config, key, tier), 'restricted');
-const core = () => import('./vendor/calculator/core.mjs?v=a684a6921871e5f3');
-const advanced = () => import('./vendor/calculator/advanced.mjs?v=a684a6921871e5f3');
-const applied = () => import('./vendor/calculator/applied.mjs?v=a684a6921871e5f3');
-const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=a684a6921871e5f3');
+const core = () => import('./vendor/calculator/core.mjs?v=07ee4f864649de99');
+const advanced = () => import('./vendor/calculator/advanced.mjs?v=07ee4f864649de99');
+const applied = () => import('./vendor/calculator/applied.mjs?v=07ee4f864649de99');
+const symbolicEngine = () => import('./vendor/calculator/symbolic.mjs?v=07ee4f864649de99');
 const moduleLoaders = {
   integral: advanced, probability: advanced, statistics: advanced, modular: advanced, programmer: advanced,
   symbolic: symbolicEngine, machine_learning: applied, chemistry: applied, signal: applied,
@@ -544,7 +544,8 @@ export async function storedExpression(source, config, name, memory) {
   return {expression};
 }
 
-export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory, selectionArithmetic = false}) {
+export async function calculate({config, module, operation, input = {}, degrees = false, answer, memory,
+  selectionArithmetic = false, closedExpression = false}) {
   ensure(permitsModule(config, module), 'restricted');
   if (module === 'expression' && operation === 'assign_variables') {
     checkKey(config, 'evaluate');
@@ -563,7 +564,7 @@ export async function calculate({config, module, operation, input = {}, degrees 
     if (immediate) return immediate;
   }
   const [math] = await warmCalculator(module, input.expression);
-  const context = {degrees, answer, memory};
+  const context = {degrees, answer, memory, closedExpression};
   if (operation === 'evaluate') {
     const {register, operator} = storage;
     if (storage.definition) {
@@ -714,16 +715,40 @@ async function simplifySelectedArray(expression, config) {
   return {text: formatted(math, value), ...(nonZero.length ? {nonZero} : {})};
 }
 
-export async function calculateSelectedFormula({expression, config = {level: 'cas'}, cas = true, memory}) {
-  if (typeof expression !== 'string' || /[=<>≤≥≠]/u.test(expression)) throw new CalculationError('expression_required');
+function namedFormula(expression) {
+  ensure(typeof expression === 'string', 'expression_required');
+  const original = commonNotation(expression);
+  ensure(!/[<>!]=|[<>]/.test(original), 'expression_required');
+  const [left, right, extra] = original.split('=');
+  if (right === undefined) return {expression: original};
+  const label = left.trim();
+  ensure(extra === undefined && right.trim() && !/[\^⁰¹²³⁴⁵⁶⁷⁸⁹]/u.test(label)
+    && assignableVariable(normalizeVariableName(label)), 'expression_required');
+  return {label, expression: right.trim()};
+}
+
+export async function calculateSelectedFormula({expression: selection, config = {level: 'cas'}, cas = true, memory}) {
+  const {label, expression} = namedFormula(selection);
   const input = {expression};
+  const allowSymbolic = cas && permitsModule(config, 'symbolic');
+  const simplify = closedExpression => calculate({config, module: 'symbolic', operation: 'simplify', input, closedExpression});
+  let result;
   try {
-    return await calculate({config, module: 'expression', operation: 'evaluate', input, memory, selectionArithmetic: true});
+    result = await calculate({config, module: 'expression', operation: 'evaluate', input, memory, selectionArithmetic: true});
   } catch (error) {
-    if (!cas || error.code !== 'unassigned' || !permitsModule(config, 'symbolic')) throw error;
-    if (expression.includes('[')) return simplifySelectedArray(expression, config);
-    return calculate({config, module: 'symbolic', operation: 'simplify', input});
+    if (!allowSymbolic || error.code !== 'unassigned') throw error;
+    result = expression.includes('[') ? await simplifySelectedArray(expression, config) : await simplify(false);
   }
+  if (!label) return result;
+  if (allowSymbolic && Number.isFinite(result.numeric) && !Number.isSafeInteger(result.numeric)) {
+    try {
+      const exact = await simplify(true);
+      result = {...result, text: exact.text};
+    } catch {
+      // Some numeric operations and stored values have no self-contained CAS form.
+    }
+  }
+  return {...result, label, text: label + ' = ' + result.text};
 }
 
 async function runOperation(math, operation, input, config, context) {
@@ -789,10 +814,14 @@ async function runOperation(math, operation, input, config, context) {
     case 'simplify': {
       const variable = input.variable === undefined ? 'x' : inputText(input.variable, 12);
       ensure(/^[A-Za-z][A-Za-z_]*$/.test(variable) && assignableVariable(variable));
-      const pieces = inputText(input.expression, 400).split('=');
+      const original = inputText(input.expression, 400);
+      const {label, expression} = operation === 'simplify' ? namedFormula(original) : {expression: original};
+      const pieces = expression.split('=');
       ensure(pieces.length === 1 || operation === 'solve' && pieces.length === 2);
       const text = pieces.map((piece, index) => expressionPlan(math, piece, config, {
-        variable, symbolic: true, freeSymbols: operation === 'simplify', completeTrailing: index === pieces.length - 1,
+        variable: context.closedExpression ? undefined : variable,
+        symbolic: true, freeSymbols: operation === 'simplify' && !context.closedExpression,
+        completeTrailing: index === pieces.length - 1,
       }).source).join('=');
       const {nerdamer} = await symbolicEngine();
       const result = operation === 'antiderivative' ? nerdamer.integrate(text, variable, 0)
@@ -801,6 +830,7 @@ async function runOperation(math, operation, input, config, context) {
       value = result?.toString();
       ensure(value && !/\b(?:integrate|solve)\(/i.test(value), 'unsupported');
       if (operation === 'antiderivative') value += ' + C';
+      if (label) value = label + ' = ' + value;
       break;
     }
     default:
